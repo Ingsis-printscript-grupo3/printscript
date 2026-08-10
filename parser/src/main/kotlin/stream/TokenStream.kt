@@ -35,6 +35,6 @@ class TokenStream(private val tokens: List<Token>) {
     fun consume(type: TokenType, errorMessage: String): Token {
         if (check(type)) return advance()
         val errorToken = peek()
-        throw RuntimeException("Error Sintáctico [Línea ${errorToken.start.line}]: $errorMessage")
+        throw RuntimeException("Syntax Error [Line ${errorToken.start.line}]: $errorMessage")
     }
 }
