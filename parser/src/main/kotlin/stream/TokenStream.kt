@@ -2,6 +2,7 @@ package printscript.parser.stream
 
 import printscript.common.Token
 import printscript.common.TokenType
+import printscript.parser.SyntaxException
 
 class TokenStream(private val tokens: Iterator<Token>) {
     private var currentToken: Token
@@ -46,6 +47,6 @@ class TokenStream(private val tokens: Iterator<Token>) {
     fun consume(type: TokenType, errorMessage: String): Token {
         if (check(type)) return advance()
         val errorToken = peek()
-        throw RuntimeException("Syntax Error [Line ${errorToken.start.line}]: $errorMessage")
+        throw SyntaxException(errorMessage, errorToken.start, errorToken.end)
     }
 }
