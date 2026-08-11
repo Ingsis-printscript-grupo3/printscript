@@ -3,19 +3,30 @@ package printscript.parser.stream
 import printscript.common.Token
 import printscript.common.TokenType
 
-class TokenStream(private val tokens: List<Token>) {
-    private var current = 0
+class TokenStream(private val tokens: Iterator<Token>) {
+    private var currentToken: Token
+    private var previousToken: Token? = null
 
-    fun peek(): Token = tokens[current]
+    init {
+        if (!tokens.hasNext()) throw RuntimeException("Empty token stream")
+        currentToken = tokens.next()
+    }
+
+    fun peek(): Token = currentToken
 
     fun advance(): Token {
-        if (!isAtEnd()) current++
+        if (!isAtEnd()) {
+            previousToken = currentToken
+            if (tokens.hasNext()) {
+                currentToken = tokens.next()
+            }
+        }
         return previous()
     }
 
-    fun previous(): Token = tokens[current - 1]
+    fun previous(): Token = previousToken ?: throw RuntimeException("No previous token")
 
-    fun isAtEnd(): Boolean = peek().type == TokenType.EOF
+    fun isAtEnd(): Boolean = currentToken.type == TokenType.EOF
 
     private fun check(type: TokenType): Boolean {
         if (isAtEnd()) return false

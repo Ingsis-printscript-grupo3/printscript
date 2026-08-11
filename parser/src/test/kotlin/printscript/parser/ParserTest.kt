@@ -16,8 +16,8 @@ class ParserTest {
 
     private fun parse(vararg tokens: Token): List<Statement> {
         val tokenList = tokens.toList() + createToken(TokenType.EOF)
-        val parser = Parser(tokenList)
-        return parser.parse()
+        val parser = Parser(tokenList.iterator())
+        return parser.parse().asSequence().toList()
     }
 
     @Test
