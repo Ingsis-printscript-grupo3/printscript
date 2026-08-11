@@ -1,4 +1,4 @@
-package printscript.parser
+package printscript.parser.result
 
 import printscript.ast.Statement
 import printscript.common.Position

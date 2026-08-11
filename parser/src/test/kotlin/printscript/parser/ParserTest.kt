@@ -6,6 +6,7 @@ import printscript.ast.*
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
+import printscript.parser.result.ParseResult
 import kotlin.test.assertEquals
 
 class ParserTest {

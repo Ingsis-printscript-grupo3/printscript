@@ -4,6 +4,8 @@ import printscript.parser.stream.TokenStream
 import printscript.parser.expression.ExpressionParser
 import printscript.parser.statement.StatementParser
 import printscript.common.Token
+import printscript.parser.result.ASTResult
+import printscript.parser.result.ParseResult
 
 class Parser(tokens: Iterator<Token>) : ParserInterface {
     private val stream = TokenStream(tokens)
@@ -12,15 +14,15 @@ class Parser(tokens: Iterator<Token>) : ParserInterface {
 
     override fun parse(): Iterator<ParseResult> = iterator {
         while (!stream.isAtEnd()) {
-            try {
-                yield(ParseResult.Success(statementParser.parseStatement()))
-            } catch (e: SyntaxException) {
-                yield(ParseResult.Failure(e.errorMessage, e.start, e.end))
-                break
-            } catch (e: Exception) {
-                val token = stream.peek()
-                yield(ParseResult.Failure(e.message ?: "Unknown error", token.start, token.end))
-                break
+            val result = statementParser.parseStatement()
+            when (result) {
+                is ASTResult.Success -> {
+                    yield(ParseResult.Success(result.value))
+                }
+                is ASTResult.Failure -> {
+                    yield(ParseResult.Failure(result.message, result.start, result.end))
+                    break
+                }
             }
         }
     }
