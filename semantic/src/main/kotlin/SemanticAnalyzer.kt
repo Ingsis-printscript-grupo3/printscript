@@ -4,11 +4,17 @@ import printscript.ast.*
 import printscript.semantic.symbol.SymbolTable
 
 class SemanticAnalyzer {
-    fun analyze(ast: List<Statement>) {
+    fun analyze(ast: List<Statement>): List<SemanticResult<Unit>> {
         val symbolTable = SymbolTable()
         val expressionResolver = ExpressionResolver(symbolTable)
         val statementValidator = StatementValidator(symbolTable, expressionResolver)
 
-        ast.forEach { statementValidator.validate(it) }
+        val results = mutableListOf<SemanticResult<Unit>>()
+        for (statement in ast) {
+            val result = statementValidator.validate(statement)
+            results.add(result)
+            if (result is SemanticResult.Failure) break
+        }
+        return results
     }
 }
