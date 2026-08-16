@@ -6,6 +6,7 @@ import printscript.ast.*
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
+import printscript.parser.result.ParseResult
 import kotlin.test.assertEquals
 
 class ParserTest {
@@ -16,8 +17,13 @@ class ParserTest {
 
     private fun parse(vararg tokens: Token): List<Statement> {
         val tokenList = tokens.toList() + createToken(TokenType.EOF)
-        val parser = Parser(tokenList)
-        return parser.parse()
+        val parser = Parser(tokenList.iterator())
+        return parser.parse().asSequence().map { result ->
+            when (result) {
+                is ParseResult.Success -> result.statement
+                is ParseResult.Failure -> throw RuntimeException(result.message)
+            }
+        }.toList()
     }
 
     @Test

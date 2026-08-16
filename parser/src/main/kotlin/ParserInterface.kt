@@ -1,7 +1,7 @@
 package printscript.parser
 
-interface ParserInterface
-{
-    fun parse(): List<printscript.ast.Statement>;
+import printscript.parser.result.ParseResult
 
+interface ParserInterface {
+    fun parse(): Iterator<ParseResult>
 }
