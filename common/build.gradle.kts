@@ -1,2 +1,4 @@
-dependencies {
+
+plugins {
+    id("printscript.kotlin-common-conventions")
 }
