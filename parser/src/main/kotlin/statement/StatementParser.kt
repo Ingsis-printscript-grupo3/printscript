@@ -59,7 +59,7 @@ class StatementParser(
         if (exprResult is ASTResult.Failure) return exprResult
         val value = (exprResult as ASTResult.Success).value
         
-        val rightParenResult = stream.consume(TokenType.RIGHTTPAREN, "Expected ')'.")
+        val rightParenResult = stream.consume(TokenType.RIGHTPAREN, "Expected ')'.")
         if (rightParenResult is ASTResult.Failure) return rightParenResult
         
         val semiResult = stream.consume(TokenType.SEMICOLON, "Expected ';'.")

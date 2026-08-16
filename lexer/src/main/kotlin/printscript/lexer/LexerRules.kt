@@ -20,7 +20,7 @@ object LexerRules {
         ':' to TokenType.COLON,
         ';' to TokenType.SEMICOLON,
         '(' to TokenType.LEFTPAREN,
-        ')' to TokenType.RIGHTTPAREN,
+        ')' to TokenType.RIGHTPAREN,
     )
 
     fun isQuote(c: Char): Boolean = c == '"' || c == '\''

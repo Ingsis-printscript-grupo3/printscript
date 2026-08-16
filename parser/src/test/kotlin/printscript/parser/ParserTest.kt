@@ -113,10 +113,10 @@ class ParserTest {
             createToken(TokenType.NUMBERLITERAL, "5"),
             createToken(TokenType.PLUS),
             createToken(TokenType.NUMBERLITERAL, "2"),
-            createToken(TokenType.RIGHTTPAREN),
+            createToken(TokenType.RIGHTPAREN),
             createToken(TokenType.MULTIPLY),
             createToken(TokenType.NUMBERLITERAL, "3"),
-            createToken(TokenType.RIGHTTPAREN),
+            createToken(TokenType.RIGHTPAREN),
             createToken(TokenType.SEMICOLON)
         )
 
@@ -140,7 +140,7 @@ class ParserTest {
             createToken(TokenType.STRINGLITERAL, "Result: "),
             createToken(TokenType.PLUS),
             createToken(TokenType.IDENTIFIER, "a"),
-            createToken(TokenType.RIGHTTPAREN),
+            createToken(TokenType.RIGHTPAREN),
             createToken(TokenType.SEMICOLON)
         )
 
@@ -160,7 +160,7 @@ class ParserTest {
                 createToken(TokenType.PRINTLN),
                 createToken(TokenType.LEFTPAREN),
                 createToken(TokenType.NUMBERLITERAL, "5"),
-                createToken(TokenType.RIGHTTPAREN)
+                createToken(TokenType.RIGHTPAREN)
                 // Falta TokenType.SEMICOLON
             )
         }
@@ -180,8 +180,8 @@ class ParserTest {
                 createToken(TokenType.NUMBERLITERAL, "2"),
                 createToken(TokenType.MULTIPLY),
                 createToken(TokenType.NUMBERLITERAL, "3"),
-                // Falta TokenType.RIGHTTPAREN de la expresión
-                createToken(TokenType.RIGHTTPAREN),
+                // Falta TokenType.RIGHTPAREN de la expresión
+                createToken(TokenType.RIGHTPAREN),
                 createToken(TokenType.SEMICOLON)
             )
         }

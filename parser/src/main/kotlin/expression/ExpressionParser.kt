@@ -54,7 +54,7 @@ class ExpressionParser(private val stream: TokenStream) {
             val exprResult = parseExpression()
             if (exprResult is ASTResult.Failure) return exprResult
             
-            val consumeResult = stream.consume(TokenType.RIGHTTPAREN, "Expected ')' closing the expression.")
+            val consumeResult = stream.consume(TokenType.RIGHTPAREN, "Expected ')' closing the expression.")
             if (consumeResult is ASTResult.Failure) return consumeResult
             
             return exprResult
