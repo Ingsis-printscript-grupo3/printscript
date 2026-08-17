@@ -11,33 +11,35 @@ import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.TokenType
 
-class Interpreter(private val output: (String) -> Unit = { texto -> println(texto) }) {
+class Interpreter(private val output: (String) -> Unit = { text -> println(text) }) {
 
     private val environment = Environment()
 
-    fun interpretar(statements: List<Statement>) {
-        statements.forEach { ejecutar(it) }
+    fun interpret(statements: Iterator<Statement>) {
+        while (statements.hasNext()) {
+            execute(statements.next())
+        }
     }
 
-    private fun ejecutar(statement: Statement) {
+    private fun execute(statement: Statement) {
         when (statement) {
             is VariableDeclaration -> {
-                val expresion = statement.value
-                val valor = if (expresion != null) evaluar(expresion) else null
-                environment.declare(statement.name, valor)
+                val expression = statement.value
+                val value = if (expression != null) evaluate(expression) else null
+                environment.declare(statement.name, value)
             }
 
             is Assignment ->
-                environment.assign(statement.name, evaluar(statement.value))
+                environment.assign(statement.name, evaluate(statement.value))
 
             is PrintCall ->
-                output(textoDe(evaluar(statement.value)))
+                output(textOf(evaluate(statement.value)))
 
             else -> throw UnknownStatementError(statement)
         }
     }
 
-    private fun evaluar(expression: Expression): Value =
+    private fun evaluate(expression: Expression): Value =
         when (expression) {
             is NumberLiteral -> NumberValue(expression.value)
 
@@ -45,25 +47,25 @@ class Interpreter(private val output: (String) -> Unit = { texto -> println(text
 
             is Identifier -> environment.lookup(expression.name)
 
-            is BinaryExpression -> aplicarOperador(
+            is BinaryExpression -> applyOperator(
                 expression,
-                evaluar(expression.left),
-                evaluar(expression.right)
+                evaluate(expression.left),
+                evaluate(expression.right)
             )
 
             else -> throw UnknownExpressionError(expression)
         }
 
-    private fun aplicarOperador(expression: BinaryExpression, left: Value, right: Value): Value {
+    private fun applyOperator(expression: BinaryExpression, left: Value, right: Value): Value {
         val operator = expression.operator
 
         if (operator == TokenType.PLUS) {
-            return sumarOConcatenar(left, right)
+            return addOrConcatenate(left, right)
         }
 
-        // los demas operadores solo funcionan entre numbers
+        // other operators only work between numbers
         if (left !is NumberValue || right !is NumberValue) {
-            throw TypeMismatchError(nombreDeTipo(left), nombreDeTipo(right))
+            throw TypeMismatchError(typeName(left), typeName(right))
         }
 
         return when (operator) {
@@ -74,27 +76,27 @@ class Interpreter(private val output: (String) -> Unit = { texto -> println(text
         }
     }
 
-    private fun sumarOConcatenar(left: Value, right: Value): Value =
+    private fun addOrConcatenate(left: Value, right: Value): Value =
         if (left is NumberValue && right is NumberValue) {
             NumberValue(left.value + right.value)
         } else {
-            StringValue(textoDe(left) + textoDe(right))
+            StringValue(textOf(left) + textOf(right))
         }
 
-    private fun textoDe(value: Value): String =
+    private fun textOf(value: Value): String =
         when (value) {
-            is NumberValue -> formatearNumero(value.value)
+            is NumberValue -> formatNumber(value.value)
             is StringValue -> value.value
         }
 
-    private fun formatearNumero(numero: Double): String =
-        if (numero % 1.0 == 0.0) {
-            numero.toLong().toString()
+    private fun formatNumber(number: Double): String =
+        if (number % 1.0 == 0.0) {
+            number.toLong().toString()
         } else {
-            numero.toString()
+            number.toString()
         }
 
-    private fun nombreDeTipo(value: Value): String =
+    private fun typeName(value: Value): String =
         when (value) {
             is NumberValue -> "number"
             is StringValue -> "string"
