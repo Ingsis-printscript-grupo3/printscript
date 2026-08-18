@@ -6,6 +6,7 @@ import printscript.ast.*
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
+import printscript.parser.result.ParseResult
 import kotlin.test.assertEquals
 
 class ParserTest {
@@ -16,8 +17,13 @@ class ParserTest {
 
     private fun parse(vararg tokens: Token): List<Statement> {
         val tokenList = tokens.toList() + createToken(TokenType.EOF)
-        val parser = Parser(tokenList)
-        return parser.parse()
+        val parser = Parser(tokenList.iterator())
+        return parser.parse().asSequence().map { result ->
+            when (result) {
+                is ParseResult.Success -> result.statement
+                is ParseResult.Failure -> throw RuntimeException(result.message)
+            }
+        }.toList()
     }
 
     @Test
@@ -107,10 +113,10 @@ class ParserTest {
             createToken(TokenType.NUMBERLITERAL, "5"),
             createToken(TokenType.PLUS),
             createToken(TokenType.NUMBERLITERAL, "2"),
-            createToken(TokenType.RIGHTTPAREN),
+            createToken(TokenType.RIGHTPAREN),
             createToken(TokenType.MULTIPLY),
             createToken(TokenType.NUMBERLITERAL, "3"),
-            createToken(TokenType.RIGHTTPAREN),
+            createToken(TokenType.RIGHTPAREN),
             createToken(TokenType.SEMICOLON)
         )
 
@@ -134,7 +140,7 @@ class ParserTest {
             createToken(TokenType.STRINGLITERAL, "Result: "),
             createToken(TokenType.PLUS),
             createToken(TokenType.IDENTIFIER, "a"),
-            createToken(TokenType.RIGHTTPAREN),
+            createToken(TokenType.RIGHTPAREN),
             createToken(TokenType.SEMICOLON)
         )
 
@@ -154,7 +160,7 @@ class ParserTest {
                 createToken(TokenType.PRINTLN),
                 createToken(TokenType.LEFTPAREN),
                 createToken(TokenType.NUMBERLITERAL, "5"),
-                createToken(TokenType.RIGHTTPAREN)
+                createToken(TokenType.RIGHTPAREN)
                 // Falta TokenType.SEMICOLON
             )
         }
@@ -174,8 +180,8 @@ class ParserTest {
                 createToken(TokenType.NUMBERLITERAL, "2"),
                 createToken(TokenType.MULTIPLY),
                 createToken(TokenType.NUMBERLITERAL, "3"),
-                // Falta TokenType.RIGHTTPAREN de la expresión
-                createToken(TokenType.RIGHTTPAREN),
+                // Falta TokenType.RIGHTPAREN de la expresión
+                createToken(TokenType.RIGHTPAREN),
                 createToken(TokenType.SEMICOLON)
             )
         }

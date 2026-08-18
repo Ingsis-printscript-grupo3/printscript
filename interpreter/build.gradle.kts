@@ -1,5 +1,5 @@
 plugins {
-    id("printscript.common-conventions")
+    id("printscript.kotlin-common-conventions")
 }
 
 dependencies {
