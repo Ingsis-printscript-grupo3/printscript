@@ -43,5 +43,5 @@ fun main() {
         return
     }
 
-    Interpreter().interpretar(statements)
+    Interpreter().interpret(statements.iterator())
 }
