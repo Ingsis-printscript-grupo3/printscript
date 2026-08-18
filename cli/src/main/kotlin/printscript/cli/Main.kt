@@ -9,6 +9,8 @@ import printscript.parser.Parser
 import printscript.parser.result.ParseResult
 import java.io.StringReader
 import printscript.lexer.LexerInterface
+import printscript.semantic.SemanticAnalyzer
+import printscript.semantic.SemanticResult
 
 private val CODIGO = """
     let x: number = 5;
@@ -41,6 +43,14 @@ fun main() {
     } catch (e: LexicalError) {
         println("Error lexico: ${e.message} (linea ${e.start.line})")
         return
+    }
+
+    val semanticResults = SemanticAnalyzer().analyze(statements)
+    for (result in semanticResults) {
+        if (result is SemanticResult.Failure) {
+            println("Error semantico: ${result.message}")
+            return
+        }
     }
 
     Interpreter().interpret(statements.iterator())
