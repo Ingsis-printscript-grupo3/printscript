@@ -25,3 +25,5 @@ class Environment {
         return variables[name] ?: throw UninitializedVariableError(name)
     }
 }
+
+
