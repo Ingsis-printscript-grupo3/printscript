@@ -2,6 +2,8 @@ package printscript.cli
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class EndToEndTest {
 
@@ -48,5 +50,40 @@ class EndToEndTest {
         )
 
         assertEquals(listOf("1", "10"), output)
+    }
+
+    @Test
+    fun `error 1 - lexical error with invalid character`() {
+        val code = """
+            let a: number = 12 @ 4;
+        """.trimIndent()
+
+        assertFailsWith<printscript.lexer.LexicalError> {
+            run(code)
+        }
+    }
+
+    @Test
+    fun `error 2 - syntax error with missing semicolon`() {
+        val code = """
+            let a: number = 12
+        """.trimIndent()
+
+        val exception = assertFailsWith<printscript.parser.SyntaxError> {
+            run(code)
+        }
+        assertTrue(exception.message!!.contains("Expected"))
+    }
+
+    @Test
+    fun `error 3 - semantic error with incompatible types`() {
+        val code = """
+            let a: number = "hola";
+        """.trimIndent()
+
+        val exception = assertFailsWith<Exception> {
+            run(code)
+        }
+        assertTrue(exception.message!!.contains("Incompatible types"))
     }
 }
