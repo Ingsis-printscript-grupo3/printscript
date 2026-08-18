@@ -5,39 +5,31 @@ import printscript.common.TokenType
 import printscript.parser.result.ASTResult
 import printscript.parser.stream.TokenStream
 
-class ExpressionParser(private val stream: TokenStream) {
+class ExpressionParser(
+    private val stream: TokenStream,
+    private val infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix
+) {
 
-    fun parseExpression(): ASTResult<Expression> {
-        val leftResult = parseTerm()
+    fun parseExpression(minPrecedence: Int = 0): ASTResult<Expression> {
+        val leftResult = parsePrimary()
         if (leftResult is ASTResult.Failure) return leftResult
         var left = (leftResult as ASTResult.Success).value
 
-        while (stream.match(TokenType.PLUS, TokenType.MINUS)) {
-            val operator = stream.previous()?.type ?: return ASTResult.Failure("Missing operator", Position(0,0), Position(0,0))
-            val rightResult = parseTerm()
-            if (rightResult is ASTResult.Failure) return rightResult
-            val right = (rightResult as ASTResult.Success).value
-            left = BinaryExpression(left, operator, right)
+        while (true) {
+            val token = stream.peek() ?: break
+            val parselet = infixParselets[token.type] ?: break
+            if (parselet.precedence < minPrecedence) break
+
+            stream.advance()
+            val operatorToken = stream.previous() ?: break
+            val result = parselet.parse(left, operatorToken, stream, this)
+            if (result is ASTResult.Failure) return result
+            left = (result as ASTResult.Success).value
         }
         return ASTResult.Success(left)
     }
 
-    private fun parseTerm(): ASTResult<Expression> {
-        val leftResult = parseFactor()
-        if (leftResult is ASTResult.Failure) return leftResult
-        var left = (leftResult as ASTResult.Success).value
-        
-        while (stream.match(TokenType.MULTIPLY, TokenType.DIVIDE)) {
-            val operator = stream.previous()?.type ?: return ASTResult.Failure("Missing operator", Position(0,0), Position(0,0))
-            val rightResult = parseFactor()
-            if (rightResult is ASTResult.Failure) return rightResult
-            val right = (rightResult as ASTResult.Success).value
-            left = BinaryExpression(left, operator, right)
-        }
-        return ASTResult.Success(left)
-    }
-
-    private fun parseFactor(): ASTResult<Expression> {
+    private fun parsePrimary(): ASTResult<Expression> {
         if (stream.match(TokenType.NUMBERLITERAL)) {
             val value = stream.previous()?.value?.toDouble() ?: 0.0
             return ASTResult.Success(NumberLiteral(value))

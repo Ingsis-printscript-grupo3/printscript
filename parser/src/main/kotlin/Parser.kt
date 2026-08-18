@@ -1,7 +1,9 @@
 package printscript.parser
 
 import printscript.parser.stream.TokenStream
+import printscript.parser.expression.DefaultExpressionParselets
 import printscript.parser.expression.ExpressionParser
+import printscript.parser.statement.DefaultStatementHandlers
 import printscript.parser.statement.StatementParser
 import printscript.common.Token
 import printscript.parser.result.ASTResult
@@ -9,8 +11,8 @@ import printscript.parser.result.ParseResult
 
 class Parser(tokens: Iterator<Token>) : ParserInterface {
     private val stream = TokenStream(tokens)
-    private val expressionParser = ExpressionParser(stream)
-    private val statementParser = StatementParser(stream, expressionParser)
+    private val expressionParser = ExpressionParser(stream, DefaultExpressionParselets.infix)
+    private val statementParser = StatementParser(stream, expressionParser, DefaultStatementHandlers.map)
 
     override fun parse(): Iterator<ParseResult> = iterator {
         while (!stream.isAtEnd()) {
