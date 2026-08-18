@@ -1,8 +1,3 @@
-rootProject.name = "printscript"
 
-include("common")
-include("ast")
-include("lexer")
-include("parser")
-include("interpreter")
-include("cli")
+rootProject.name= "printscript"
+include ("ast","cli","common","interpreter", "lexer","parser","semantic")
