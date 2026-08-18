@@ -6,19 +6,21 @@ import printscript.ast.Statement
 sealed class InterpreterError(message: String) : RuntimeException(message)
 
 class VariableAlreadyDeclaredError(val name: String) :
-    InterpreterError("La variable '$name' ya fue declarada")
+    InterpreterError("Variable '$name' is already declared")
 
 class UndeclaredVariableError(val name: String) :
-    InterpreterError("La variable '$name' no fue declarada")
+    InterpreterError("Variable '$name' is not declared")
 
 class UninitializedVariableError(val name: String) :
-    InterpreterError("La variable '$name' fue declarada pero todavia no tiene un valor asignado")
+    InterpreterError("Variable '$name' is declared but not initialized")
 
 class TypeMismatchError(val leftType: String, val rightType: String) :
-    InterpreterError("No se puede operar entre $leftType y $rightType")
+    InterpreterError("Cannot operate between $leftType and $rightType")
 
 class UnknownStatementError(val statement: Statement) :
-    InterpreterError("No se reconoce el tipo de statement")
+    InterpreterError("Unknown statement type")
 
 class UnknownExpressionError(val expression: Expression) :
-    InterpreterError("No se reconoce el tipo de expresion")
+    InterpreterError("Unknown expression type")
+
+

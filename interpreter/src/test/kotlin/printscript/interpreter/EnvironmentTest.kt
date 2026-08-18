@@ -6,7 +6,7 @@ import kotlin.test.assertFailsWith
 class EnvironmentTest {
 
     @Test
-    fun `declarar una variable con valor y leerla devuelve ese valor`() {
+    fun `declaring a variable with a value and reading it returns that value`() {
         val env = Environment()
         env.declare("x", NumberValue(5.0))
 
@@ -14,7 +14,7 @@ class EnvironmentTest {
     }
 
     @Test
-    fun `declarar dos veces la misma variable falla`() {
+    fun `declaring the same variable twice fails`() {
         val env = Environment()
         env.declare("x", NumberValue(5.0))
 
@@ -25,7 +25,7 @@ class EnvironmentTest {
     }
 
     @Test
-    fun `asignar a una variable no declarada falla`() {
+    fun `assigning to an undeclared variable fails`() {
         val env = Environment()
         val error = assertFailsWith<UndeclaredVariableError> {
             env.assign("x", NumberValue(5.0))
@@ -34,7 +34,7 @@ class EnvironmentTest {
     }
 
     @Test
-    fun `leer una variable no declarada falla`() {
+    fun `reading an undeclared variable fails`() {
         val env = Environment()
         val error = assertFailsWith<UndeclaredVariableError> {
             env.lookup("x")
@@ -43,7 +43,7 @@ class EnvironmentTest {
     }
 
     @Test
-    fun `declarar sin valor y asignarle uno desp permite leerla`() {
+    fun `declaring without a value and assigning one later allows reading it`() {
         val env = Environment()
         env.declare("x", null)
         env.assign("x", NumberValue(5.0))
@@ -52,7 +52,7 @@ class EnvironmentTest {
     }
 
     @Test
-    fun `leer una variable declarada sin valor falla`() {
+    fun `reading a declared variable without a value fails`() {
         val env = Environment()
         env.declare("x", null)
         val error = assertFailsWith<UninitializedVariableError> {
@@ -63,3 +63,5 @@ class EnvironmentTest {
 
 
 }
+
+

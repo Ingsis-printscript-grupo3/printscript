@@ -16,85 +16,85 @@ import kotlin.test.assertFailsWith
 
 class InterpreterTest {
 
-    private fun correr(vararg statements: Statement): List<String> {
-        val salida = mutableListOf<String>()
-        Interpreter { texto -> salida.add(texto) }.interpretar(statements.toList())
-        return salida
+    private fun run(vararg statements: Statement): List<String> {
+        val output = mutableListOf<String>()
+        Interpreter { text -> output.add(text) }.interpret(statements.iterator())
+        return output
     }
 
-    private fun num(valor: Double) = NumberLiteral(valor)
+    private fun num(value: Double) = NumberLiteral(value)
 
-    private fun texto(valor: String) = StringLiteral(valor)
+    private fun text(value: String) = StringLiteral(value)
 
-    private fun id(nombre: String) = Identifier(nombre)
+    private fun id(name: String) = Identifier(name)
 
-    private fun bin(izq: Expression, op: TokenType, der: Expression) = BinaryExpression(izq, op, der)
+    private fun bin(left: Expression, op: TokenType, right: Expression) = BinaryExpression(left, op, right)
 
     @Test
-    fun `ejemplo 1 - concatenacion de dos variables string`() {
+    fun `example 1 - concatenation of two string variables`() {
         // let name: string = "Joe";
         // let lastName: string = "Doe";
         // println(name + " " + lastName);
-        val salida = correr(
-            VariableDeclaration("name", "string", texto("Joe")),
-            VariableDeclaration("lastName", "string", texto("Doe")),
+        val output = run(
+            VariableDeclaration("name", "string", text("Joe")),
+            VariableDeclaration("lastName", "string", text("Doe")),
             PrintCall(
                 bin(
-                    bin(id("name"), TokenType.PLUS, texto(" ")),
+                    bin(id("name"), TokenType.PLUS, text(" ")),
                     TokenType.PLUS,
                     id("lastName")
                 )
             )
         )
 
-        assertEquals(listOf("Joe Doe"), salida)
+        assertEquals(listOf("Joe Doe"), output)
     }
 
     @Test
-    fun `ejemplo 2 - division guardada en una variable y concatenada`() {
+    fun `example 2 - division stored in a variable and concatenated`() {
         // let a: number = 12;
         // let b: number = 4;
         // let c: number = a / b;
         // println("Result: " + c);
-        val salida = correr(
+        val output = run(
             VariableDeclaration("a", "number", num(12.0)),
             VariableDeclaration("b", "number", num(4.0)),
             VariableDeclaration("c", "number", bin(id("a"), TokenType.DIVIDE, id("b"))),
-            PrintCall(bin(texto("Result: "), TokenType.PLUS, id("c")))
+            PrintCall(bin(text("Result: "), TokenType.PLUS, id("c")))
         )
 
-        assertEquals(listOf("Result: 3"), salida)
+        assertEquals(listOf("Result: 3"), output)
     }
 
     @Test
-    fun `ejemplo 3 - reasignacion de una variable ya declarada`() {
+    fun `example 3 - reassignment of an already declared variable`() {
         // let a: number = 12;
         // let b: number = 4;
         // a = a / b;
         // println("Result: " + a);
-        val salida = correr(
+        val output = run(
             VariableDeclaration("a", "number", num(12.0)),
             VariableDeclaration("b", "number", num(4.0)),
             Assignment("a", bin(id("a"), TokenType.DIVIDE, id("b"))),
-            PrintCall(bin(texto("Result: "), TokenType.PLUS, id("a")))
+            PrintCall(bin(text("Result: "), TokenType.PLUS, id("a")))
         )
 
-        assertEquals(listOf("Result: 3"), salida)
+        assertEquals(listOf("Result: 3"), output)
     }
 
     @Test
-    fun `usar una variable no declarada es error`() {
+    fun `using an undeclared variable is an error`() {
         val error = assertFailsWith<UndeclaredVariableError> {
-            correr(PrintCall(id("x")))
+            run(PrintCall(id("x")))
         }
 
         assertEquals("x", error.name)
     }
 
     @Test
-    fun `restar sobre un string es error de tipos`() {
+    fun `subtracting on a string is a type error`() {
         val error = assertFailsWith<TypeMismatchError> {
-            correr(PrintCall(bin(texto("hola"), TokenType.MINUS, num(1.0))))
+            run(PrintCall(bin(text("hola"), TokenType.MINUS, num(1.0))))
         }
 
         assertEquals("string", error.leftType)
@@ -102,16 +102,18 @@ class InterpreterTest {
     }
 
     @Test
-    fun `sumar dos numbers da un number y no los concatena`() {
-        val salida = correr(PrintCall(bin(num(1.0), TokenType.PLUS, num(2.0))))
+    fun `adding two numbers gives a number and does not concatenate them`() {
+        val output = run(PrintCall(bin(num(1.0), TokenType.PLUS, num(2.0))))
 
-        assertEquals(listOf("3"), salida)
+        assertEquals(listOf("3"), output)
     }
 
     @Test
-    fun `un resultado con decimales conserva los decimales`() {
-        val salida = correr(PrintCall(bin(num(7.0), TokenType.DIVIDE, num(2.0))))
+    fun `a result with decimals keeps the decimals`() {
+        val output = run(PrintCall(bin(num(7.0), TokenType.DIVIDE, num(2.0))))
 
-        assertEquals(listOf("3.5"), salida)
+        assertEquals(listOf("3.5"), output)
     }
 }
+
+
