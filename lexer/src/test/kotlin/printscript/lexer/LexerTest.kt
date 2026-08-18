@@ -9,7 +9,7 @@ import kotlin.test.assertFailsWith
 class LexerTest {
 
     private fun tokenize(source: String): List<printscript.common.Token> =
-        Lexer(CharStream(StringReader(source))).tokenize().toList()
+        Lexer(CharStream(StringReader(source))).tokenize().asSequence().toList()
 
     private fun types(source: String): List<TokenType> = tokenize(source).map { it.type }
 

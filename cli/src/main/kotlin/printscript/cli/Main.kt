@@ -8,6 +8,7 @@ import printscript.lexer.LexicalError
 import printscript.parser.Parser
 import printscript.parser.result.ParseResult
 import java.io.StringReader
+import printscript.lexer.LexerInterface
 
 private val CODIGO = """
     let x: number = 5;
@@ -22,8 +23,8 @@ fun main() {
     println(CODIGO)
     println("output:")
 
-    val lexer = Lexer(CharStream(StringReader(CODIGO)))
-    val parser = Parser(lexer.tokenize().iterator())
+    val lexer: LexerInterface = Lexer(CharStream(StringReader(CODIGO)))
+    val parser = Parser(lexer.tokenize())
 
     val statements = mutableListOf<Statement>()
 
