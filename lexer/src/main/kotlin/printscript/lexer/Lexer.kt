@@ -4,9 +4,9 @@ import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
 
-class Lexer(private val charStream: CharStream) {
+class Lexer(private val charStream: CharStream) : LexerInterface {
 
-    fun tokenize(): Sequence<Token> = sequence {
+    override fun tokenize(): Iterator<Token> = iterator {
         while (true) {
             val token = nextToken()
             yield(token)
