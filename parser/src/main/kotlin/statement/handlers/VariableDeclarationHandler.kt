@@ -24,7 +24,7 @@ object VariableDeclarationHandler : StatementHandler {
         } else {
             val errorToken = stream.peek()
             val pos = errorToken?.start ?: stream.previous()?.end ?: Position(0, 0)
-            return ASTResult.Failure("Syntax Error: Expected 'number' or 'string'.", pos, errorToken?.end ?: pos)
+            return ASTResult.Failure("Expected 'number' or 'string'.", pos, errorToken?.end ?: pos)
         }
 
         var initializer: Expression? = null

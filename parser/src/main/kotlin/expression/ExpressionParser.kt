@@ -53,6 +53,6 @@ class ExpressionParser(
         }
         val errorToken = stream.peek()
         val pos = errorToken?.start ?: stream.previous()?.end ?: Position(0, 0)
-        return ASTResult.Failure("Syntax Error [Line ${pos.line}]: Expected a value or expression.", pos, errorToken?.end ?: pos)
+        return ASTResult.Failure("Expected a value or expression.", pos, errorToken?.end ?: pos)
     }
 }
