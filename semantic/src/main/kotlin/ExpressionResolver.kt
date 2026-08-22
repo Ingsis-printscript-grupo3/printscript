@@ -28,7 +28,6 @@ class ExpressionResolver(private val symbolTable: SymbolTable) {
                 if (left == "number" && right == "number") return SemanticResult.Success("number")
                 SemanticResult.Failure("Semantic Error: Incompatible types in operation.")
             }
-            else -> SemanticResult.Failure("Semantic Error: Unknown expression.")
         }
     }
 }
