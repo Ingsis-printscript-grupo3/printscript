@@ -48,7 +48,6 @@ class Interpreter(
     }
 
     private fun execute(statement: Statement) {
-        //assert()
         @Suppress("UNCHECKED_CAST")
         val plugin = statementInterpreters[statement::class] as? StatementInterpreter<Statement>
             ?: throw UnknownStatementError(statement)
