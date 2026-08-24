@@ -15,7 +15,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class InterpreterTest {
-
     private fun run(vararg statements: Statement): List<String> {
         val output = mutableListOf<String>()
         Interpreter { text -> output.add(text) }.interpret(statements.iterator())
@@ -28,24 +27,29 @@ class InterpreterTest {
 
     private fun id(name: String) = Identifier(name)
 
-    private fun bin(left: Expression, op: TokenType, right: Expression) = BinaryExpression(left, op, right)
+    private fun bin(
+        left: Expression,
+        op: TokenType,
+        right: Expression,
+    ) = BinaryExpression(left, op, right)
 
     @Test
     fun `example 1 - concatenation of two string variables`() {
         // let name: string = "Joe";
         // let lastName: string = "Doe";
         // println(name + " " + lastName);
-        val output = run(
-            VariableDeclaration("name", "string", text("Joe")),
-            VariableDeclaration("lastName", "string", text("Doe")),
-            PrintCall(
-                bin(
-                    bin(id("name"), TokenType.PLUS, text(" ")),
-                    TokenType.PLUS,
-                    id("lastName")
-                )
+        val output =
+            run(
+                VariableDeclaration("name", "string", text("Joe")),
+                VariableDeclaration("lastName", "string", text("Doe")),
+                PrintCall(
+                    bin(
+                        bin(id("name"), TokenType.PLUS, text(" ")),
+                        TokenType.PLUS,
+                        id("lastName"),
+                    ),
+                ),
             )
-        )
 
         assertEquals(listOf("Joe Doe"), output)
     }
@@ -56,12 +60,13 @@ class InterpreterTest {
         // let b: number = 4;
         // let c: number = a / b;
         // println("Result: " + c);
-        val output = run(
-            VariableDeclaration("a", "number", num(12.0)),
-            VariableDeclaration("b", "number", num(4.0)),
-            VariableDeclaration("c", "number", bin(id("a"), TokenType.DIVIDE, id("b"))),
-            PrintCall(bin(text("Result: "), TokenType.PLUS, id("c")))
-        )
+        val output =
+            run(
+                VariableDeclaration("a", "number", num(12.0)),
+                VariableDeclaration("b", "number", num(4.0)),
+                VariableDeclaration("c", "number", bin(id("a"), TokenType.DIVIDE, id("b"))),
+                PrintCall(bin(text("Result: "), TokenType.PLUS, id("c"))),
+            )
 
         assertEquals(listOf("Result: 3"), output)
     }
@@ -72,30 +77,33 @@ class InterpreterTest {
         // let b: number = 4;
         // a = a / b;
         // println("Result: " + a);
-        val output = run(
-            VariableDeclaration("a", "number", num(12.0)),
-            VariableDeclaration("b", "number", num(4.0)),
-            Assignment("a", bin(id("a"), TokenType.DIVIDE, id("b"))),
-            PrintCall(bin(text("Result: "), TokenType.PLUS, id("a")))
-        )
+        val output =
+            run(
+                VariableDeclaration("a", "number", num(12.0)),
+                VariableDeclaration("b", "number", num(4.0)),
+                Assignment("a", bin(id("a"), TokenType.DIVIDE, id("b"))),
+                PrintCall(bin(text("Result: "), TokenType.PLUS, id("a"))),
+            )
 
         assertEquals(listOf("Result: 3"), output)
     }
 
     @Test
     fun `using an undeclared variable is an error`() {
-        val error = assertFailsWith<UndeclaredVariableError> {
-            run(PrintCall(id("x")))
-        }
+        val error =
+            assertFailsWith<UndeclaredVariableError> {
+                run(PrintCall(id("x")))
+            }
 
         assertEquals("x", error.name)
     }
 
     @Test
     fun `subtracting on a string is a type error`() {
-        val error = assertFailsWith<TypeMismatchError> {
-            run(PrintCall(bin(text("hola"), TokenType.MINUS, num(1.0))))
-        }
+        val error =
+            assertFailsWith<TypeMismatchError> {
+                run(PrintCall(bin(text("hola"), TokenType.MINUS, num(1.0))))
+            }
 
         assertEquals("string", error.leftType)
         assertEquals("number", error.rightType)
@@ -115,5 +123,3 @@ class InterpreterTest {
         assertEquals(listOf("3.5"), output)
     }
 }
-
-

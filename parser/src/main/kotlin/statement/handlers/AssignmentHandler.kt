@@ -10,7 +10,10 @@ import printscript.parser.statement.StatementHandler
 import printscript.parser.stream.TokenStream
 
 object AssignmentHandler : StatementHandler {
-    override fun parse(stream: TokenStream, expressionParser: ExpressionParser): ASTResult<Statement> {
+    override fun parse(
+        stream: TokenStream,
+        expressionParser: ExpressionParser,
+    ): ASTResult<Statement> {
         val nameToken = stream.previous() ?: return ASTResult.Failure("Expected identifier", Position(0, 0), Position(0, 0))
 
         val assignResult = stream.consume(TokenType.ASSIGN, "Expected '='.")

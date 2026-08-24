@@ -5,14 +5,14 @@ import printscript.common.Token
 import printscript.common.TokenType
 
 class Lexer(private val charStream: CharStream) : LexerInterface {
-
-    override fun tokenize(): Iterator<Token> = iterator {
-        while (true) {
-            val token = nextToken()
-            yield(token)
-            if (token.type == TokenType.EOF) break
+    override fun tokenize(): Iterator<Token> =
+        iterator {
+            while (true) {
+                val token = nextToken()
+                yield(token)
+                if (token.type == TokenType.EOF) break
+            }
         }
-    }
 
     private fun nextToken(): Token {
         skipWhitespace()
@@ -87,7 +87,10 @@ class Lexer(private val charStream: CharStream) : LexerInterface {
         return Token(TokenType.STRINGLITERAL, start, end, text.toString())
     }
 
-    private fun readSymbol(start: Position, c: Char): Token {
+    private fun readSymbol(
+        start: Position,
+        c: Char,
+    ): Token {
         charStream.advance()
         val end = charStream.position()
         val type = LexerRules.symbols.getValue(c)

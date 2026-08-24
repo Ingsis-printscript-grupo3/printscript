@@ -1,20 +1,17 @@
 package printscript.interpreter.plugin.expression
+import printscript.ast.NumberLiteral
 import printscript.interpreter.Environment
 import printscript.interpreter.InterpreterInterface
-import printscript.interpreter.Value
 import printscript.interpreter.NumberValue
+import printscript.interpreter.Value
 import printscript.interpreter.plugin.ExpressionEvaluator
 
-import printscript.ast.NumberLiteral
-
 class NumberLiteralEvaluator : ExpressionEvaluator<NumberLiteral> {
-    override fun evaluate(expression: NumberLiteral, env: Environment, interpreter: InterpreterInterface): Value {
+    override fun evaluate(
+        expression: NumberLiteral,
+        env: Environment,
+        interpreter: InterpreterInterface,
+    ): Value {
         return NumberValue(expression.value)
     }
 }
-
-
-
-
-
-

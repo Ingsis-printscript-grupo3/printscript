@@ -17,5 +17,3 @@ fun Value.typeName(): String =
         is NumberValue -> "number"
         is StringValue -> "string"
     }
-
-

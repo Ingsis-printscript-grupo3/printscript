@@ -4,19 +4,20 @@ import printscript.ast.Statement
 import printscript.interpreter.Interpreter
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
+import printscript.lexer.LexerInterface
 import printscript.lexer.LexicalError
 import printscript.parser.Parser
 import printscript.parser.result.ParseResult
 import java.io.StringReader
-import printscript.lexer.LexerInterface
 
-private val CODIGO = """
+private val CODIGO =
+    """
     let x: number = 5;
     let y: number = x * 3;
     println(y);
     let saludo: string = "hola";
     println(saludo);
-""".trimIndent()
+    """.trimIndent()
 
 fun main() {
     println("codigo:")
