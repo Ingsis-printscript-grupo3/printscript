@@ -1,13 +1,16 @@
 package printscript.cli
 
-import printscript.ast.Statement
 import printscript.interpreter.Interpreter
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
 import printscript.lexer.LexerInterface
 import printscript.lexer.LexicalError
 import printscript.parser.Parser
+import printscript.parser.ParserInterface
+import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
+import printscript.semantic.SemanticAnalyzer
+import printscript.semantic.SemanticResult
 import java.io.StringReader
 
 private val CODIGO =
@@ -24,25 +27,44 @@ fun main() {
     println(CODIGO)
     println("output:")
 
-    val lexer: LexerInterface = Lexer(CharStream(StringReader(CODIGO)))
-    val parser = Parser(lexer.tokenize())
-
-    val statements = mutableListOf<Statement>()
-
     try {
-        for (result in parser.parse()) {
-            when (result) {
-                is ParseResult.Success -> statements.add(result.statement)
-                is ParseResult.Failure -> {
-                    println("Error de sintaxis: ${result.message}")
-                    return
-                }
-            }
-        }
+        runPrintScript(CODIGO, { linea -> println(linea) }) // aca los outputs van a la consola
     } catch (e: LexicalError) {
         println("Error lexico: ${e.message} (linea ${e.start.line})")
-        return
+    } catch (e: SyntaxError) {
+        println("Error de sintaxis: ${e.message} (linea ${e.start.line})")
+    } catch (e: Exception) {
+        println(e.message) // Thrown by semantic analyzer
+    }
+}
+
+// arma la pipeline texto -> lexer -> parser -> interpreter
+// output es a donde van los println del programa
+fun runPrintScript(
+    code: String,
+    output: (String) -> Unit,
+) {
+    val lexer: LexerInterface = Lexer(CharStream(StringReader(code)))
+    val parser: ParserInterface = Parser(lexer.tokenize())
+
+    // cada statement se lexea y parsea aca
+    val statementList =
+        parser.parse()
+            .asSequence()
+            .map { result ->
+                when (result) {
+                    is ParseResult.Success -> result.statement
+                    is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
+                }
+            }
+            .toList()
+
+    val semanticResults = SemanticAnalyzer().analyze(statementList)
+    for (result in semanticResults) {
+        if (result is SemanticResult.Failure) {
+            throw Exception(result.message) // Throws semantic error
+        }
     }
 
-    Interpreter().interpret(statements.iterator())
+    Interpreter(output).interpret(statementList.iterator())
 }

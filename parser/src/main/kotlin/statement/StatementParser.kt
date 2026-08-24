@@ -16,13 +16,13 @@ class StatementParser(
         val token = stream.peek()
         if (token == null) {
             val pos = stream.previous()?.end ?: Position(0, 0)
-            return ASTResult.Failure("Syntax Error: Unexpected end of input.", pos, pos)
+            return ASTResult.Failure("Unexpected end of input.", pos, pos)
         }
 
         val handler =
             handlers[token.type]
                 ?: return ASTResult.Failure(
-                    "Syntax Error [Line ${token.start.line}]: Unexpected token '${token.value}'.",
+                    "Unexpected token '${token.value}'.",
                     token.start,
                     token.end,
                 )

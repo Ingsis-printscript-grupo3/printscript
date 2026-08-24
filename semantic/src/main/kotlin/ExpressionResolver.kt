@@ -23,6 +23,11 @@ class ExpressionResolver(private val symbolTable: SymbolTable) {
                 val left = (leftResult as SemanticResult.Success).value
                 val right = (rightResult as SemanticResult.Success).value
 
+                if (expression.operator == printscript.common.TokenType.PLUS) {
+                    if (left == "number" && right == "number") return SemanticResult.Success("number")
+                    return SemanticResult.Success("string")
+                }
+
                 if (left == "number" && right == "number") return SemanticResult.Success("number")
                 SemanticResult.Failure("Semantic Error: Incompatible types in operation.")
             }

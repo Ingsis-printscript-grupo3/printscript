@@ -1,10 +1,28 @@
 package printscript.lexer
 
-import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
+import printscript.lexer.plugin.TokenReader
+import printscript.lexer.plugin.reader.IdentifierReader
+import printscript.lexer.plugin.reader.NumberReader
+import printscript.lexer.plugin.reader.StringLiteralReader
+import printscript.lexer.plugin.reader.SymbolReader
 
-class Lexer(private val charStream: CharStream) : LexerInterface {
+class Lexer(
+    private val charStream: CharStream,
+    private val readers: List<TokenReader>,
+) : LexerInterface {
+    // constructor con los readers de PrintScript para q los tests y el CLI puedan seguir creando el Lexer con un solo argumento
+    constructor(charStream: CharStream) : this(
+        charStream,
+        listOf(
+            IdentifierReader(LexerRules.keywords),
+            NumberReader(),
+            StringLiteralReader(),
+            SymbolReader(LexerRules.symbols),
+        ),
+    )
+
     override fun tokenize(): Iterator<Token> =
         iterator {
             while (true) {
@@ -23,77 +41,21 @@ class Lexer(private val charStream: CharStream) : LexerInterface {
             return Token(TokenType.EOF, start, start, "")
         }
 
-        val c = charStream.peek()!!
+        val char = charStream.peek()!!
 
-        return when {
-            LexerRules.isIdentifierStart(c) -> readIdentifier(start)
-            c.isDigit() -> readNumber(start)
-            LexerRules.isQuote(c) -> readString(start)
-            LexerRules.symbols.containsKey(c) -> readSymbol(start, c)
-            else -> {
-                charStream.advance()
-                throw LexicalError("Carácter inesperado: '$c'", start, charStream.position())
-            }
-        }
+        val reader =
+            readers.firstOrNull { it.matches(char) }
+                ?: run {
+                    charStream.advance()
+                    throw LexicalError("Carácter inesperado: '$char'", start, charStream.position())
+                }
+
+        return reader.read(charStream, start)
     }
 
     private fun skipWhitespace() {
         while (!charStream.isAtEnd() && charStream.peek()!!.let { it == ' ' || it == '\t' || it == '\r' || it == '\n' }) {
             charStream.advance()
         }
-    }
-
-    private fun readIdentifier(start: Position): Token {
-        val text = StringBuilder()
-        while (!charStream.isAtEnd() && LexerRules.isIdentifierPart(charStream.peek()!!)) {
-            text.append(charStream.advance())
-        }
-        val end = charStream.position()
-        val type = LexerRules.keywords[text.toString()] ?: TokenType.IDENTIFIER
-        return Token(type, start, end, text.toString())
-    }
-
-    private fun readNumber(start: Position): Token {
-        val text = StringBuilder()
-        while (!charStream.isAtEnd() && charStream.peek()!!.isDigit()) {
-            text.append(charStream.advance())
-        }
-
-        if (!charStream.isAtEnd() && charStream.peek() == '.' && charStream.peekNext()?.isDigit() == true) {
-            text.append(charStream.advance())
-            while (!charStream.isAtEnd() && charStream.peek()!!.isDigit()) {
-                text.append(charStream.advance())
-            }
-        }
-
-        val end = charStream.position()
-        return Token(TokenType.NUMBERLITERAL, start, end, text.toString())
-    }
-
-    private fun readString(start: Position): Token {
-        val quote = charStream.advance()
-        val text = StringBuilder()
-
-        while (true) {
-            if (charStream.isAtEnd() || charStream.peek() == '\n') {
-                throw LexicalError("String sin cerrar", start, charStream.position())
-            }
-            val c = charStream.advance()
-            if (c == quote) break
-            text.append(c)
-        }
-
-        val end = charStream.position()
-        return Token(TokenType.STRINGLITERAL, start, end, text.toString())
-    }
-
-    private fun readSymbol(
-        start: Position,
-        c: Char,
-    ): Token {
-        charStream.advance()
-        val end = charStream.position()
-        val type = LexerRules.symbols.getValue(c)
-        return Token(type, start, end, c.toString())
     }
 }
