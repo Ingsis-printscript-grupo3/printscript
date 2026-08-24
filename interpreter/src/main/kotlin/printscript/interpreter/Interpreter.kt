@@ -9,6 +9,8 @@ import printscript.ast.PrintCall
 import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
+import printscript.interpreter.output.ConsoleOutput
+import printscript.interpreter.output.Output
 import printscript.interpreter.plugin.ExpressionEvaluator
 import printscript.interpreter.plugin.StatementInterpreter
 import printscript.interpreter.plugin.expression.BinaryExpressionEvaluator
@@ -26,8 +28,9 @@ class Interpreter(
 ) : InterpreterInterface {
     private val environment = Environment()
 
-    // Constructor secundario para mantener compatibilidad con los tests actuales
-    constructor(output: (String) -> Unit = { println(it) }) : this(
+    //constructor de conveniencia con los plugins de PrintScript 1.0
+    //output es el destino de los println: ConsoleOutput, BucketOutput, o los dos con MultiOutput
+    constructor(output: Output = ConsoleOutput()) : this(
         statementInterpreters = mapOf(
             VariableDeclaration::class to VariableDeclarationInterpreter(),
             Assignment::class to AssignmentInterpreter(),
