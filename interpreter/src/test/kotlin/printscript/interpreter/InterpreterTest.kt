@@ -134,7 +134,7 @@ class InterpreterTest {
 
     @Test
     fun `a statement with no interpreter registered fails`() {
-        val interpreter = Interpreter(emptyMap(), emptyMap())
+        val interpreter = Interpreter(emptyList(), emptyList())
 
         assertFailsWith<UnknownStatementError> {
             interpreter.interpret(listOf(PrintCall(text("line"))).iterator())
@@ -144,8 +144,8 @@ class InterpreterTest {
     @Test
     fun `an expression with no evaluator registered fails`() {
         val interpreter = Interpreter(
-            statementInterpreters = mapOf(PrintCall::class to PrintCallInterpreter(BucketOutput())),
-            expressionEvaluators = emptyMap()
+            statementInterpreters = listOf(PrintCallInterpreter(BucketOutput())),
+            expressionEvaluators = emptyList()
         )
 
         assertFailsWith<UnknownExpressionError> {
