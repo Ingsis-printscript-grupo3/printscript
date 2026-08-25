@@ -1,11 +1,14 @@
 package printscript.semantic
 
-import printscript.ast.*
+import printscript.ast.Assignment
+import printscript.ast.PrintCall
+import printscript.ast.Statement
+import printscript.ast.VariableDeclaration
 import printscript.semantic.symbol.SymbolTable
 
 class StatementValidator(
     private val symbolTable: SymbolTable,
-    private val expressionResolver: ExpressionResolver
+    private val expressionResolver: ExpressionResolver,
 ) {
     fun validate(statement: Statement): SemanticResult<Unit> {
         when (statement) {
@@ -22,11 +25,11 @@ class StatementValidator(
                 val exprResult = expressionResolver.resolveType(statement.value)
                 if (exprResult is SemanticResult.Failure) return exprResult
                 val exprType = (exprResult as SemanticResult.Success).value
-                
+
                 val expectedResult = symbolTable.lookup(statement.name)
                 if (expectedResult is SemanticResult.Failure) return expectedResult
                 val expectedType = (expectedResult as SemanticResult.Success).value
-                
+
                 if (exprType != expectedType) return SemanticResult.Failure("Incompatible types in assignment.")
                 return SemanticResult.Success(Unit)
             }

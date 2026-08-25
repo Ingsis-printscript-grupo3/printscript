@@ -4,7 +4,6 @@ import printscript.common.Position
 import java.io.Reader
 
 class CharStream(private val reader: Reader) {
-
     private var current: Int = reader.read()
     private var next: Int = reader.read()
 

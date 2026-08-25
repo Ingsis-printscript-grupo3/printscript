@@ -9,7 +9,10 @@ import printscript.parser.statement.StatementHandler
 import printscript.parser.stream.TokenStream
 
 object PrintCallHandler : StatementHandler {
-    override fun parse(stream: TokenStream, expressionParser: ExpressionParser): ASTResult<Statement> {
+    override fun parse(
+        stream: TokenStream,
+        expressionParser: ExpressionParser,
+    ): ASTResult<Statement> {
         val leftParenResult = stream.consume(TokenType.LEFTPAREN, "Expected '('.")
         if (leftParenResult is ASTResult.Failure) return leftParenResult
 
