@@ -12,7 +12,6 @@ import printscript.common.TokenType
 class PrintScriptFormatter(
     private val rules: FormatterRules,
 ) : Formatter {
-
     override fun format(statements: List<Statement>): String {
         val builder = StringBuilder()
         statements.forEachIndexed { index, stmt ->
@@ -25,11 +24,12 @@ class PrintScriptFormatter(
         return builder.toString()
     }
 
-    private fun formatStatement(stmt: Statement): String = when (stmt) {
-        is VariableDeclaration -> formatVariableDeclaration(stmt)
-        is Assignment -> "${stmt.name}${assignmentOperator()}${formatExpression(stmt.value)};"
-        is PrintCall -> "println(${formatExpression(stmt.value)});"
-    }
+    private fun formatStatement(stmt: Statement): String =
+        when (stmt) {
+            is VariableDeclaration -> formatVariableDeclaration(stmt)
+            is Assignment -> "${stmt.name}${assignmentOperator()}${formatExpression(stmt.value)};"
+            is PrintCall -> "println(${formatExpression(stmt.value)});"
+        }
 
     private fun formatVariableDeclaration(stmt: VariableDeclaration): String {
         val colon = "${if (rules.spaceBeforeColon) " " else ""}:${if (rules.spaceAfterColon) " " else ""}"
@@ -40,18 +40,20 @@ class PrintScriptFormatter(
 
     private fun assignmentOperator(): String = if (rules.spaceAroundAssignment) " = " else "="
 
-    private fun formatExpression(expr: Expression): String = when (expr) {
-        is NumberLiteral -> expr.value.toString()
-        is StringLiteral -> "\"${expr.value}\""
-        is Identifier -> expr.name
-        is BinaryExpression -> "${formatExpression(expr.left)} ${formatOperator(expr.operator)} ${formatExpression(expr.right)}"
-    }
+    private fun formatExpression(expr: Expression): String =
+        when (expr) {
+            is NumberLiteral -> expr.value.toString()
+            is StringLiteral -> "\"${expr.value}\""
+            is Identifier -> expr.name
+            is BinaryExpression -> "${formatExpression(expr.left)} ${formatOperator(expr.operator)} ${formatExpression(expr.right)}"
+        }
 
-    private fun formatOperator(operator: TokenType): String = when (operator) {
-        TokenType.PLUS -> "+"
-        TokenType.MINUS -> "-"
-        TokenType.MULTIPLY -> "*"
-        TokenType.DIVIDE -> "/"
-        else -> throw IllegalStateException("Token '$operator' is not a valid binary operator")
-    }
+    private fun formatOperator(operator: TokenType): String =
+        when (operator) {
+            TokenType.PLUS -> "+"
+            TokenType.MINUS -> "-"
+            TokenType.MULTIPLY -> "*"
+            TokenType.DIVIDE -> "/"
+            else -> throw IllegalStateException("Token '$operator' is not a valid binary operator")
+        }
 }

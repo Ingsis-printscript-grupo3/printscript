@@ -6,5 +6,8 @@ import printscript.parser.result.ASTResult
 import printscript.parser.stream.TokenStream
 
 fun interface StatementHandler {
-    fun parse(stream: TokenStream, expressionParser: ExpressionParser): ASTResult<Statement>
+    fun parse(
+        stream: TokenStream,
+        expressionParser: ExpressionParser,
+    ): ASTResult<Statement>
 }

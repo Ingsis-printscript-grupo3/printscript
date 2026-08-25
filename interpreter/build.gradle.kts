@@ -8,7 +8,7 @@ dependencies {
     implementation(project(":common"))
 }
 
-//por ahora solo el reporte, sin enganchar el umbral a check
+// por ahora solo el reporte, sin enganchar el umbral a check
 tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }

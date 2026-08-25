@@ -1,9 +1,9 @@
 package printscript.parser.stream
 
+import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
 import printscript.parser.result.ASTResult
-import printscript.common.Position
 
 class TokenStream(private val tokens: Iterator<Token>) {
     private var currentToken: Token? = null
@@ -48,7 +48,10 @@ class TokenStream(private val tokens: Iterator<Token>) {
         return false
     }
 
-    fun consume(type: TokenType, errorMessage: String): ASTResult<Token> {
+    fun consume(
+        type: TokenType,
+        errorMessage: String,
+    ): ASTResult<Token> {
         if (check(type)) {
             val token = advance()
             if (token != null) return ASTResult.Success(token)

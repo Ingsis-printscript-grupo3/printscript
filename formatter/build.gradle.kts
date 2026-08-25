@@ -5,7 +5,7 @@ plugins {
     jacoco
 }
 
-dependencies{
+dependencies {
     implementation(project(":ast"))
     implementation(project(":common"))
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")

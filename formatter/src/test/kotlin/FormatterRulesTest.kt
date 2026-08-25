@@ -3,7 +3,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class FormatterRulesTest {
-
     @Test
     fun `uses sensible defaults when no values are provided`() {
         val rules = FormatterRules()

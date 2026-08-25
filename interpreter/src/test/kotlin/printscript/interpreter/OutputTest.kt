@@ -7,7 +7,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class OutputTest {
-
     @Test
     fun `the bucket keeps the lines in order`() {
         val bucket = BucketOutput()
