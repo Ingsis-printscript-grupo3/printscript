@@ -1,3 +1,5 @@
+package printscript.formatter
+
 data class FormatterRules(
     val spaceBeforeColon: Boolean = false,
     val spaceAfterColon: Boolean = true,

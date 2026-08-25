@@ -9,4 +9,6 @@ dependencies {
     implementation(project(":interpreter"))
     implementation(project(":ast"))
     implementation(project(":common"))
+    implementation(project(":formatter"))
+    implementation(project(":linter"))
 }

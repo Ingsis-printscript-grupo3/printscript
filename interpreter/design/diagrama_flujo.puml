@@ -1,0 +1,70 @@
+@startuml
+skinparam conditionStyle inside
+
+title Diagrama de Flujo: Intérprete PrintScript
+
+start
+:interpretar(statements);
+
+while (¿Quedan sentencias?) is (Sí)
+  :Leer siguiente Statement;
+
+  if (¿Requiere evaluar una expresión?) then (Sí, ej: a = 5, println(a))
+    
+    partition "Motor de Evaluación (Proceso Unificado)" {
+      :Iniciar evaluar(expresión);
+      if (¿Tipo de Expresión?) then (Literal)
+          :Devolver NumberValue o StringValue;
+      elseif (Identifier) then (Variable)
+          :Environment.lookup(nombre);
+          if (¿Existe y tiene valor?) then (Sí)
+             :Devolver Valor;
+          else (No)
+             #ffaaaa:Lanzar Error: Undeclared / Uninitialized;
+             detach
+          endif
+      elseif (BinaryExpression) then (Operación Binaria)
+          :evaluar(izquierda);
+          :evaluar(derecha);
+          if (¿Operador es + ?) then (Sí)
+             if (¿Ambos son números?) then (Sí)
+               :Suma Matemática;
+               :Devolver NumberValue;
+             else (No)
+               :Concatenar Textos;
+               :Devolver StringValue;
+             endif
+          else (Operadores -, *, /)
+             if (¿Ambos son números?) then (Sí)
+               :Cálculo Matemático;
+               :Devolver NumberValue;
+             else (No)
+               #ffaaaa:Lanzar Error: TypeMismatch;
+               detach
+             endif
+          endif
+      endif
+    }
+    
+  else (No, ej: declaración sin inicializar)
+    :Valor Evaluado = null;
+  endif
+  
+  note right: Los flujos toman su propio\ncamino según el Statement original
+  
+  if (¿Qué tipo de Statement era?) then (VariableDeclaration)
+    #lightgreen:Environment.declare(nombre, Valor Evaluado);
+  elseif (Assignment) then (Asignación)
+    #lightgreen:Environment.assign(nombre, Valor Evaluado);
+  elseif (PrintCall) then (Impresión)
+    :Formatear: textoDe(Valor Evaluado);
+    #lightblue:Imprimir: output(texto);
+  else (Desconocido)
+    #ffaaaa:Lanzar Error: UnknownStatement;
+    detach
+  endif
+
+endwhile (No)
+
+stop
+@enduml
