@@ -1,20 +1,26 @@
 package printscript.interpreter.plugin.expression
+
+import printscript.ast.BinaryExpression
+import printscript.ast.Expression
+import printscript.common.TokenType
 import printscript.interpreter.Environment
 import printscript.interpreter.InterpreterInterface
-import printscript.interpreter.Value
 import printscript.interpreter.NumberValue
 import printscript.interpreter.StringValue
 import printscript.interpreter.TypeMismatchError
 import printscript.interpreter.UnknownExpressionError
+import printscript.interpreter.Value
 import printscript.interpreter.plugin.ExpressionEvaluator
 import printscript.interpreter.textOf
 import printscript.interpreter.typeName
 
-import printscript.ast.BinaryExpression
-import printscript.common.TokenType
+class BinaryExpressionEvaluator : ExpressionEvaluator {
 
-class BinaryExpressionEvaluator : ExpressionEvaluator<BinaryExpression> {
-    override fun evaluate(expression: BinaryExpression, env: Environment, interpreter: InterpreterInterface): Value {
+    override fun matches(expression: Expression) = expression is BinaryExpression
+
+    override fun evaluate(expression: Expression, env: Environment, interpreter: InterpreterInterface): Value {
+        if (expression !is BinaryExpression) throw UnknownExpressionError(expression)
+
         return applyOperator(
             expression,
             interpreter.evaluate(expression.left),
@@ -48,9 +54,3 @@ class BinaryExpressionEvaluator : ExpressionEvaluator<BinaryExpression> {
             StringValue(left.textOf() + right.textOf())
         }
 }
-
-
-
-
-
-

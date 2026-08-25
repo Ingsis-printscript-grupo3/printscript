@@ -1,17 +1,14 @@
 package printscript.interpreter.plugin
+
+import printscript.ast.Expression
 import printscript.interpreter.Environment
 import printscript.interpreter.InterpreterInterface
 import printscript.interpreter.Value
-import printscript.interpreter.plugin.ExpressionEvaluator
 
-import printscript.ast.Expression
+//plugin q sabe evaluar un tipo de expresion
+interface ExpressionEvaluator {
 
-interface ExpressionEvaluator<T : Expression> {
-    fun evaluate(expression: T, env: Environment, interpreter: InterpreterInterface): Value
+    fun matches(expression: Expression): Boolean
+
+    fun evaluate(expression: Expression, env: Environment, interpreter: InterpreterInterface): Value
 }
-
-
-
-
-
-
