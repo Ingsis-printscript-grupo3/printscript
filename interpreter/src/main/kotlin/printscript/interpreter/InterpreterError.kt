@@ -22,5 +22,3 @@ class UnknownStatementError(val statement: Statement) :
 
 class UnknownExpressionError(val expression: Expression) :
     InterpreterError("Unknown expression type")
-
-

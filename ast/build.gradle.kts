@@ -2,6 +2,6 @@ plugins {
     id("printscript.kotlin-common-conventions")
 }
 
-dependencies{
+dependencies {
     implementation(project(":common"))
 }

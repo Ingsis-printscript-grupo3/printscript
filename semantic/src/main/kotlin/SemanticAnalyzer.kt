@@ -1,6 +1,6 @@
 package printscript.semantic
 
-import printscript.ast.*
+import printscript.ast.Statement
 import printscript.semantic.symbol.SymbolTable
 
 class SemanticAnalyzer {

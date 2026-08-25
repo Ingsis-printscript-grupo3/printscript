@@ -8,10 +8,13 @@ import printscript.interpreter.UnknownStatementError
 import printscript.interpreter.plugin.StatementInterpreter
 
 class AssignmentInterpreter : StatementInterpreter {
-
     override fun matches(statement: Statement) = statement is Assignment
 
-    override fun execute(statement: Statement, env: Environment, interpreter: InterpreterInterface) {
+    override fun execute(
+        statement: Statement,
+        env: Environment,
+        interpreter: InterpreterInterface,
+    ) {
         if (statement !is Assignment) throw UnknownStatementError(statement)
 
         env.assign(statement.name, interpreter.evaluate(statement.value))

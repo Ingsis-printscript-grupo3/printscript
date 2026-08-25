@@ -4,7 +4,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 
 object FormatterRulesLoader {
-
     private val jsonMapper = ObjectMapper().registerKotlinModule()
     private val yamlMapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
 

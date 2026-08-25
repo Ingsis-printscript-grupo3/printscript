@@ -12,6 +12,6 @@ interface InfixParselet {
         left: Expression,
         operatorToken: Token,
         stream: TokenStream,
-        expressionParser: ExpressionParser
+        expressionParser: ExpressionParser,
     ): ASTResult<Expression>
 }

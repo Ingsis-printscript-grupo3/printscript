@@ -8,10 +8,13 @@ import printscript.interpreter.UnknownStatementError
 import printscript.interpreter.plugin.StatementInterpreter
 
 class VariableDeclarationInterpreter : StatementInterpreter {
-
     override fun matches(statement: Statement) = statement is VariableDeclaration
 
-    override fun execute(statement: Statement, env: Environment, interpreter: InterpreterInterface) {
+    override fun execute(
+        statement: Statement,
+        env: Environment,
+        interpreter: InterpreterInterface,
+    ) {
         if (statement !is VariableDeclaration) throw UnknownStatementError(statement)
 
         val expression = statement.value

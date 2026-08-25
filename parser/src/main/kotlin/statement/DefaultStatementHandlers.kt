@@ -6,9 +6,10 @@ import printscript.parser.statement.handlers.PrintCallHandler
 import printscript.parser.statement.handlers.VariableDeclarationHandler
 
 object DefaultStatementHandlers {
-    val map: Map<TokenType, StatementHandler> = mapOf(
-        TokenType.LET to VariableDeclarationHandler,
-        TokenType.PRINTLN to PrintCallHandler,
-        TokenType.IDENTIFIER to AssignmentHandler,
-    )
+    val map: Map<TokenType, StatementHandler> =
+        mapOf(
+            TokenType.LET to VariableDeclarationHandler,
+            TokenType.PRINTLN to PrintCallHandler,
+            TokenType.IDENTIFIER to AssignmentHandler,
+        )
 }

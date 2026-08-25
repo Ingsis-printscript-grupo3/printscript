@@ -12,9 +12,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class PrintScriptFormatterTest {
-
-    private fun format(statements: List<Statement>, rules: FormatterRules = FormatterRules()): String =
-        PrintScriptFormatter(rules).format(statements)
+    private fun format(
+        statements: List<Statement>,
+        rules: FormatterRules = FormatterRules(),
+    ): String = PrintScriptFormatter(rules).format(statements)
 
     @Test
     fun `formats a variable declaration with an initial value using default rules`() {
@@ -61,12 +62,13 @@ class PrintScriptFormatterTest {
 
     @Test
     fun `formats every supported binary operator`() {
-        val operators = mapOf(
-            TokenType.PLUS to "+",
-            TokenType.MINUS to "-",
-            TokenType.MULTIPLY to "*",
-            TokenType.DIVIDE to "/",
-        )
+        val operators =
+            mapOf(
+                TokenType.PLUS to "+",
+                TokenType.MINUS to "-",
+                TokenType.MULTIPLY to "*",
+                TokenType.DIVIDE to "/",
+            )
 
         operators.forEach { (tokenType, symbol) ->
             val expr = BinaryExpression(NumberLiteral(1.0), tokenType, NumberLiteral(2.0))
@@ -118,10 +120,11 @@ class PrintScriptFormatterTest {
 
     @Test
     fun `does not add a line break before println when the rule is 0`() {
-        val statements = listOf(
-            VariableDeclaration("x", "number", NumberLiteral(1.0)),
-            PrintCall(Identifier("x")),
-        )
+        val statements =
+            listOf(
+                VariableDeclaration("x", "number", NumberLiteral(1.0)),
+                PrintCall(Identifier("x")),
+            )
         val rules = FormatterRules(lineBreaksBeforePrintln = 0)
 
         assertEquals("let x: number = 1.0;println(x);\n", format(statements, rules))
@@ -129,20 +132,22 @@ class PrintScriptFormatterTest {
 
     @Test
     fun `adds a single line break before println by default`() {
-        val statements = listOf(
-            VariableDeclaration("x", "number", NumberLiteral(1.0)),
-            PrintCall(Identifier("x")),
-        )
+        val statements =
+            listOf(
+                VariableDeclaration("x", "number", NumberLiteral(1.0)),
+                PrintCall(Identifier("x")),
+            )
 
         assertEquals("let x: number = 1.0;\nprintln(x);\n", format(statements))
     }
 
     @Test
     fun `adds two line breaks before println when the rule is 2`() {
-        val statements = listOf(
-            VariableDeclaration("x", "number", NumberLiteral(1.0)),
-            PrintCall(Identifier("x")),
-        )
+        val statements =
+            listOf(
+                VariableDeclaration("x", "number", NumberLiteral(1.0)),
+                PrintCall(Identifier("x")),
+            )
         val rules = FormatterRules(lineBreaksBeforePrintln = 2)
 
         assertEquals("let x: number = 1.0;\n\nprintln(x);\n", format(statements, rules))
@@ -163,19 +168,21 @@ class PrintScriptFormatterTest {
 
     @Test
     fun `formats several statements together end to end`() {
-        val statements = listOf(
-            VariableDeclaration("x", "number", NumberLiteral(5.0)),
-            Assignment("x", BinaryExpression(Identifier("x"), TokenType.PLUS, NumberLiteral(1.0))),
-            PrintCall(Identifier("x")),
-            VariableDeclaration("greeting", "string", StringLiteral("hello")),
-            PrintCall(Identifier("greeting")),
-        )
+        val statements =
+            listOf(
+                VariableDeclaration("x", "number", NumberLiteral(5.0)),
+                Assignment("x", BinaryExpression(Identifier("x"), TokenType.PLUS, NumberLiteral(1.0))),
+                PrintCall(Identifier("x")),
+                VariableDeclaration("greeting", "string", StringLiteral("hello")),
+                PrintCall(Identifier("greeting")),
+            )
 
-        val expected = "let x: number = 5.0;\n" +
-            "x = x + 1.0;\n" +
-            "println(x);\n" +
-            "let greeting: string = \"hello\";\n" +
-            "println(greeting);\n"
+        val expected =
+            "let x: number = 5.0;\n" +
+                "x = x + 1.0;\n" +
+                "println(x);\n" +
+                "let greeting: string = \"hello\";\n" +
+                "println(greeting);\n"
 
         assertEquals(expected, format(statements))
     }

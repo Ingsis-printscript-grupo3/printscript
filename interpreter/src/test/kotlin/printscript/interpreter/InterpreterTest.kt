@@ -24,7 +24,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class InterpreterTest {
-
     private fun run(vararg statements: Statement): List<String> {
         val bucket = BucketOutput()
         Interpreter(bucket).interpret(statements.iterator())
@@ -37,24 +36,29 @@ class InterpreterTest {
 
     private fun id(name: String) = Identifier(name)
 
-    private fun bin(left: Expression, op: TokenType, right: Expression) = BinaryExpression(left, op, right)
+    private fun bin(
+        left: Expression,
+        op: TokenType,
+        right: Expression,
+    ) = BinaryExpression(left, op, right)
 
     @Test
     fun `concatenation of two string variables`() {
         // let name: string = "Joe";
         // let lastName: string = "Doe";
         // println(name + " " + lastName);
-        val output = run(
-            VariableDeclaration("name", "string", text("Joe")),
-            VariableDeclaration("lastName", "string", text("Doe")),
-            PrintCall(
-                bin(
-                    bin(id("name"), TokenType.PLUS, text(" ")),
-                    TokenType.PLUS,
-                    id("lastName")
-                )
+        val output =
+            run(
+                VariableDeclaration("name", "string", text("Joe")),
+                VariableDeclaration("lastName", "string", text("Doe")),
+                PrintCall(
+                    bin(
+                        bin(id("name"), TokenType.PLUS, text(" ")),
+                        TokenType.PLUS,
+                        id("lastName"),
+                    ),
+                ),
             )
-        )
 
         assertEquals(listOf("Joe Doe"), output)
     }
@@ -65,12 +69,13 @@ class InterpreterTest {
         // let b: number = 4;
         // let c: number = a / b;
         // println("Result: " + c);
-        val output = run(
-            VariableDeclaration("a", "number", num(12.0)),
-            VariableDeclaration("b", "number", num(4.0)),
-            VariableDeclaration("c", "number", bin(id("a"), TokenType.DIVIDE, id("b"))),
-            PrintCall(bin(text("Result: "), TokenType.PLUS, id("c")))
-        )
+        val output =
+            run(
+                VariableDeclaration("a", "number", num(12.0)),
+                VariableDeclaration("b", "number", num(4.0)),
+                VariableDeclaration("c", "number", bin(id("a"), TokenType.DIVIDE, id("b"))),
+                PrintCall(bin(text("Result: "), TokenType.PLUS, id("c"))),
+            )
 
         assertEquals(listOf("Result: 3"), output)
     }
@@ -81,30 +86,33 @@ class InterpreterTest {
         // let b: number = 4;
         // a = a / b;
         // println("Result: " + a);
-        val output = run(
-            VariableDeclaration("a", "number", num(12.0)),
-            VariableDeclaration("b", "number", num(4.0)),
-            Assignment("a", bin(id("a"), TokenType.DIVIDE, id("b"))),
-            PrintCall(bin(text("Result: "), TokenType.PLUS, id("a")))
-        )
+        val output =
+            run(
+                VariableDeclaration("a", "number", num(12.0)),
+                VariableDeclaration("b", "number", num(4.0)),
+                Assignment("a", bin(id("a"), TokenType.DIVIDE, id("b"))),
+                PrintCall(bin(text("Result: "), TokenType.PLUS, id("a"))),
+            )
 
         assertEquals(listOf("Result: 3"), output)
     }
 
     @Test
     fun `using an undeclared variable is an error`() {
-        val error = assertFailsWith<UndeclaredVariableError> {
-            run(PrintCall(id("x")))
-        }
+        val error =
+            assertFailsWith<UndeclaredVariableError> {
+                run(PrintCall(id("x")))
+            }
 
         assertEquals("x", error.name)
     }
 
     @Test
     fun `subtracting on a string is a type error`() {
-        val error = assertFailsWith<TypeMismatchError> {
-            run(PrintCall(bin(text("hola"), TokenType.MINUS, num(1.0))))
-        }
+        val error =
+            assertFailsWith<TypeMismatchError> {
+                run(PrintCall(bin(text("hola"), TokenType.MINUS, num(1.0))))
+            }
 
         assertEquals("string", error.leftType)
         assertEquals("number", error.rightType)
@@ -131,7 +139,7 @@ class InterpreterTest {
         val second = BucketOutput()
 
         Interpreter(MultiOutput(first, second)).interpret(
-            listOf(PrintCall(bin(num(5.0), TokenType.MULTIPLY, num(3.0)))).iterator()
+            listOf(PrintCall(bin(num(5.0), TokenType.MULTIPLY, num(3.0)))).iterator(),
         )
 
         assertEquals(listOf("15"), first.lines())
@@ -149,29 +157,31 @@ class InterpreterTest {
 
     @Test
     fun `an expression with no evaluator registered fails`() {
-        val interpreter = Interpreter(
-            statementInterpreters = listOf(PrintCallInterpreter(BucketOutput())),
-            expressionEvaluators = emptyList()
-        )
+        val interpreter =
+            Interpreter(
+                statementInterpreters = listOf(PrintCallInterpreter(BucketOutput())),
+                expressionEvaluators = emptyList(),
+            )
 
         assertFailsWith<UnknownExpressionError> {
             interpreter.interpret(listOf(PrintCall(text("line"))).iterator())
         }
     }
 
-    //cada plugin tiene un guard tira error si le llega un nodo q no es suyo
-    //por el flujo normal nunca pasa, pq el Interpreter pregunta matches() antes
+    // cada plugin tiene un guard tira error si le llega un nodo q no es suyo
+    // por el flujo normal nunca pasa, pq el Interpreter pregunta matches() antes
 
     @Test
     fun `statement plugins reject nodes that are not theirs`() {
         val print = PrintCall(text("hello"))
         val assignment = Assignment("x", num(1.0))
 
-        val cases = listOf(
-            VariableDeclarationInterpreter() to print,
-            AssignmentInterpreter() to print,
-            PrintCallInterpreter(BucketOutput()) to assignment
-        )
+        val cases =
+            listOf(
+                VariableDeclarationInterpreter() to print,
+                AssignmentInterpreter() to print,
+                PrintCallInterpreter(BucketOutput()) to assignment,
+            )
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownStatementError> {
@@ -185,12 +195,13 @@ class InterpreterTest {
         val number = num(1.0)
         val string = text("hello")
 
-        val cases = listOf(
-            NumberLiteralEvaluator() to string,
-            StringLiteralEvaluator() to number,
-            IdentifierEvaluator() to number,
-            BinaryExpressionEvaluator() to number
-        )
+        val cases =
+            listOf(
+                NumberLiteralEvaluator() to string,
+                StringLiteralEvaluator() to number,
+                IdentifierEvaluator() to number,
+                BinaryExpressionEvaluator() to number,
+            )
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownExpressionError> {
