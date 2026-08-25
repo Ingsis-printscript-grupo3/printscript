@@ -6,7 +6,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class EndToEndTest {
-
     private fun runEngine(code: String): Pair<ExecutionResult, List<String>> {
         val bucket = BucketOutput()
         val engine = Engine(output = bucket)
@@ -16,12 +15,13 @@ class EndToEndTest {
 
     @Test
     fun `declara una variable y la imprime`() {
-        val (result, output) = runEngine(
-            """
-            let saludo: string = "hola";
-            println(saludo);
-            """.trimIndent()
-        )
+        val (result, output) =
+            runEngine(
+                """
+                let saludo: string = "hola";
+                println(saludo);
+                """.trimIndent(),
+            )
 
         assertTrue(result is ExecutionResult.Success)
         assertEquals(listOf("hola"), output)
@@ -29,13 +29,14 @@ class EndToEndTest {
 
     @Test
     fun `usa una variable declarada dentro de una operacion`() {
-        val (result, output) = runEngine(
-            """
-            let x: number = 5;
-            let y: number = x * 3;
-            println(y);
-            """.trimIndent()
-        )
+        val (result, output) =
+            runEngine(
+                """
+                let x: number = 5;
+                let y: number = x * 3;
+                println(y);
+                """.trimIndent(),
+            )
 
         assertTrue(result is ExecutionResult.Success)
         assertEquals(listOf("15"), output)
@@ -43,14 +44,15 @@ class EndToEndTest {
 
     @Test
     fun `reasigna una variable y el print refleja el valor nuevo`() {
-        val (result, output) = runEngine(
-            """
-            let contador: number = 1;
-            println(contador);
-            contador = contador + 9;
-            println(contador);
-            """.trimIndent()
-        )
+        val (result, output) =
+            runEngine(
+                """
+                let contador: number = 1;
+                println(contador);
+                contador = contador + 9;
+                println(contador);
+                """.trimIndent(),
+            )
 
         assertTrue(result is ExecutionResult.Success)
         assertEquals(listOf("1", "10"), output)
@@ -58,9 +60,10 @@ class EndToEndTest {
 
     @Test
     fun `error 1 - lexical error with invalid character`() {
-        val code = """
+        val code =
+            """
             let a: number = 12 @ 4;
-        """.trimIndent()
+            """.trimIndent()
 
         val (result, _) = runEngine(code)
         assertTrue(result is ExecutionResult.Failure)
@@ -69,9 +72,10 @@ class EndToEndTest {
 
     @Test
     fun `error 2 - syntax error with missing semicolon`() {
-        val code = """
+        val code =
+            """
             let a: number = 12
-        """.trimIndent()
+            """.trimIndent()
 
         val (result, _) = runEngine(code)
         assertTrue(result is ExecutionResult.Failure)
@@ -81,9 +85,10 @@ class EndToEndTest {
 
     @Test
     fun `error 3 - semantic error with incompatible types`() {
-        val code = """
+        val code =
+            """
             let a: number = "hola";
-        """.trimIndent()
+            """.trimIndent()
 
         val (result, _) = runEngine(code)
         assertTrue(result is ExecutionResult.Failure)

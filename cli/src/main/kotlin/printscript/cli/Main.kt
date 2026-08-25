@@ -2,13 +2,14 @@ package printscript.cli
 
 import printscript.interpreter.output.ConsoleOutput
 
-private val CODIGO = """
+private val CODIGO =
+    """
     let x: number = 5;
     let y: number = x * 3;
     println(y);
     let saludo: string = "hola";
     println(saludo);
-""".trimIndent()
+    """.trimIndent()
 
 fun main() {
     println("code:")
@@ -16,7 +17,7 @@ fun main() {
     println("output:")
 
     val engine = Engine(output = ConsoleOutput())
-    
+
     when (val result = engine.execute(CODIGO)) {
         is ExecutionResult.Success -> {
             // Execution finished successfully, outputs are handled by the callback
