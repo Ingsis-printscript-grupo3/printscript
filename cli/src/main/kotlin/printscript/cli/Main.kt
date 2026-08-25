@@ -72,7 +72,7 @@ private fun parseToAST(code: String) =
 
 fun validatePrintScript(code: String) {
     val statementList = parseToAST(code)
-    val semanticResults = SemanticAnalyzer().analyze(statementList)
+    val semanticResults = SemanticAnalyzer().analyze(statementList.iterator())
     for (result in semanticResults) {
         if (result is SemanticResult.Failure) {
             throw Exception(result.message)
