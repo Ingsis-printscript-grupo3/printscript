@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# Corre ktlint antes de cada commit. Si hay errores de estilo, el commit se cancela.
+#
+# Se instala una sola vez, con:   ./gradlew installGitHooks
+# o a mano con:                   git config core.hooksPath .githooks
+
+echo "pre-commit: corriendo ktlintCheck..."
+
+if ! ./gradlew ktlintCheck --console=plain --quiet; then
+    echo ""
+    echo "pre-commit: hay errores de estilo, el commit se cancelo."
+    echo "arreglalos con:  ./gradlew ktlintFormat"
+    echo "y despues volve a commitear."
+    exit 1
+fi
+
+echo "pre-commit: estilo ok"
