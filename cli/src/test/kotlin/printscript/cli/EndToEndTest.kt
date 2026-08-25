@@ -1,34 +1,36 @@
 package printscript.cli
+
 import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class EndToEndTest {
-    private fun run(code: String): List<String> {
+    private fun runEngine(code: String): Pair<ExecutionResult, List<String>> {
         val bucket = BucketOutput()
-        runPrintScript(code, bucket)
-        return bucket.lines()
+        val engine = Engine(output = bucket)
+        val result = engine.execute(code)
+        return Pair(result, bucket.lines())
     }
 
     @Test
     fun `declara una variable y la imprime`() {
-        val output =
-            run(
+        val (result, output) =
+            runEngine(
                 """
                 let saludo: string = "hola";
                 println(saludo);
                 """.trimIndent(),
             )
 
+        assertTrue(result is ExecutionResult.Success)
         assertEquals(listOf("hola"), output)
     }
 
     @Test
     fun `usa una variable declarada dentro de una operacion`() {
-        val output =
-            run(
+        val (result, output) =
+            runEngine(
                 """
                 let x: number = 5;
                 let y: number = x * 3;
@@ -36,13 +38,14 @@ class EndToEndTest {
                 """.trimIndent(),
             )
 
+        assertTrue(result is ExecutionResult.Success)
         assertEquals(listOf("15"), output)
     }
 
     @Test
     fun `reasigna una variable y el print refleja el valor nuevo`() {
-        val output =
-            run(
+        val (result, output) =
+            runEngine(
                 """
                 let contador: number = 1;
                 println(contador);
@@ -51,6 +54,7 @@ class EndToEndTest {
                 """.trimIndent(),
             )
 
+        assertTrue(result is ExecutionResult.Success)
         assertEquals(listOf("1", "10"), output)
     }
 
@@ -61,9 +65,9 @@ class EndToEndTest {
             let a: number = 12 @ 4;
             """.trimIndent()
 
-        assertFailsWith<printscript.lexer.LexicalError> {
-            run(code)
-        }
+        val (result, _) = runEngine(code)
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Lexical", result.type)
     }
 
     @Test
@@ -73,11 +77,10 @@ class EndToEndTest {
             let a: number = 12
             """.trimIndent()
 
-        val exception =
-            assertFailsWith<printscript.parser.SyntaxError> {
-                run(code)
-            }
-        assertTrue(exception.message!!.contains("Expected"))
+        val (result, _) = runEngine(code)
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Syntax", result.type)
+        assertTrue(result.message.contains("Expected"))
     }
 
     @Test
@@ -87,10 +90,9 @@ class EndToEndTest {
             let a: number = "hola";
             """.trimIndent()
 
-        val exception =
-            assertFailsWith<Exception> {
-                run(code)
-            }
-        assertTrue(exception.message!!.contains("Incompatible types"))
+        val (result, _) = runEngine(code)
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Semantic", result.type)
+        assertTrue(result.message.contains("Incompatible types"))
     }
 }

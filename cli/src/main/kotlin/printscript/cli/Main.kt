@@ -2,9 +2,7 @@ package printscript.cli
 
 import printscript.formatter.FormatterRulesLoader
 import printscript.formatter.PrintScriptFormatter
-import printscript.interpreter.Interpreter
 import printscript.interpreter.output.ConsoleOutput
-import printscript.interpreter.output.Output
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
 import printscript.lexer.LexicalError
@@ -34,7 +32,7 @@ fun main(args: Array<String>) {
     try {
         when (operation) {
             "Validation" -> validatePrintScript(code)
-            "Execution" -> runPrintScript(code, ConsoleOutput())
+            "Execution" -> executePrintScript(code)
             "Formatting" -> formatPrintScript(code, configFile)
             "Analyzing" -> analyzePrintScript(code, configFile)
             else -> println("Unknown operation: $operation")
@@ -48,21 +46,16 @@ fun main(args: Array<String>) {
     }
 }
 
-// arma la pipeline texto -> lexer -> parser -> interpreter
-fun runPrintScript(
-    code: String,
-    output: Output,
-) {
-    val statementList = parseToAST(code)
-
-    val semanticResults = SemanticAnalyzer().analyze(statementList)
-    for (result in semanticResults) {
-        if (result is SemanticResult.Failure) {
-            throw Exception(result.message) // Throws semantic error
+fun executePrintScript(code: String) {
+    val engine = Engine(output = ConsoleOutput())
+    when (val result = engine.execute(code)) {
+        is ExecutionResult.Success -> {
+            // Execution finished successfully, outputs are handled by the callback
+        }
+        is ExecutionResult.Failure -> {
+            println("Error ${result.type}: ${result.message}")
         }
     }
-
-    Interpreter(output).interpret(statementList.iterator())
 }
 
 private fun parseToAST(code: String) =
