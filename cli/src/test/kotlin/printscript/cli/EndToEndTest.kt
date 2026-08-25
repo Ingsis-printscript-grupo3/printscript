@@ -1,5 +1,6 @@
 package printscript.cli
 
+import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -7,10 +8,10 @@ import kotlin.test.assertTrue
 class EndToEndTest {
 
     private fun runEngine(code: String): Pair<ExecutionResult, List<String>> {
-        val output = mutableListOf<String>()
-        val engine = Engine { line -> output.add(line) }
+        val bucket = BucketOutput()
+        val engine = Engine(output = bucket)
         val result = engine.execute(code)
-        return Pair(result, output)
+        return Pair(result, bucket.lines())
     }
 
     @Test

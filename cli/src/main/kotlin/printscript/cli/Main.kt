@@ -1,5 +1,7 @@
 package printscript.cli
 
+import printscript.interpreter.output.ConsoleOutput
+
 private val CODIGO = """
     let x: number = 5;
     let y: number = x * 3;
@@ -13,7 +15,7 @@ fun main() {
     println(CODIGO)
     println("output:")
 
-    val engine = Engine(output = { linea -> println(linea) })
+    val engine = Engine(output = ConsoleOutput())
     
     when (val result = engine.execute(CODIGO)) {
         is ExecutionResult.Success -> {

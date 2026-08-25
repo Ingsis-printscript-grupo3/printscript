@@ -10,6 +10,7 @@ import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
 import printscript.semantic.SemanticAnalyzer
 import printscript.semantic.SemanticResult
+import printscript.interpreter.output.Output
 import java.io.Reader
 import java.io.StringReader
 
@@ -18,7 +19,7 @@ sealed interface ExecutionResult {
     data class Failure(val type: String, val message: String) : ExecutionResult
 }
 
-class Engine(private val output: (String) -> Unit = { println(it) }) {
+class Engine(private val output: Output) {
 
     fun execute(code: String): ExecutionResult {
         return execute(StringReader(code))

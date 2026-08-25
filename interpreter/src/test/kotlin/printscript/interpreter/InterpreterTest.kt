@@ -10,6 +10,15 @@ import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.TokenType
+import printscript.interpreter.output.BucketOutput
+import printscript.interpreter.output.MultiOutput
+import printscript.interpreter.plugin.expression.BinaryExpressionEvaluator
+import printscript.interpreter.plugin.expression.IdentifierEvaluator
+import printscript.interpreter.plugin.expression.NumberLiteralEvaluator
+import printscript.interpreter.plugin.expression.StringLiteralEvaluator
+import printscript.interpreter.plugin.statement.AssignmentInterpreter
+import printscript.interpreter.plugin.statement.PrintCallInterpreter
+import printscript.interpreter.plugin.statement.VariableDeclarationInterpreter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -17,9 +26,9 @@ import kotlin.test.assertFailsWith
 class InterpreterTest {
 
     private fun run(vararg statements: Statement): List<String> {
-        val output = mutableListOf<String>()
-        Interpreter { text -> output.add(text) }.interpret(statements.iterator())
-        return output
+        val bucket = BucketOutput()
+        Interpreter(bucket).interpret(statements.iterator())
+        return bucket.lines()
     }
 
     private fun num(value: Double) = NumberLiteral(value)
@@ -31,7 +40,7 @@ class InterpreterTest {
     private fun bin(left: Expression, op: TokenType, right: Expression) = BinaryExpression(left, op, right)
 
     @Test
-    fun `example 1 - concatenation of two string variables`() {
+    fun `concatenation of two string variables`() {
         // let name: string = "Joe";
         // let lastName: string = "Doe";
         // println(name + " " + lastName);
@@ -51,7 +60,7 @@ class InterpreterTest {
     }
 
     @Test
-    fun `example 2 - division stored in a variable and concatenated`() {
+    fun `division stored in a variable and concatenated`() {
         // let a: number = 12;
         // let b: number = 4;
         // let c: number = a / b;
@@ -67,7 +76,7 @@ class InterpreterTest {
     }
 
     @Test
-    fun `example 3 - reassignment of an already declared variable`() {
+    fun `reassignment of an already declared variable`() {
         // let a: number = 12;
         // let b: number = 4;
         // a = a / b;
@@ -114,6 +123,79 @@ class InterpreterTest {
 
         assertEquals(listOf("3.5"), output)
     }
+
+    @Test
+    fun `printing with a MultiOutput reaches every destination`() {
+        // println(5 * 3);
+        val first = BucketOutput()
+        val second = BucketOutput()
+
+        Interpreter(MultiOutput(first, second)).interpret(
+            listOf(PrintCall(bin(num(5.0), TokenType.MULTIPLY, num(3.0)))).iterator()
+        )
+
+        assertEquals(listOf("15"), first.lines())
+        assertEquals(listOf("15"), second.lines())
+    }
+
+    @Test
+    fun `a statement with no interpreter registered fails`() {
+        val interpreter = Interpreter(emptyList(), emptyList())
+
+        assertFailsWith<UnknownStatementError> {
+            interpreter.interpret(listOf(PrintCall(text("line"))).iterator())
+        }
+    }
+
+    @Test
+    fun `an expression with no evaluator registered fails`() {
+        val interpreter = Interpreter(
+            statementInterpreters = listOf(PrintCallInterpreter(BucketOutput())),
+            expressionEvaluators = emptyList()
+        )
+
+        assertFailsWith<UnknownExpressionError> {
+            interpreter.interpret(listOf(PrintCall(text("line"))).iterator())
+        }
+    }
+
+    //cada plugin tiene un guard tira error si le llega un nodo q no es suyo
+    //por el flujo normal nunca pasa, pq el Interpreter pregunta matches() antes
+
+    @Test
+    fun `statement plugins reject nodes that are not theirs`() {
+        val print = PrintCall(text("hello"))
+        val assignment = Assignment("x", num(1.0))
+
+        val cases = listOf(
+            VariableDeclarationInterpreter() to print,
+            AssignmentInterpreter() to print,
+            PrintCallInterpreter(BucketOutput()) to assignment
+        )
+
+        for ((plugin, foreignNode) in cases) {
+            assertFailsWith<UnknownStatementError> {
+                plugin.execute(foreignNode, Environment(), Interpreter())
+            }
+        }
+    }
+
+    @Test
+    fun `expression plugins reject nodes that are not theirs`() {
+        val number = num(1.0)
+        val string = text("hello")
+
+        val cases = listOf(
+            NumberLiteralEvaluator() to string,
+            StringLiteralEvaluator() to number,
+            IdentifierEvaluator() to number,
+            BinaryExpressionEvaluator() to number
+        )
+
+        for ((plugin, foreignNode) in cases) {
+            assertFailsWith<UnknownExpressionError> {
+                plugin.evaluate(foreignNode, Environment(), Interpreter())
+            }
+        }
+    }
 }
-
-
