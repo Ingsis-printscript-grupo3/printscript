@@ -6,7 +6,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class EndToEndTest {
-
     private fun run(code: String): List<String> {
         val bucket = BucketOutput()
         runPrintScript(code, bucket)

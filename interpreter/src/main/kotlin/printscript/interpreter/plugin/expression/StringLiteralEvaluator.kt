@@ -10,10 +10,13 @@ import printscript.interpreter.Value
 import printscript.interpreter.plugin.ExpressionEvaluator
 
 class StringLiteralEvaluator : ExpressionEvaluator {
-
     override fun matches(expression: Expression) = expression is StringLiteral
 
-    override fun evaluate(expression: Expression, env: Environment, interpreter: InterpreterInterface): Value {
+    override fun evaluate(
+        expression: Expression,
+        env: Environment,
+        interpreter: InterpreterInterface,
+    ): Value {
         if (expression !is StringLiteral) throw UnknownExpressionError(expression)
 
         return StringValue(expression.value)

@@ -2,17 +2,17 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class FormatterRulesLoaderTest {
-
     @Test
     fun `loads all fields from a complete JSON config`() {
-        val json = """
+        val json =
+            """
             {
               "spaceBeforeColon": true,
               "spaceAfterColon": false,
               "spaceAroundAssignment": true,
               "lineBreaksBeforePrintln": 2
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val rules = FormatterRulesLoader.fromJson(json)
 
@@ -30,12 +30,13 @@ class FormatterRulesLoaderTest {
 
     @Test
     fun `loads all fields from a complete YAML config`() {
-        val yaml = """
+        val yaml =
+            """
             spaceBeforeColon: true
             spaceAfterColon: false
             spaceAroundAssignment: true
             lineBreaksBeforePrintln: 2
-        """.trimIndent()
+            """.trimIndent()
 
         val rules = FormatterRulesLoader.fromYaml(yaml)
 

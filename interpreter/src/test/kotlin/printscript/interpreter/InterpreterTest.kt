@@ -139,7 +139,7 @@ class InterpreterTest {
         val second = BucketOutput()
 
         Interpreter(MultiOutput(first, second)).interpret(
-            listOf(PrintCall(bin(num(5.0), TokenType.MULTIPLY, num(3.0)))).iterator()
+            listOf(PrintCall(bin(num(5.0), TokenType.MULTIPLY, num(3.0)))).iterator(),
         )
 
         assertEquals(listOf("15"), first.lines())
@@ -157,29 +157,31 @@ class InterpreterTest {
 
     @Test
     fun `an expression with no evaluator registered fails`() {
-        val interpreter = Interpreter(
-            statementInterpreters = listOf(PrintCallInterpreter(BucketOutput())),
-            expressionEvaluators = emptyList()
-        )
+        val interpreter =
+            Interpreter(
+                statementInterpreters = listOf(PrintCallInterpreter(BucketOutput())),
+                expressionEvaluators = emptyList(),
+            )
 
         assertFailsWith<UnknownExpressionError> {
             interpreter.interpret(listOf(PrintCall(text("line"))).iterator())
         }
     }
 
-    //cada plugin tiene un guard tira error si le llega un nodo q no es suyo
-    //por el flujo normal nunca pasa, pq el Interpreter pregunta matches() antes
+    // cada plugin tiene un guard tira error si le llega un nodo q no es suyo
+    // por el flujo normal nunca pasa, pq el Interpreter pregunta matches() antes
 
     @Test
     fun `statement plugins reject nodes that are not theirs`() {
         val print = PrintCall(text("hello"))
         val assignment = Assignment("x", num(1.0))
 
-        val cases = listOf(
-            VariableDeclarationInterpreter() to print,
-            AssignmentInterpreter() to print,
-            PrintCallInterpreter(BucketOutput()) to assignment
-        )
+        val cases =
+            listOf(
+                VariableDeclarationInterpreter() to print,
+                AssignmentInterpreter() to print,
+                PrintCallInterpreter(BucketOutput()) to assignment,
+            )
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownStatementError> {
@@ -193,12 +195,13 @@ class InterpreterTest {
         val number = num(1.0)
         val string = text("hello")
 
-        val cases = listOf(
-            NumberLiteralEvaluator() to string,
-            StringLiteralEvaluator() to number,
-            IdentifierEvaluator() to number,
-            BinaryExpressionEvaluator() to number
-        )
+        val cases =
+            listOf(
+                NumberLiteralEvaluator() to string,
+                StringLiteralEvaluator() to number,
+                IdentifierEvaluator() to number,
+                BinaryExpressionEvaluator() to number,
+            )
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownExpressionError> {

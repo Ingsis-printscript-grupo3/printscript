@@ -30,7 +30,7 @@ fun main() {
     println("output:")
 
     try {
-        runPrintScript(CODIGO, ConsoleOutput()) //aca los outputs van a la consola
+        runPrintScript(CODIGO, ConsoleOutput()) // aca los outputs van a la consola
     } catch (e: LexicalError) {
         println("Error lexico: ${e.message} (linea ${e.start.line})")
     } catch (e: SyntaxError) {
@@ -40,8 +40,11 @@ fun main() {
     }
 }
 
-//arma la pipeline texto -> lexer -> parser -> interpreter
-fun runPrintScript(code: String, output: Output) {
+// arma la pipeline texto -> lexer -> parser -> interpreter
+fun runPrintScript(
+    code: String,
+    output: Output,
+) {
     val lexer: LexerInterface = Lexer(CharStream(StringReader(code)))
     val parser: ParserInterface = Parser(lexer.tokenize())
 
