@@ -1,14 +1,9 @@
 package printscript.interpreter
 
-import printscript.ast.Assignment
-import printscript.ast.BinaryExpression
 import printscript.ast.Expression
-import printscript.ast.Identifier
-import printscript.ast.NumberLiteral
-import printscript.ast.PrintCall
 import printscript.ast.Statement
-import printscript.ast.StringLiteral
-import printscript.ast.VariableDeclaration
+import printscript.interpreter.output.ConsoleOutput
+import printscript.interpreter.output.Output
 import printscript.interpreter.plugin.ExpressionEvaluator
 import printscript.interpreter.plugin.StatementInterpreter
 import printscript.interpreter.plugin.expression.BinaryExpressionEvaluator
@@ -18,28 +13,28 @@ import printscript.interpreter.plugin.expression.StringLiteralEvaluator
 import printscript.interpreter.plugin.statement.AssignmentInterpreter
 import printscript.interpreter.plugin.statement.PrintCallInterpreter
 import printscript.interpreter.plugin.statement.VariableDeclarationInterpreter
-import kotlin.reflect.KClass
 
 class Interpreter(
-    private val statementInterpreters: Map<KClass<out Statement>, StatementInterpreter<out Statement>>,
-    private val expressionEvaluators: Map<KClass<out Expression>, ExpressionEvaluator<out Expression>>,
+    private val statementInterpreters: List<StatementInterpreter>,
+    private val expressionEvaluators: List<ExpressionEvaluator>,
 ) : InterpreterInterface {
     private val environment = Environment()
 
-    // Constructor secundario para mantener compatibilidad con los tests actuales
-    constructor(output: (String) -> Unit = { println(it) }) : this(
+    // constructor de conveniencia con los plugins de PrintScript 1.0
+    // output es el destino de los println: ConsoleOutput, BucketOutput, o los dos con MultiOutput
+    constructor(output: Output = ConsoleOutput()) : this(
         statementInterpreters =
-            mapOf(
-                VariableDeclaration::class to VariableDeclarationInterpreter(),
-                Assignment::class to AssignmentInterpreter(),
-                PrintCall::class to PrintCallInterpreter(output),
+            listOf(
+                VariableDeclarationInterpreter(),
+                AssignmentInterpreter(),
+                PrintCallInterpreter(output),
             ),
         expressionEvaluators =
-            mapOf(
-                NumberLiteral::class to NumberLiteralEvaluator(),
-                StringLiteral::class to StringLiteralEvaluator(),
-                Identifier::class to IdentifierEvaluator(),
-                BinaryExpression::class to BinaryExpressionEvaluator(),
+            listOf(
+                NumberLiteralEvaluator(),
+                StringLiteralEvaluator(),
+                IdentifierEvaluator(),
+                BinaryExpressionEvaluator(),
             ),
     )
 
@@ -49,19 +44,18 @@ class Interpreter(
         }
     }
 
+    // le pregunto a c plugin si el statement es suyo, igual q el lexer con los readers
     private fun execute(statement: Statement) {
-        @Suppress("UNCHECKED_CAST")
         val plugin =
-            statementInterpreters[statement::class] as? StatementInterpreter<Statement>
+            statementInterpreters.firstOrNull { it.matches(statement) }
                 ?: throw UnknownStatementError(statement)
 
         plugin.execute(statement, environment, this)
     }
 
     override fun evaluate(expression: Expression): Value {
-        @Suppress("UNCHECKED_CAST")
         val plugin =
-            expressionEvaluators[expression::class] as? ExpressionEvaluator<Expression>
+            expressionEvaluators.firstOrNull { it.matches(expression) }
                 ?: throw UnknownExpressionError(expression)
 
         return plugin.evaluate(expression, environment, this)

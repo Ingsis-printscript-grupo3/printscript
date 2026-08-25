@@ -2,7 +2,7 @@ package printscript.ast
 
 import printscript.common.TokenType
 
-interface Expression
+sealed interface Expression
 
 data class BinaryExpression(
     val left: Expression,
@@ -16,7 +16,7 @@ data class StringLiteral(val value: String) : Expression
 
 data class Identifier(val name: String) : Expression
 
-interface Statement
+sealed interface Statement
 
 data class VariableDeclaration(
     val name: String,

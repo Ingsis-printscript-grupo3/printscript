@@ -1,17 +1,6 @@
 package printscript.cli
 
-import printscript.interpreter.Interpreter
-import printscript.lexer.CharStream
-import printscript.lexer.Lexer
-import printscript.lexer.LexerInterface
-import printscript.lexer.LexicalError
-import printscript.parser.Parser
-import printscript.parser.ParserInterface
-import printscript.parser.SyntaxError
-import printscript.parser.result.ParseResult
-import printscript.semantic.SemanticAnalyzer
-import printscript.semantic.SemanticResult
-import java.io.StringReader
+import printscript.interpreter.output.ConsoleOutput
 
 private val CODIGO =
     """
@@ -23,48 +12,18 @@ private val CODIGO =
     """.trimIndent()
 
 fun main() {
-    println("codigo:")
+    println("code:")
     println(CODIGO)
     println("output:")
 
-    try {
-        runPrintScript(CODIGO, { linea -> println(linea) }) // aca los outputs van a la consola
-    } catch (e: LexicalError) {
-        println("Error lexico: ${e.message} (linea ${e.start.line})")
-    } catch (e: SyntaxError) {
-        println("Error de sintaxis: ${e.message} (linea ${e.start.line})")
-    } catch (e: Exception) {
-        println(e.message) // Thrown by semantic analyzer
-    }
-}
+    val engine = Engine(output = ConsoleOutput())
 
-// arma la pipeline texto -> lexer -> parser -> interpreter
-// output es a donde van los println del programa
-fun runPrintScript(
-    code: String,
-    output: (String) -> Unit,
-) {
-    val lexer: LexerInterface = Lexer(CharStream(StringReader(code)))
-    val parser: ParserInterface = Parser(lexer.tokenize())
-
-    // cada statement se lexea y parsea aca
-    val statementList =
-        parser.parse()
-            .asSequence()
-            .map { result ->
-                when (result) {
-                    is ParseResult.Success -> result.statement
-                    is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
-                }
-            }
-            .toList()
-
-    val semanticResults = SemanticAnalyzer().analyze(statementList)
-    for (result in semanticResults) {
-        if (result is SemanticResult.Failure) {
-            throw Exception(result.message) // Throws semantic error
+    when (val result = engine.execute(CODIGO)) {
+        is ExecutionResult.Success -> {
+            // Execution finished successfully, outputs are handled by the callback
+        }
+        is ExecutionResult.Failure -> {
+            println("Error ${result.type}: ${result.message}")
         }
     }
-
-    Interpreter(output).interpret(statementList.iterator())
 }
