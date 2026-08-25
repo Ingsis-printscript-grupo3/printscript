@@ -12,7 +12,13 @@ import printscript.ast.VariableDeclaration
 import printscript.common.TokenType
 import printscript.interpreter.output.BucketOutput
 import printscript.interpreter.output.MultiOutput
+import printscript.interpreter.plugin.expression.BinaryExpressionEvaluator
+import printscript.interpreter.plugin.expression.IdentifierEvaluator
+import printscript.interpreter.plugin.expression.NumberLiteralEvaluator
+import printscript.interpreter.plugin.expression.StringLiteralEvaluator
+import printscript.interpreter.plugin.statement.AssignmentInterpreter
 import printscript.interpreter.plugin.statement.PrintCallInterpreter
+import printscript.interpreter.plugin.statement.VariableDeclarationInterpreter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -150,6 +156,46 @@ class InterpreterTest {
 
         assertFailsWith<UnknownExpressionError> {
             interpreter.interpret(listOf(PrintCall(text("line"))).iterator())
+        }
+    }
+
+    //cada plugin tiene un guard tira error si le llega un nodo q no es suyo
+    //por el flujo normal nunca pasa, pq el Interpreter pregunta matches() antes
+
+    @Test
+    fun `statement plugins reject nodes that are not theirs`() {
+        val print = PrintCall(text("hello"))
+        val assignment = Assignment("x", num(1.0))
+
+        val cases = listOf(
+            VariableDeclarationInterpreter() to print,
+            AssignmentInterpreter() to print,
+            PrintCallInterpreter(BucketOutput()) to assignment
+        )
+
+        for ((plugin, foreignNode) in cases) {
+            assertFailsWith<UnknownStatementError> {
+                plugin.execute(foreignNode, Environment(), Interpreter())
+            }
+        }
+    }
+
+    @Test
+    fun `expression plugins reject nodes that are not theirs`() {
+        val number = num(1.0)
+        val string = text("hello")
+
+        val cases = listOf(
+            NumberLiteralEvaluator() to string,
+            StringLiteralEvaluator() to number,
+            IdentifierEvaluator() to number,
+            BinaryExpressionEvaluator() to number
+        )
+
+        for ((plugin, foreignNode) in cases) {
+            assertFailsWith<UnknownExpressionError> {
+                plugin.evaluate(foreignNode, Environment(), Interpreter())
+            }
         }
     }
 }
