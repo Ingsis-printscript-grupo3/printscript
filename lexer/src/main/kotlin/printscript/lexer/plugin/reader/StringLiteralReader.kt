@@ -9,12 +9,10 @@ import printscript.lexer.LexicalError
 import printscript.lexer.plugin.TokenReader
 
 class StringLiteralReader : TokenReader {
+
     override fun matches(char: Char): Boolean = LexerRules.isQuote(char)
 
-    override fun read(
-        stream: CharStream,
-        start: Position,
-    ): Token {
+    override fun read(stream: CharStream, start: Position): Token {
         val quote = stream.advance()
         val text = StringBuilder()
 

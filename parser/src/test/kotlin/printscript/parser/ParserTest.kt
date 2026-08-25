@@ -2,14 +2,7 @@ package printscript.parser
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import printscript.ast.Assignment
-import printscript.ast.BinaryExpression
-import printscript.ast.Identifier
-import printscript.ast.NumberLiteral
-import printscript.ast.PrintCall
-import printscript.ast.Statement
-import printscript.ast.StringLiteral
-import printscript.ast.VariableDeclaration
+import printscript.ast.*
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
@@ -17,12 +10,10 @@ import printscript.parser.result.ParseResult
 import kotlin.test.assertEquals
 
 class ParserTest {
+
     private fun pos() = Position(1, 1) // Posición dummy para los tests
 
-    private fun createToken(
-        type: TokenType,
-        value: String = "",
-    ) = Token(type, pos(), pos(), value)
+    private fun createToken(type: TokenType, value: String = "") = Token(type, pos(), pos(), value)
 
     private fun parse(vararg tokens: Token): List<Statement> {
         val tokenList = tokens.toList() + createToken(TokenType.EOF)
@@ -38,16 +29,15 @@ class ParserTest {
     @Test
     fun `test happy path - variable declaration with number`() {
         // let x: number = 5;
-        val statements =
-            parse(
-                createToken(TokenType.LET),
-                createToken(TokenType.IDENTIFIER, "x"),
-                createToken(TokenType.COLON),
-                createToken(TokenType.NUMBERTYPE, "number"),
-                createToken(TokenType.ASSIGN),
-                createToken(TokenType.NUMBERLITERAL, "5"),
-                createToken(TokenType.SEMICOLON),
-            )
+        val statements = parse(
+            createToken(TokenType.LET),
+            createToken(TokenType.IDENTIFIER, "x"),
+            createToken(TokenType.COLON),
+            createToken(TokenType.NUMBERTYPE, "number"),
+            createToken(TokenType.ASSIGN),
+            createToken(TokenType.NUMBERLITERAL, "5"),
+            createToken(TokenType.SEMICOLON)
+        )
 
         assertEquals(1, statements.size)
         val stmt = statements[0] as VariableDeclaration
@@ -60,16 +50,15 @@ class ParserTest {
     @Test
     fun `test happy path - variable declaration with string`() {
         // let msg: string = "hello";
-        val statements =
-            parse(
-                createToken(TokenType.LET),
-                createToken(TokenType.IDENTIFIER, "msg"),
-                createToken(TokenType.COLON),
-                createToken(TokenType.STRINGTYPE, "string"),
-                createToken(TokenType.ASSIGN),
-                createToken(TokenType.STRINGLITERAL, "hello"),
-                createToken(TokenType.SEMICOLON),
-            )
+        val statements = parse(
+            createToken(TokenType.LET),
+            createToken(TokenType.IDENTIFIER, "msg"),
+            createToken(TokenType.COLON),
+            createToken(TokenType.STRINGTYPE, "string"),
+            createToken(TokenType.ASSIGN),
+            createToken(TokenType.STRINGLITERAL, "hello"),
+            createToken(TokenType.SEMICOLON)
+        )
 
         assertEquals(1, statements.size)
         val stmt = statements[0] as VariableDeclaration
@@ -82,14 +71,13 @@ class ParserTest {
     @Test
     fun `test happy path - variable declaration without assignment`() {
         // let x: number;
-        val statements =
-            parse(
-                createToken(TokenType.LET),
-                createToken(TokenType.IDENTIFIER, "x"),
-                createToken(TokenType.COLON),
-                createToken(TokenType.NUMBERTYPE, "number"),
-                createToken(TokenType.SEMICOLON),
-            )
+        val statements = parse(
+            createToken(TokenType.LET),
+            createToken(TokenType.IDENTIFIER, "x"),
+            createToken(TokenType.COLON),
+            createToken(TokenType.NUMBERTYPE, "number"),
+            createToken(TokenType.SEMICOLON)
+        )
 
         assertEquals(1, statements.size)
         val stmt = statements[0] as VariableDeclaration
@@ -101,13 +89,12 @@ class ParserTest {
     @Test
     fun `test happy path - variable assignment`() {
         // x = 10;
-        val statements =
-            parse(
-                createToken(TokenType.IDENTIFIER, "x"),
-                createToken(TokenType.ASSIGN),
-                createToken(TokenType.NUMBERLITERAL, "10"),
-                createToken(TokenType.SEMICOLON),
-            )
+        val statements = parse(
+            createToken(TokenType.IDENTIFIER, "x"),
+            createToken(TokenType.ASSIGN),
+            createToken(TokenType.NUMBERLITERAL, "10"),
+            createToken(TokenType.SEMICOLON)
+        )
 
         assertEquals(1, statements.size)
         val stmt = statements[0] as Assignment
@@ -119,20 +106,19 @@ class ParserTest {
     @Test
     fun `test happy path - println with complex arithmetic expression`() {
         // println((5 + 2) * 3);
-        val statements =
-            parse(
-                createToken(TokenType.PRINTLN),
-                createToken(TokenType.LEFTPAREN),
-                createToken(TokenType.LEFTPAREN),
-                createToken(TokenType.NUMBERLITERAL, "5"),
-                createToken(TokenType.PLUS),
-                createToken(TokenType.NUMBERLITERAL, "2"),
-                createToken(TokenType.RIGHTPAREN),
-                createToken(TokenType.MULTIPLY),
-                createToken(TokenType.NUMBERLITERAL, "3"),
-                createToken(TokenType.RIGHTPAREN),
-                createToken(TokenType.SEMICOLON),
-            )
+        val statements = parse(
+            createToken(TokenType.PRINTLN),
+            createToken(TokenType.LEFTPAREN),
+            createToken(TokenType.LEFTPAREN),
+            createToken(TokenType.NUMBERLITERAL, "5"),
+            createToken(TokenType.PLUS),
+            createToken(TokenType.NUMBERLITERAL, "2"),
+            createToken(TokenType.RIGHTPAREN),
+            createToken(TokenType.MULTIPLY),
+            createToken(TokenType.NUMBERLITERAL, "3"),
+            createToken(TokenType.RIGHTPAREN),
+            createToken(TokenType.SEMICOLON)
+        )
 
         assertEquals(1, statements.size)
         val stmt = statements[0] as PrintCall
@@ -148,16 +134,15 @@ class ParserTest {
     @Test
     fun `test happy path - string concatenation`() {
         // println("Result: " + a);
-        val statements =
-            parse(
-                createToken(TokenType.PRINTLN),
-                createToken(TokenType.LEFTPAREN),
-                createToken(TokenType.STRINGLITERAL, "Result: "),
-                createToken(TokenType.PLUS),
-                createToken(TokenType.IDENTIFIER, "a"),
-                createToken(TokenType.RIGHTPAREN),
-                createToken(TokenType.SEMICOLON),
-            )
+        val statements = parse(
+            createToken(TokenType.PRINTLN),
+            createToken(TokenType.LEFTPAREN),
+            createToken(TokenType.STRINGLITERAL, "Result: "),
+            createToken(TokenType.PLUS),
+            createToken(TokenType.IDENTIFIER, "a"),
+            createToken(TokenType.RIGHTPAREN),
+            createToken(TokenType.SEMICOLON)
+        )
 
         assertEquals(1, statements.size)
         val stmt = statements[0] as PrintCall
@@ -170,75 +155,69 @@ class ParserTest {
     @Test
     fun `test unhappy path - missing semicolon`() {
         // println(5)
-        val exception =
-            assertThrows<RuntimeException> {
-                parse(
-                    createToken(TokenType.PRINTLN),
-                    createToken(TokenType.LEFTPAREN),
-                    createToken(TokenType.NUMBERLITERAL, "5"),
-                    createToken(TokenType.RIGHTPAREN),
-                    // Falta TokenType.SEMICOLON
-                )
-            }
+        val exception = assertThrows<RuntimeException> {
+            parse(
+                createToken(TokenType.PRINTLN),
+                createToken(TokenType.LEFTPAREN),
+                createToken(TokenType.NUMBERLITERAL, "5"),
+                createToken(TokenType.RIGHTPAREN)
+                // Falta TokenType.SEMICOLON
+            )
+        }
         assert(exception.message!!.contains("Expected ';'"))
     }
 
     @Test
     fun `test unhappy path - missing closing parenthesis in expression`() {
         // println((5 + 2 * 3);
-        val exception =
-            assertThrows<RuntimeException> {
-                parse(
-                    createToken(TokenType.PRINTLN),
-                    createToken(TokenType.LEFTPAREN),
-                    createToken(TokenType.LEFTPAREN),
-                    createToken(TokenType.NUMBERLITERAL, "5"),
-                    createToken(TokenType.PLUS),
-                    createToken(TokenType.NUMBERLITERAL, "2"),
-                    createToken(TokenType.MULTIPLY),
-                    createToken(TokenType.NUMBERLITERAL, "3"),
-                    // Falta TokenType.RIGHTPAREN de la expresión
-                    createToken(TokenType.RIGHTPAREN),
-                    createToken(TokenType.SEMICOLON),
-                )
-            }
+        val exception = assertThrows<RuntimeException> {
+            parse(
+                createToken(TokenType.PRINTLN),
+                createToken(TokenType.LEFTPAREN),
+                createToken(TokenType.LEFTPAREN),
+                createToken(TokenType.NUMBERLITERAL, "5"),
+                createToken(TokenType.PLUS),
+                createToken(TokenType.NUMBERLITERAL, "2"),
+                createToken(TokenType.MULTIPLY),
+                createToken(TokenType.NUMBERLITERAL, "3"),
+                // Falta TokenType.RIGHTPAREN de la expresión
+                createToken(TokenType.RIGHTPAREN),
+                createToken(TokenType.SEMICOLON)
+            )
+        }
         assert(exception.message!!.contains("Expected ')'"))
     }
 
     @Test
     fun `test unhappy path - unexpected token in declaration`() {
         // let 5 : number = 5;
-        val exception =
-            assertThrows<RuntimeException> {
-                parse(
-                    createToken(TokenType.LET),
-                    // Inesperado
-                    createToken(TokenType.NUMBERLITERAL, "5"),
-                    createToken(TokenType.COLON),
-                    createToken(TokenType.NUMBERTYPE, "number"),
-                    createToken(TokenType.ASSIGN),
-                    createToken(TokenType.NUMBERLITERAL, "5"),
-                    createToken(TokenType.SEMICOLON),
-                )
-            }
+        val exception = assertThrows<RuntimeException> {
+            parse(
+                createToken(TokenType.LET),
+                createToken(TokenType.NUMBERLITERAL, "5"), // Inesperado
+                createToken(TokenType.COLON),
+                createToken(TokenType.NUMBERTYPE, "number"),
+                createToken(TokenType.ASSIGN),
+                createToken(TokenType.NUMBERLITERAL, "5"),
+                createToken(TokenType.SEMICOLON)
+            )
+        }
         assert(exception.message!!.contains("Expected variable name"))
     }
 
     @Test
     fun `test unhappy path - missing type in declaration`() {
         // let x: = 5;
-        val exception =
-            assertThrows<RuntimeException> {
-                parse(
-                    createToken(TokenType.LET),
-                    createToken(TokenType.IDENTIFIER, "x"),
-                    createToken(TokenType.COLON),
-                    // Inesperado, se esperaba number o string
-                    createToken(TokenType.ASSIGN),
-                    createToken(TokenType.NUMBERLITERAL, "5"),
-                    createToken(TokenType.SEMICOLON),
-                )
-            }
+        val exception = assertThrows<RuntimeException> {
+            parse(
+                createToken(TokenType.LET),
+                createToken(TokenType.IDENTIFIER, "x"),
+                createToken(TokenType.COLON),
+                createToken(TokenType.ASSIGN), // Inesperado, se esperaba number o string
+                createToken(TokenType.NUMBERLITERAL, "5"),
+                createToken(TokenType.SEMICOLON)
+            )
+        }
         assert(exception.message!!.contains("Expected 'number' or 'string'"))
     }
 }

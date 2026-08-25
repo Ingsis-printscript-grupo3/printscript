@@ -5,10 +5,7 @@ import printscript.semantic.SemanticResult
 class SymbolTable {
     private val symbols = mutableMapOf<String, String>()
 
-    fun define(
-        name: String,
-        type: String,
-    ): SemanticResult<Unit> {
+    fun define(name: String, type: String): SemanticResult<Unit> {
         if (symbols.containsKey(name)) {
             return SemanticResult.Failure("Semantic Error: Variable '$name' already exists.")
         }

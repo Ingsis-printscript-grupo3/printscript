@@ -7,7 +7,7 @@ interface Expression
 data class BinaryExpression(
     val left: Expression,
     val operator: TokenType,
-    val right: Expression,
+    val right: Expression
 ) : Expression
 
 data class NumberLiteral(val value: Double) : Expression
@@ -21,14 +21,14 @@ interface Statement
 data class VariableDeclaration(
     val name: String,
     val type: String,
-    val value: Expression?,
+    val value: Expression?
 ) : Statement
 
 data class Assignment(
     val name: String,
-    val value: Expression,
+    val value: Expression
 ) : Statement
 
 data class PrintCall(
-    val value: Expression,
+    val value: Expression
 ) : Statement

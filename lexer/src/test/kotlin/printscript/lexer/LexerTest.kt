@@ -7,6 +7,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class LexerTest {
+
     private fun tokenize(source: String): List<printscript.common.Token> =
         Lexer(CharStream(StringReader(source))).tokenize().asSequence().toList()
 
@@ -119,12 +120,11 @@ class LexerTest {
 
     @Test
     fun `ejemplo 1 de la consigna`() {
-        val source =
-            """
+        val source = """
             let name: string = "Joe";
             let lastName: string = "Doe";
             println(name + " " + lastName);
-            """.trimIndent()
+        """.trimIndent()
 
         assertEquals(
             listOf(
@@ -142,13 +142,12 @@ class LexerTest {
 
     @Test
     fun `ejemplo 2 de la consigna`() {
-        val source =
-            """
+        val source = """
             let a: number = 12;
             let b: number = 4;
             let c: number = a / b;
             println("Result: " + c);
-            """.trimIndent()
+        """.trimIndent()
 
         assertEquals(
             listOf(
@@ -167,13 +166,12 @@ class LexerTest {
 
     @Test
     fun `ejemplo 3 de la consigna`() {
-        val source =
-            """
+        val source = """
             let a: number = 12;
             let b: number = 4;
             a = a / b;
             println("Result: " + a);
-            """.trimIndent()
+        """.trimIndent()
 
         assertEquals(
             listOf(

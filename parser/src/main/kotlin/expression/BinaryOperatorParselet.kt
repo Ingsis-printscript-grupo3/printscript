@@ -11,7 +11,7 @@ class BinaryOperatorParselet(override val precedence: Int) : InfixParselet {
         left: Expression,
         operatorToken: Token,
         stream: TokenStream,
-        expressionParser: ExpressionParser,
+        expressionParser: ExpressionParser
     ): ASTResult<Expression> {
         val rightResult = expressionParser.parseExpression(precedence + 1)
         if (rightResult is ASTResult.Failure) return rightResult

@@ -1,8 +1,5 @@
 package printscript.parser.expression
-import printscript.ast.Expression
-import printscript.ast.Identifier
-import printscript.ast.NumberLiteral
-import printscript.ast.StringLiteral
+import printscript.ast.*
 import printscript.common.Position
 import printscript.common.TokenType
 import printscript.parser.result.ASTResult
@@ -10,8 +7,9 @@ import printscript.parser.stream.TokenStream
 
 class ExpressionParser(
     private val stream: TokenStream,
-    private val infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix,
+    private val infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix
 ) {
+
     fun parseExpression(minPrecedence: Int = 0): ASTResult<Expression> {
         val leftResult = parsePrimary()
         if (leftResult is ASTResult.Failure) return leftResult
@@ -47,10 +45,10 @@ class ExpressionParser(
         if (stream.match(TokenType.LEFTPAREN)) {
             val exprResult = parseExpression()
             if (exprResult is ASTResult.Failure) return exprResult
-
+            
             val consumeResult = stream.consume(TokenType.RIGHTPAREN, "Expected ')' closing the expression.")
             if (consumeResult is ASTResult.Failure) return consumeResult
-
+            
             return exprResult
         }
         val errorToken = stream.peek()

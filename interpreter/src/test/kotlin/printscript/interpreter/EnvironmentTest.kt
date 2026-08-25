@@ -4,6 +4,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class EnvironmentTest {
+
     @Test
     fun `declaring a variable with a value and reading it returns that value`() {
         val env = Environment()
@@ -17,30 +18,27 @@ class EnvironmentTest {
         val env = Environment()
         env.declare("x", NumberValue(5.0))
 
-        val error =
-            assertFailsWith<VariableAlreadyDeclaredError> {
-                env.declare("x", NumberValue(10.0))
-            }
+        val error = assertFailsWith<VariableAlreadyDeclaredError> {
+            env.declare("x", NumberValue(10.0))
+        }
         assertEquals("x", error.name)
     }
 
     @Test
     fun `assigning to an undeclared variable fails`() {
         val env = Environment()
-        val error =
-            assertFailsWith<UndeclaredVariableError> {
-                env.assign("x", NumberValue(5.0))
-            }
+        val error = assertFailsWith<UndeclaredVariableError> {
+            env.assign("x", NumberValue(5.0))
+        }
         assertEquals("x", error.name)
     }
 
     @Test
     fun `reading an undeclared variable fails`() {
         val env = Environment()
-        val error =
-            assertFailsWith<UndeclaredVariableError> {
-                env.lookup("x")
-            }
+        val error = assertFailsWith<UndeclaredVariableError> {
+            env.lookup("x")
+        }
         assertEquals("x", error.name)
     }
 
@@ -57,10 +55,13 @@ class EnvironmentTest {
     fun `reading a declared variable without a value fails`() {
         val env = Environment()
         env.declare("x", null)
-        val error =
-            assertFailsWith<UninitializedVariableError> {
-                env.lookup("x")
-            }
+        val error = assertFailsWith<UninitializedVariableError> {
+            env.lookup("x")
+        }
         assertEquals("x", error.name)
     }
+
+
 }
+
+

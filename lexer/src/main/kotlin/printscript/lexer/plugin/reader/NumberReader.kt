@@ -7,12 +7,10 @@ import printscript.lexer.CharStream
 import printscript.lexer.plugin.TokenReader
 
 class NumberReader : TokenReader {
+
     override fun matches(char: Char): Boolean = char.isDigit()
 
-    override fun read(
-        stream: CharStream,
-        start: Position,
-    ): Token {
+    override fun read(stream: CharStream, start: Position): Token {
         val text = StringBuilder()
         while (!stream.isAtEnd() && stream.peek()!!.isDigit()) {
             text.append(stream.advance())
