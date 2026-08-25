@@ -1,15 +1,16 @@
 package printscript.cli
-
+import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class EndToEndTest {
+
     private fun run(code: String): List<String> {
-        val output = mutableListOf<String>()
-        runPrintScript(code) { line -> output.add(line) } // aca no printeo en consola, agrego a lista asi puedo comparar
-        return output
+        val bucket = BucketOutput()
+        runPrintScript(code, bucket)
+        return bucket.lines()
     }
 
     @Test

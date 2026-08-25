@@ -1,6 +1,8 @@
 package printscript.cli
 
 import printscript.interpreter.Interpreter
+import printscript.interpreter.output.ConsoleOutput
+import printscript.interpreter.output.Output
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
 import printscript.lexer.LexerInterface
@@ -28,7 +30,7 @@ fun main() {
     println("output:")
 
     try {
-        runPrintScript(CODIGO, { linea -> println(linea) }) // aca los outputs van a la consola
+        runPrintScript(CODIGO, ConsoleOutput()) //aca los outputs van a la consola
     } catch (e: LexicalError) {
         println("Error lexico: ${e.message} (linea ${e.start.line})")
     } catch (e: SyntaxError) {
@@ -38,12 +40,8 @@ fun main() {
     }
 }
 
-// arma la pipeline texto -> lexer -> parser -> interpreter
-// output es a donde van los println del programa
-fun runPrintScript(
-    code: String,
-    output: (String) -> Unit,
-) {
+//arma la pipeline texto -> lexer -> parser -> interpreter
+fun runPrintScript(code: String, output: Output) {
     val lexer: LexerInterface = Lexer(CharStream(StringReader(code)))
     val parser: ParserInterface = Parser(lexer.tokenize())
 

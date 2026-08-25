@@ -38,7 +38,6 @@ class StatementValidator(
                 if (exprResult is SemanticResult.Failure) return exprResult
                 return SemanticResult.Success(Unit)
             }
-            else -> return SemanticResult.Failure("Unknown statement")
         }
     }
 }
