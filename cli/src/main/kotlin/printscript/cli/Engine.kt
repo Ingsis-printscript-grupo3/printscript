@@ -11,6 +11,7 @@ import printscript.parser.result.ParseResult
 import printscript.semantic.SemanticAnalyzer
 import printscript.semantic.SemanticResult
 import printscript.interpreter.output.Output
+import printscript.interpreter.InterpreterError
 import java.io.Reader
 import java.io.StringReader
 
@@ -18,6 +19,8 @@ sealed interface ExecutionResult {
     object Success : ExecutionResult
     data class Failure(val type: String, val message: String) : ExecutionResult
 }
+
+class SemanticException(message: String) : RuntimeException(message)
 
 class Engine(private val output: Output) {
 
@@ -47,7 +50,7 @@ class Engine(private val output: Output) {
                 for (result in semanticResultIterator) {
                     when (result) {
                         is SemanticResult.Success -> yield(result.value)
-                        is SemanticResult.Failure -> throw Exception("Semantic error: ${result.message}")
+                        is SemanticResult.Failure -> throw SemanticException(result.message)
                     }
                 }
             }
@@ -58,8 +61,12 @@ class Engine(private val output: Output) {
             ExecutionResult.Failure("Lexical", "${e.message} (line ${e.start.line})")
         } catch (e: SyntaxError) {
             ExecutionResult.Failure("Syntax", "${e.message} (line ${e.start.line})")
+        } catch (e: SemanticException) {
+            ExecutionResult.Failure("Semantic", e.message ?: "Unknown semantic error")
+        } catch (e: InterpreterError) {
+            ExecutionResult.Failure("Runtime", e.message ?: "Interpreter error")
         } catch (e: Exception) {
-            ExecutionResult.Failure("Semantic", e.message ?: "Unknown error")
+            ExecutionResult.Failure("Internal", e.message ?: "Unknown error")
         }
     }
 }
