@@ -1,5 +1,6 @@
 package printscript.cli
 
+import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
 import printscript.formatter.PrintScriptFormatter
 import printscript.interpreter.output.ConsoleOutput
@@ -58,6 +59,7 @@ fun executePrintScript(code: String) {
     }
 }
 
+//corre lexer y parser y pasa lista de Statements
 private fun parseToAST(code: String) =
     Parser(Lexer(CharStream(java.io.StringReader(code))).tokenize())
         .parse()
@@ -86,17 +88,7 @@ fun formatPrintScript(
     configFile: String?,
 ) {
     val statementList = parseToAST(code)
-    val rules =
-        if (configFile != null) {
-            val configText = File(configFile).readText()
-            if (configFile.endsWith(".yaml") || configFile.endsWith(".yml")) {
-                FormatterRulesLoader.fromYaml(configText)
-            } else {
-                FormatterRulesLoader.fromJson(configText)
-            }
-        } else {
-            printscript.formatter.FormatterRules()
-        }
+    val rules = if (configFile != null) FormatterRulesLoader.fromFile(configFile) else FormatterRules()
 
     val formattedCode = PrintScriptFormatter(rules).format(statementList)
     println(formattedCode)
