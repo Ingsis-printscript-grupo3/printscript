@@ -22,7 +22,7 @@ class PrintScriptFormatterTest {
     fun `formats a variable declaration with an initial value using default rules`() {
         val statements = listOf(VariableDeclaration("x", "number", NumberLiteral(5.0)))
 
-        assertEquals("let x: number = 5.0;\n", format(statements))
+        assertEquals("let x: number = 5;\n", format(statements))
     }
 
     @Test
@@ -36,7 +36,7 @@ class PrintScriptFormatterTest {
     fun `formats an assignment`() {
         val statements = listOf(Assignment("x", NumberLiteral(10.0)))
 
-        assertEquals("x = 10.0;\n", format(statements))
+        assertEquals("x = 10;\n", format(statements))
     }
 
     @Test
@@ -54,11 +54,32 @@ class PrintScriptFormatterTest {
     }
 
     @Test
+    fun `writes whole numbers without decimals`() {
+        val statements = listOf(Assignment("x", NumberLiteral(5.0)))
+
+        assertEquals("x = 5;\n", format(statements))
+    }
+
+    @Test
+    fun `keeps the decimals of a number that has them`() {
+        val statements = listOf(Assignment("x", NumberLiteral(3.5)))
+
+        assertEquals("x = 3.5;\n", format(statements))
+    }
+
+    @Test
+    fun `writes a negative whole number without decimals`() {
+        val statements = listOf(Assignment("x", NumberLiteral(-7.0)))
+
+        assertEquals("x = -7;\n", format(statements))
+    }
+
+    @Test
     fun `formats a binary expression with one space before and after the operator`() {
         val expr = BinaryExpression(Identifier("x"), TokenType.PLUS, NumberLiteral(3.0))
         val statements = listOf(Assignment("y", expr))
 
-        assertEquals("y = x + 3.0;\n", format(statements))
+        assertEquals("y = x + 3;\n", format(statements))
     }
 
     @Test
@@ -75,7 +96,7 @@ class PrintScriptFormatterTest {
             val expr = BinaryExpression(NumberLiteral(1.0), tokenType, NumberLiteral(2.0))
             val statements = listOf(Assignment("y", expr))
 
-            assertEquals("y = 1.0 $symbol 2.0;\n", format(statements))
+            assertEquals("y = 1 $symbol 2;\n", format(statements))
         }
     }
 
@@ -85,6 +106,60 @@ class PrintScriptFormatterTest {
         val statements = listOf(Assignment("y", expr))
 
         assertFailsWith<IllegalStateException> { format(statements) }
+    }
+
+    @Test
+    fun `wraps a sum in parentheses when it is multiplied`() {
+        val sum = BinaryExpression(NumberLiteral(2.0), TokenType.PLUS, NumberLiteral(3.0))
+        val expr = BinaryExpression(sum, TokenType.MULTIPLY, NumberLiteral(4.0))
+        val statements = listOf(Assignment("y", expr))
+
+        assertEquals("y = (2 + 3) * 4;\n", format(statements))
+    }
+
+    @Test
+    fun `does not add parentheses when the product already binds tighter`() {
+        val product = BinaryExpression(NumberLiteral(3.0), TokenType.MULTIPLY, NumberLiteral(4.0))
+        val expr = BinaryExpression(NumberLiteral(2.0), TokenType.PLUS, product)
+        val statements = listOf(Assignment("y", expr))
+
+        assertEquals("y = 2 + 3 * 4;\n", format(statements))
+    }
+
+    @Test
+    fun `wraps a subtraction that sits on the right of another subtraction`() {
+        val inner = BinaryExpression(Identifier("b"), TokenType.MINUS, Identifier("c"))
+        val expr = BinaryExpression(Identifier("a"), TokenType.MINUS, inner)
+        val statements = listOf(Assignment("y", expr))
+
+        assertEquals("y = a - (b - c);\n", format(statements))
+    }
+
+    @Test
+    fun `does not wrap a subtraction that sits on the left of another subtraction`() {
+        val inner = BinaryExpression(Identifier("a"), TokenType.MINUS, Identifier("b"))
+        val expr = BinaryExpression(inner, TokenType.MINUS, Identifier("c"))
+        val statements = listOf(Assignment("y", expr))
+
+        assertEquals("y = a - b - c;\n", format(statements))
+    }
+
+    @Test
+    fun `wraps a division that sits on the right of another division`() {
+        val inner = BinaryExpression(Identifier("b"), TokenType.DIVIDE, Identifier("c"))
+        val expr = BinaryExpression(Identifier("a"), TokenType.DIVIDE, inner)
+        val statements = listOf(Assignment("y", expr))
+
+        assertEquals("y = a / (b / c);\n", format(statements))
+    }
+
+    @Test
+    fun `does not wrap a sum that sits on the right of another sum`() {
+        val inner = BinaryExpression(Identifier("b"), TokenType.PLUS, Identifier("c"))
+        val expr = BinaryExpression(Identifier("a"), TokenType.PLUS, inner)
+        val statements = listOf(Assignment("y", expr))
+
+        assertEquals("y = a + b + c;\n", format(statements))
     }
 
     @Test
@@ -108,7 +183,7 @@ class PrintScriptFormatterTest {
         val statements = listOf(VariableDeclaration("x", "number", NumberLiteral(5.0)))
         val rules = FormatterRules(spaceAroundAssignment = false)
 
-        assertEquals("let x: number=5.0;\n", format(statements, rules))
+        assertEquals("let x: number=5;\n", format(statements, rules))
     }
 
     @Test
@@ -116,7 +191,7 @@ class PrintScriptFormatterTest {
         val statements = listOf(Assignment("x", NumberLiteral(5.0)))
         val rules = FormatterRules(spaceAroundAssignment = false)
 
-        assertEquals("x=5.0;\n", format(statements, rules))
+        assertEquals("x=5;\n", format(statements, rules))
     }
 
     @Test
@@ -128,7 +203,7 @@ class PrintScriptFormatterTest {
             )
         val rules = FormatterRules(lineBreaksBeforePrintln = 0)
 
-        assertEquals("let x: number = 1.0;println(x);\n", format(statements, rules))
+        assertEquals("let x: number = 1;println(x);\n", format(statements, rules))
     }
 
     @Test
@@ -139,7 +214,7 @@ class PrintScriptFormatterTest {
                 PrintCall(Identifier("x")),
             )
 
-        assertEquals("let x: number = 1.0;\nprintln(x);\n", format(statements))
+        assertEquals("let x: number = 1;\nprintln(x);\n", format(statements))
     }
 
     @Test
@@ -151,7 +226,7 @@ class PrintScriptFormatterTest {
             )
         val rules = FormatterRules(lineBreaksBeforePrintln = 2)
 
-        assertEquals("let x: number = 1.0;\n\nprintln(x);\n", format(statements, rules))
+        assertEquals("let x: number = 1;\n\nprintln(x);\n", format(statements, rules))
     }
 
     @Test
@@ -159,7 +234,7 @@ class PrintScriptFormatterTest {
         val statements = listOf(PrintCall(NumberLiteral(1.0)))
         val rules = FormatterRules(lineBreaksBeforePrintln = 2)
 
-        assertEquals("println(1.0);\n", format(statements, rules))
+        assertEquals("println(1);\n", format(statements, rules))
     }
 
     @Test
@@ -179,8 +254,8 @@ class PrintScriptFormatterTest {
             )
 
         val expected =
-            "let x: number = 5.0;\n" +
-                "x = x + 1.0;\n" +
+            "let x: number = 5;\n" +
+                "x = x + 1;\n" +
                 "println(x);\n" +
                 "let greeting: string = \"hello\";\n" +
                 "println(greeting);\n"
