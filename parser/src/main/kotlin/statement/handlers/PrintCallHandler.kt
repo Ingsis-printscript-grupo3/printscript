@@ -2,6 +2,7 @@ package printscript.parser.statement.handlers
 
 import printscript.ast.PrintCall
 import printscript.ast.Statement
+import printscript.common.Position
 import printscript.common.TokenType
 import printscript.parser.expression.ExpressionParser
 import printscript.parser.result.ASTResult
@@ -13,6 +14,8 @@ object PrintCallHandler : StatementHandler {
         stream: TokenStream,
         expressionParser: ExpressionParser,
     ): ASTResult<Statement> {
+        val printlnToken = stream.previous()
+
         val leftParenResult = stream.consume(TokenType.LEFTPAREN, "Expected '('.")
         if (leftParenResult is ASTResult.Failure) return leftParenResult
 
@@ -26,6 +29,6 @@ object PrintCallHandler : StatementHandler {
         val semiResult = stream.consume(TokenType.SEMICOLON, "Expected ';'.")
         if (semiResult is ASTResult.Failure) return semiResult
 
-        return ASTResult.Success(PrintCall(value))
+        return ASTResult.Success(PrintCall(value, printlnToken?.start ?: Position(0, 0)))
     }
 }

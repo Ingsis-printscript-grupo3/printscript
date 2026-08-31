@@ -26,6 +26,6 @@ object AssignmentHandler : StatementHandler {
         val semiResult = stream.consume(TokenType.SEMICOLON, "Expected ';'.")
         if (semiResult is ASTResult.Failure) return semiResult
 
-        return ASTResult.Success(Assignment(nameToken.value, value))
+        return ASTResult.Success(Assignment(nameToken.value, value, nameToken.start))
     }
 }

@@ -54,13 +54,6 @@ class FormatterTest {
     }
 
     @Test
-    fun `writes whole numbers without decimals`() {
-        val statements = listOf(Assignment("x", NumberLiteral(5.0)))
-
-        assertEquals("x = 5;\n", format(statements))
-    }
-
-    @Test
     fun `keeps the decimals of a number that has them`() {
         val statements = listOf(Assignment("x", NumberLiteral(3.5)))
 

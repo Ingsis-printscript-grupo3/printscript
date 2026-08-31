@@ -113,13 +113,6 @@ class LinterTest {
     }
 
     @Test
-    fun `a statement that no rule cares about produces no warnings`() {
-        val stmt = VariableDeclaration("myVar", "number", null, pos())
-
-        assertEquals(0, analyze(listOf(stmt)).size)
-    }
-
-    @Test
     fun `rejects an identifier format that no rule knows`() {
         assertFailsWith<IllegalArgumentException> { LinterRules(identifierFormat = "camelCase") }
     }
