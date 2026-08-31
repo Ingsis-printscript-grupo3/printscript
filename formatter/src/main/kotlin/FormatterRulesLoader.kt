@@ -13,10 +13,9 @@ object FormatterRulesLoader {
 
     fun fromYaml(yaml: String): FormatterRules = yamlMapper.readValue(yaml)
 
-    fun fromFile(path: String): FormatterRules = fromFile(File(path))
-
-    fun fromFile(file: File): FormatterRules {
-        require(file.isFile) { "Config file not found: ${file.path}" }
+    fun fromFile(path: String): FormatterRules {
+        val file = File(path)
+        require(file.isFile) { "Config file not found: $path" }
         val text = file.readText()
         return when (val extension = file.extension.lowercase()) {
             "json" -> fromJson(text)
