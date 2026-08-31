@@ -7,6 +7,10 @@ plugins {
     jacoco
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 detekt {
     config.setFrom("$rootDir/config/detekt/detekt.yml")
     buildUponDefaultConfig = true
