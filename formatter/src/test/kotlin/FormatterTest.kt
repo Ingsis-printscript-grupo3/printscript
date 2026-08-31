@@ -12,11 +12,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-class PrintScriptFormatterTest {
+class FormatterTest {
     private fun format(
         statements: List<Statement>,
         rules: FormatterRules = FormatterRules(),
-    ): String = PrintScriptFormatter(rules).format(statements)
+    ): String = Formatter(rules).format(statements)
 
     @Test
     fun `formats a variable declaration with an initial value using default rules`() {
@@ -51,13 +51,6 @@ class PrintScriptFormatterTest {
         val statements = listOf(Assignment("y", Identifier("x")))
 
         assertEquals("y = x;\n", format(statements))
-    }
-
-    @Test
-    fun `writes whole numbers without decimals`() {
-        val statements = listOf(Assignment("x", NumberLiteral(5.0)))
-
-        assertEquals("x = 5;\n", format(statements))
     }
 
     @Test

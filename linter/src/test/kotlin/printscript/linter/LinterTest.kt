@@ -8,15 +8,17 @@ import printscript.ast.Statement
 import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.common.TokenType
+import printscript.linter.rule.IdentifierFormatRule
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class LinterTest {
     private fun analyze(
         statements: List<Statement>,
         config: LinterRules = LinterRules(),
     ): List<Warning> {
-        return StaticCodeAnalyzer(config).analyze(statements.iterator())
+        return Linter(config).analyze(statements.iterator())
     }
 
     private fun pos() = Position(0, 0)
@@ -84,5 +86,39 @@ class LinterTest {
         val stmt = PrintCall(expr, pos())
         val warnings = analyze(listOf(stmt), LinterRules(printCallArgumentsMustBeLiteralOrIdentifier = false))
         assertEquals(0, warnings.size)
+    }
+
+    @Test
+    fun `the warning points at the position of the statement that caused it`() {
+        val stmt = VariableDeclaration("my_var", "number", null, Position(3, 7))
+
+        val warnings = analyze(listOf(stmt))
+
+        assertEquals(Position(3, 7), warnings[0].position)
+    }
+
+    @Test
+    fun `keeps going after the first warning and returns every one of them`() {
+        val statements =
+            listOf(
+                VariableDeclaration("my_var", "number", null, Position(1, 1)),
+                VariableDeclaration("other_var", "number", null, Position(2, 1)),
+                PrintCall(BinaryExpression(num(1.0), TokenType.PLUS, num(2.0), pos()), Position(3, 1)),
+            )
+
+        val warnings = analyze(statements)
+
+        assertEquals(3, warnings.size)
+        assertEquals(listOf(Position(1, 1), Position(2, 1), Position(3, 1)), warnings.map { it.position })
+    }
+
+    @Test
+    fun `rejects an identifier format that no rule knows`() {
+        assertFailsWith<IllegalArgumentException> { LinterRules(identifierFormat = "camelCase") }
+    }
+
+    @Test
+    fun `rejects an unknown identifier format when the rule is built on its own`() {
+        assertFailsWith<IllegalArgumentException> { IdentifierFormatRule("camelCase") }
     }
 }

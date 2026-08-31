@@ -2,13 +2,14 @@ package printscript.cli
 
 import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
-import printscript.formatter.PrintScriptFormatter
+import printscript.formatter.Formatter
 import printscript.interpreter.output.ConsoleOutput
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
 import printscript.lexer.LexicalError
+import printscript.linter.LinterRules
 import printscript.linter.LinterRulesLoader
-import printscript.linter.StaticCodeAnalyzer
+import printscript.linter.Linter
 import printscript.parser.Parser
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
@@ -90,7 +91,7 @@ fun formatPrintScript(
     val statementList = parseToAST(code)
     val rules = if (configFile != null) FormatterRulesLoader.fromFile(configFile) else FormatterRules()
 
-    val formattedCode = PrintScriptFormatter(rules).format(statementList)
+    val formattedCode = Formatter(rules).format(statementList)
     println(formattedCode)
 }
 
@@ -99,19 +100,9 @@ fun analyzePrintScript(
     configFile: String?,
 ) {
     val statementList = parseToAST(code)
-    val rules =
-        if (configFile != null) {
-            val configText = File(configFile).readText()
-            if (configFile.endsWith(".yaml") || configFile.endsWith(".yml")) {
-                LinterRulesLoader.fromYaml(configText)
-            } else {
-                LinterRulesLoader.fromJson(configText)
-            }
-        } else {
-            printscript.linter.LinterRules()
-        }
+    val rules = if (configFile != null) LinterRulesLoader.fromFile(configFile) else LinterRules()
 
-    val warnings = StaticCodeAnalyzer(rules).analyze(statementList.iterator())
+    val warnings = Linter(rules).analyze(statementList.iterator())
     if (warnings.isEmpty()) {
         println("No linting warnings found.")
     } else {
