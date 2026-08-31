@@ -13,7 +13,6 @@ import printscript.common.TokenType
 class Formatter(
     private val rules: FormatterRules,
 ) : FormatterInterface {
-
     // Recorre el programa y pega cada statement con su separador
     override fun format(statements: List<Statement>): String {
         val builder = StringBuilder()
@@ -38,7 +37,7 @@ class Formatter(
         val colon = "${if (rules.spaceBeforeColon) " " else ""}:${if (rules.spaceAfterColon) " " else ""}"
         val declaration = "let ${stmt.name}$colon${stmt.type}"
 
-        //el valor inicial es opcional
+        // el valor inicial es opcional
         return stmt.value?.let { "$declaration${assignmentOperator()}${formatExpression(it)};" }
             ?: "$declaration;"
     }
@@ -68,8 +67,9 @@ class Formatter(
         isRightOperand: Boolean,
     ): String {
         val text = formatExpression(operand)
-        val needsParentheses = operand is BinaryExpression &&
-            needsParentheses(operand.operator, parentOperator, isRightOperand)
+        val needsParentheses =
+            operand is BinaryExpression &&
+                needsParentheses(operand.operator, parentOperator, isRightOperand)
         return if (needsParentheses) "($text)" else text
     }
 
@@ -97,6 +97,6 @@ class Formatter(
             TokenType.MINUS -> "-"
             TokenType.MULTIPLY -> "*"
             TokenType.DIVIDE -> "/"
-            else -> throw IllegalStateException("Token '$operator' is not a valid binary operator")
+            else -> error("Token '$operator' is not a valid binary operator")
         }
 }
