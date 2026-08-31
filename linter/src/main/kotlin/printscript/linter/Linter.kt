@@ -5,9 +5,9 @@ import printscript.linter.rule.IdentifierFormatRule
 import printscript.linter.rule.LinterRule
 import printscript.linter.rule.PrintCallArgumentRule
 
-class StaticCodeAnalyzer(
+class Linter(
     private val rules: List<LinterRule>,
-) {
+) : LinterInterface {
     constructor(config: LinterRules = LinterRules()) : this(
         buildList {
             add(IdentifierFormatRule(config.identifierFormat))
@@ -17,7 +17,7 @@ class StaticCodeAnalyzer(
         },
     )
 
-    fun analyze(statements: Iterator<Statement>): List<Warning> {
+    override fun analyze(statements: Iterator<Statement>): List<Warning> {
         val warnings = mutableListOf<Warning>()
         while (statements.hasNext()) {
             val statement = statements.next()
