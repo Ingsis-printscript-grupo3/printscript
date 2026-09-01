@@ -54,8 +54,10 @@ class Lexer(
     }
 
     private fun skipWhitespace() {
-        while (!charStream.isAtEnd() && charStream.peek()!!.let { it == ' ' || it == '\t' || it == '\r' || it == '\n' }) {
+        while (!charStream.isAtEnd() && isWhitespace(charStream.peek()!!)) {
             charStream.advance()
         }
     }
+
+    private fun isWhitespace(char: Char): Boolean = char == ' ' || char == '\t' || char == '\r' || char == '\n'
 }
