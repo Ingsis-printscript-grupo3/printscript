@@ -77,7 +77,10 @@ class LinterTest {
         val stmt = PrintCall(expr, pos())
         val warnings = analyze(listOf(stmt))
         assertEquals(1, warnings.size)
-        assertEquals("println can only be called with an identifier or a literal, not an expression", warnings[0].message)
+        assertEquals(
+            "println can only be called with an identifier or a literal, not an expression",
+            warnings[0].message,
+        )
     }
 
     @Test
