@@ -108,4 +108,18 @@ class EndToEndTest {
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Runtime", result.type)
     }
+
+    @Test
+    fun `the semantic error reports the line of the failing statement`() {
+        val code =
+            """
+            let a: number = 1;
+            let b: string = 2;
+            """.trimIndent()
+
+        val (result, _) = runEngine(code)
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Semantic", result.type)
+        assertTrue(result.message.contains("(line 2)"))
+    }
 }

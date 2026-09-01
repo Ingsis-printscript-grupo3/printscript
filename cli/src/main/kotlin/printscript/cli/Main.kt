@@ -1,19 +1,20 @@
 package printscript.cli
 
+import printscript.formatter.Formatter
 import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
-import printscript.formatter.Formatter
 import printscript.interpreter.output.ConsoleOutput
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
 import printscript.lexer.LexicalError
+import printscript.linter.Linter
 import printscript.linter.LinterRules
 import printscript.linter.LinterRulesLoader
-import printscript.linter.Linter
 import printscript.parser.Parser
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
 import printscript.semantic.SemanticAnalyzer
+import printscript.semantic.SemanticError
 import printscript.semantic.SemanticResult
 import java.io.File
 
@@ -43,6 +44,8 @@ fun main(args: Array<String>) {
         println("Error lexico: ${e.message} (linea ${e.start.line})")
     } catch (e: SyntaxError) {
         println("Error de sintaxis: ${e.message} (linea ${e.start.line})")
+    } catch (e: SemanticError) {
+        println("Error semantico: ${e.message} (linea ${e.start.line})")
     } catch (e: Exception) {
         println(e.message)
     }
@@ -60,7 +63,7 @@ fun executePrintScript(code: String) {
     }
 }
 
-//corre lexer y parser y pasa lista de Statements
+// corre lexer y parser y pasa lista de Statements
 private fun parseToAST(code: String) =
     Parser(Lexer(CharStream(java.io.StringReader(code))).tokenize())
         .parse()
@@ -78,7 +81,7 @@ fun validatePrintScript(code: String) {
     val semanticResults = SemanticAnalyzer().analyze(statementList.iterator())
     for (result in semanticResults) {
         if (result is SemanticResult.Failure) {
-            throw Exception(result.message)
+            throw SemanticError(result.message, result.position)
         }
     }
     println("Validation successful.")
