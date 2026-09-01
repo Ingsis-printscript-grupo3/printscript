@@ -4,40 +4,34 @@ import printscript.ast.Assignment
 import printscript.ast.PrintCall
 import printscript.ast.Statement
 import printscript.ast.VariableDeclaration
+import printscript.semantic.plugin.DefaultStatementHandlers
+import printscript.semantic.plugin.StatementHandler
 import printscript.semantic.symbol.SymbolTable
 
+// dispatches over a list of handlers via matches(), same as interpreter (see ExpressionResolver)
 class StatementValidator(
     private val symbolTable: SymbolTable,
-    private val expressionResolver: ExpressionResolver,
+    private val expressionResolver: ExpressionResolverInterface,
+    private val handlers: List<StatementHandler<*>> = DefaultStatementHandlers.list,
 ) {
     fun validate(statement: Statement): SemanticResult<Unit> {
+        statementExhaustivenessWitness(statement)
+
+        val handler =
+            handlers.firstOrNull { it.matches(statement) }
+                ?: throw UnknownStatementError(statement)
+
+        return handler.validate(statement, symbolTable, expressionResolver)
+    }
+
+    // compile-time safety net: see the comment in ExpressionResolver.
+    // what to do when it fails: add the new branch here AND register its StatementHandler
+    // in DefaultStatementHandlers.
+    private fun statementExhaustivenessWitness(statement: Statement) {
         when (statement) {
-            is VariableDeclaration -> {
-                statement.value?.let { value ->
-                    val exprResult = expressionResolver.resolveType(value)
-                    if (exprResult is SemanticResult.Failure) return exprResult
-                    val exprType = (exprResult as SemanticResult.Success).value
-                    if (exprType != statement.type) return SemanticResult.Failure("Incompatible types.")
-                }
-                return symbolTable.define(statement.name, statement.type)
-            }
-            is Assignment -> {
-                val exprResult = expressionResolver.resolveType(statement.value)
-                if (exprResult is SemanticResult.Failure) return exprResult
-                val exprType = (exprResult as SemanticResult.Success).value
-
-                val expectedResult = symbolTable.lookup(statement.name)
-                if (expectedResult is SemanticResult.Failure) return expectedResult
-                val expectedType = (expectedResult as SemanticResult.Success).value
-
-                if (exprType != expectedType) return SemanticResult.Failure("Incompatible types in assignment.")
-                return SemanticResult.Success(Unit)
-            }
-            is PrintCall -> {
-                val exprResult = expressionResolver.resolveType(statement.value)
-                if (exprResult is SemanticResult.Failure) return exprResult
-                return SemanticResult.Success(Unit)
-            }
+            is VariableDeclaration -> {}
+            is Assignment -> {}
+            is PrintCall -> {}
         }
     }
 }

@@ -1,0 +1,5 @@
+let a: string = "Hola desde PrintScript!";
+println(a);
+let b: number = 5;
+let c: number = 10;
+println(b + c);

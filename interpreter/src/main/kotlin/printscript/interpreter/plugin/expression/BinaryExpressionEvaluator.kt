@@ -1,6 +1,5 @@
 package printscript.interpreter.plugin.expression
 import printscript.ast.BinaryExpression
-import printscript.ast.Expression
 import printscript.common.TokenType
 import printscript.interpreter.Environment
 import printscript.interpreter.InterpreterInterface
@@ -13,16 +12,12 @@ import printscript.interpreter.plugin.ExpressionEvaluator
 import printscript.interpreter.textOf
 import printscript.interpreter.typeName
 
-class BinaryExpressionEvaluator : ExpressionEvaluator {
-    override fun matches(expression: Expression) = expression is BinaryExpression
-
-    override fun evaluate(
-        expression: Expression,
+class BinaryExpressionEvaluator : ExpressionEvaluator<BinaryExpression>(BinaryExpression::class.java) {
+    override fun doEvaluate(
+        expression: BinaryExpression,
         env: Environment,
         interpreter: InterpreterInterface,
     ): Value {
-        if (expression !is BinaryExpression) throw UnknownExpressionError(expression)
-
         return applyOperator(
             expression,
             interpreter.evaluate(expression.left),
