@@ -120,6 +120,6 @@ class EndToEndTest {
         val (result, _) = runEngine(code)
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Semantic", result.type)
-        assertTrue(result.message.contains("(line 2)"))
+        assertTrue(result.message.contains("line 2"))
     }
 }

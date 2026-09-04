@@ -1,11 +1,14 @@
 package printscript.cli
 
+import printscript.ast.Statement
+import printscript.common.Position
 import printscript.interpreter.Interpreter
 import printscript.interpreter.InterpreterError
 import printscript.interpreter.output.Output
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
 import printscript.lexer.LexicalError
+import printscript.linter.Warning
 import printscript.parser.Parser
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
@@ -21,28 +24,131 @@ sealed interface ExecutionResult {
     data class Failure(val type: String, val message: String) : ExecutionResult
 }
 
+sealed interface FormatResult {
+    data class Success(val code: String) : FormatResult
+
+    data class Failure(val type: String, val message: String) : FormatResult
+}
+
+sealed interface LintResult {
+    data class Success(val warnings: List<Warning>) : LintResult
+
+    data class Failure(val type: String, val message: String) : LintResult
+}
+
 class Engine(private val output: Output) {
-    fun execute(code: String): ExecutionResult {
-        return execute(StringReader(code))
+    fun execute(
+        code: String,
+        onProgress: (Int) -> Unit = {},
+    ): ExecutionResult {
+        return execute(StringReader(code), onProgress)
     }
 
-    fun execute(reader: Reader): ExecutionResult {
+    fun execute(
+        reader: Reader,
+        onProgress: (Int) -> Unit = {},
+    ): ExecutionResult {
+        return runPipeline(reader, onProgress) { validStatements -> Interpreter(output).interpret(validStatements) }
+    }
+
+    fun validate(
+        code: String,
+        onProgress: (Int) -> Unit = {},
+    ): ExecutionResult {
+        return validate(StringReader(code), onProgress)
+    }
+
+    fun validate(
+        reader: Reader,
+        onProgress: (Int) -> Unit = {},
+    ): ExecutionResult {
+        return runPipeline(reader, onProgress) { validStatements -> validStatements.forEach { } }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    fun format(
+        reader: Reader,
+        onProgress: (Int) -> Unit = {},
+        format: (List<Statement>) -> String,
+    ): FormatResult {
+        return try {
+            FormatResult.Success(format(parseStatements(reader, onProgress)))
+        } catch (e: LexicalError) {
+            FormatResult.Failure("Lexical", "${e.message} ${formatRange(e.start, e.end)}")
+        } catch (e: SyntaxError) {
+            FormatResult.Failure("Syntax", "${e.message} ${formatRange(e.start, e.end)}")
+        } catch (e: Exception) {
+            FormatResult.Failure("Internal", e.message ?: "Unknown error")
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    fun lint(
+        reader: Reader,
+        onProgress: (Int) -> Unit = {},
+        lint: (List<Statement>) -> List<Warning>,
+    ): LintResult {
+        return try {
+            LintResult.Success(lint(parseStatements(reader, onProgress)))
+        } catch (e: LexicalError) {
+            LintResult.Failure("Lexical", "${e.message} ${formatRange(e.start, e.end)}")
+        } catch (e: SyntaxError) {
+            LintResult.Failure("Syntax", "${e.message} ${formatRange(e.start, e.end)}")
+        } catch (e: Exception) {
+            LintResult.Failure("Internal", e.message ?: "Unknown error")
+        }
+    }
+
+    private fun parseStatements(
+        reader: Reader,
+        onProgress: (Int) -> Unit,
+    ): List<Statement> {
+        val lexer = Lexer(CharStream(reader))
+        val parser = Parser(lexer.tokenize())
+        var parsedCount = 0
+        return buildList {
+            for (result in parser.parse()) {
+                when (result) {
+                    is ParseResult.Success -> {
+                        add(result.statement)
+                        onProgress(++parsedCount)
+                    }
+                    is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
+                }
+            }
+        }
+    }
+
+    private fun parseIntoAst(
+        parser: Parser,
+        onProgress: (Int) -> Unit,
+    ): Iterator<Statement> {
+        var parsedCount = 0
+        return iterator {
+            for (result in parser.parse()) {
+                when (result) {
+                    is ParseResult.Success -> {
+                        yield(result.statement)
+                        onProgress(++parsedCount)
+                    }
+                    is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
+                }
+            }
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun runPipeline(
+        reader: Reader,
+        onProgress: (Int) -> Unit,
+        consume: (Iterator<Statement>) -> Unit,
+    ): ExecutionResult {
         return try {
             val lexer = Lexer(CharStream(reader))
             val parser = Parser(lexer.tokenize())
             val semanticAnalyzer = SemanticAnalyzer()
-            val interpreter = Interpreter(output)
 
-            val astIterator =
-                iterator {
-                    for (result in parser.parse()) {
-                        when (result) {
-                            is ParseResult.Success -> yield(result.statement)
-                            is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
-                        }
-                    }
-                }
-
+            val astIterator = parseIntoAst(parser, onProgress)
             val semanticResultIterator = semanticAnalyzer.analyze(astIterator)
 
             val validStatementIterator =
@@ -55,18 +161,23 @@ class Engine(private val output: Output) {
                     }
                 }
 
-            interpreter.interpret(validStatementIterator)
+            consume(validStatementIterator)
             ExecutionResult.Success
         } catch (e: LexicalError) {
-            ExecutionResult.Failure("Lexical", "${e.message} (line ${e.start.line})")
+            ExecutionResult.Failure("Lexical", "${e.message} ${formatRange(e.start, e.end)}")
         } catch (e: SyntaxError) {
-            ExecutionResult.Failure("Syntax", "${e.message} (line ${e.start.line})")
+            ExecutionResult.Failure("Syntax", "${e.message} ${formatRange(e.start, e.end)}")
         } catch (e: SemanticError) {
-            ExecutionResult.Failure("Semantic", "${e.message} (line ${e.start.line})")
+            ExecutionResult.Failure("Semantic", "${e.message} ${formatRange(e.start, e.end)}")
         } catch (e: InterpreterError) {
             ExecutionResult.Failure("Runtime", e.message ?: "Interpreter error")
         } catch (e: Exception) {
             ExecutionResult.Failure("Internal", e.message ?: "Unknown error")
         }
     }
+
+    private fun formatRange(
+        start: Position,
+        end: Position,
+    ): String = "(from line ${start.line}, column ${start.column} to line ${end.line}, column ${end.column})"
 }
