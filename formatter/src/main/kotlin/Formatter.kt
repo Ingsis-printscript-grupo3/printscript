@@ -1,3 +1,5 @@
+package printscript.formatter
+
 import printscript.ast.Statement
 
 interface Formatter {

@@ -1,3 +1,5 @@
+package printscript.formatter
+
 import printscript.ast.Assignment
 import printscript.ast.BinaryExpression
 import printscript.ast.Identifier

@@ -16,3 +16,7 @@ dependencies {
 tasks.withType<Test>().configureEach{
     useJUnitPlatform()
 }
+
+kotlin {
+    jvmToolchain(21)
+}
