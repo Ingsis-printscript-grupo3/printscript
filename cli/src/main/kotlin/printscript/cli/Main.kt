@@ -7,11 +7,13 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
+import printscript.formatter.Formatter
 import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
-import printscript.formatter.PrintScriptFormatter
 import printscript.interpreter.output.ConsoleOutput
-import java.io.File
+import printscript.linter.Linter
+import printscript.linter.LinterRules
+import printscript.linter.LinterRulesLoader
 
 private const val SUPPORTED_VERSION = "1.0"
 
@@ -60,25 +62,37 @@ class ValidateCommand : CliktCommand(
 
 class AnalyzeCommand : CliktCommand(
     name = "analyze",
-    help =
-        "Statically analyze a .prs file. Currently runs the same lexical/syntax/semantic " +
-            "checks as 'validate' — rule-based static analysis (naming conventions, etc.) is not implemented yet.",
+    help = "Statically analyze a .prs file for style and best-practice violations",
 ) {
     private val file by argument(help = "Path to the .prs file to analyze")
         .file(mustExist = true, canBeDir = false, mustBeReadable = true)
-    private val config by option("--config", help = "Path to a rules config file (reserved for future analysis rules)")
+    private val config by option("--config", help = "Path to a JSON or YAML file with linter rules")
         .file(mustExist = true, canBeDir = false, mustBeReadable = true)
     private val version by versionOption()
 
     override fun run() {
         requireSupportedVersion(version)
+        val rules = config?.let { LinterRulesLoader.fromFile(it.path) } ?: LinterRules()
         val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress()
-        val result = engine.validate(file.reader(), onProgress = progress::report)
+
+        val result =
+            engine.lint(file.reader(), onProgress = progress::report) { statements ->
+                Linter(rules).analyze(statements.iterator())
+            }
         progress.finish()
+
         when (result) {
-            is ExecutionResult.Success -> echo("${file.path}: no errors found")
-            is ExecutionResult.Failure -> fail(result.type, result.message)
+            is LintResult.Success -> {
+                if (result.warnings.isEmpty()) {
+                    echo("${file.path}: no warnings found")
+                } else {
+                    result.warnings.forEach { warning ->
+                        echo("Warning at [${warning.position.line}:${warning.position.column}]: ${warning.message}")
+                    }
+                }
+            }
+            is LintResult.Failure -> fail(result.type, result.message)
         }
     }
 }
@@ -92,13 +106,13 @@ class FormatCommand : CliktCommand(name = "format", help = "Format a .prs file a
 
     override fun run() {
         requireSupportedVersion(version)
-        val rules = config?.let(::loadRules) ?: FormatterRules()
+        val rules = config?.let { FormatterRulesLoader.fromFile(it.path) } ?: FormatterRules()
         val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress()
 
         val result =
             engine.format(file.reader(), onProgress = progress::report) { statements ->
-                PrintScriptFormatter(rules).format(statements)
+                Formatter(rules).format(statements)
             }
         progress.finish()
 
@@ -107,18 +121,9 @@ class FormatCommand : CliktCommand(name = "format", help = "Format a .prs file a
             is FormatResult.Failure -> fail(result.type, result.message)
         }
     }
-
-    private fun loadRules(configFile: File): FormatterRules {
-        val isYaml = configFile.extension.equals("yaml", ignoreCase = true) || configFile.extension.equals("yml", ignoreCase = true)
-        return if (isYaml) {
-            FormatterRulesLoader.fromYaml(configFile.readText())
-        } else {
-            FormatterRulesLoader.fromJson(configFile.readText())
-        }
-    }
 }
 
-/** Reports parsing progress to stderr as statements are parsed, so it never mixes with a command's own stdout output. */
+// Reports progress to stderr as statements are parsed, so it never mixes with a command's own stdout output.
 private class ParsingProgress {
     private var shown = false
 

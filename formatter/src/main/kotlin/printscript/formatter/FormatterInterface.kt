@@ -1,7 +1,6 @@
 package printscript.formatter
-
 import printscript.ast.Statement
 
-interface Formatter {
+interface FormatterInterface {
     fun format(statements: List<Statement>): String
 }

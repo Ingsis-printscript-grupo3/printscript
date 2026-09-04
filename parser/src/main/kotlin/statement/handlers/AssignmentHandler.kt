@@ -14,7 +14,9 @@ object AssignmentHandler : StatementHandler {
         stream: TokenStream,
         expressionParser: ExpressionParser,
     ): ASTResult<Statement> {
-        val nameToken = stream.previous() ?: return ASTResult.Failure("Expected identifier", Position(0, 0), Position(0, 0))
+        val nameToken =
+            stream.previous()
+                ?: return ASTResult.Failure("Expected identifier", Position(0, 0), Position(0, 0))
 
         val assignResult = stream.consume(TokenType.ASSIGN, "Expected '='.")
         if (assignResult is ASTResult.Failure) return assignResult
@@ -26,6 +28,6 @@ object AssignmentHandler : StatementHandler {
         val semiResult = stream.consume(TokenType.SEMICOLON, "Expected ';'.")
         if (semiResult is ASTResult.Failure) return semiResult
 
-        return ASTResult.Success(Assignment(nameToken.value, value))
+        return ASTResult.Success(Assignment(nameToken.value, value, nameToken.start))
     }
 }

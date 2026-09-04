@@ -14,7 +14,7 @@ class SemanticAnalyzer {
                 val result = statementValidator.validate(statement)
                 when (result) {
                     is SemanticResult.Failure -> {
-                        yield(SemanticResult.Failure(result.message))
+                        yield(SemanticResult.Failure(result.message, statement.position))
                         break
                     }
                     is SemanticResult.Success -> {

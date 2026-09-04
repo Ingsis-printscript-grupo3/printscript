@@ -14,21 +14,21 @@ class EndToEndTest {
     }
 
     @Test
-    fun `declara una variable y la imprime`() {
+    fun `declares a variable and prints it`() {
         val (result, output) =
             runEngine(
                 """
-                let saludo: string = "hola";
-                println(saludo);
+                let greeting: string = "hello";
+                println(greeting);
                 """.trimIndent(),
             )
 
         assertTrue(result is ExecutionResult.Success)
-        assertEquals(listOf("hola"), output)
+        assertEquals(listOf("hello"), output)
     }
 
     @Test
-    fun `usa una variable declarada dentro de una operacion`() {
+    fun `uses a declared variable inside an operation`() {
         val (result, output) =
             runEngine(
                 """
@@ -43,14 +43,14 @@ class EndToEndTest {
     }
 
     @Test
-    fun `reasigna una variable y el print refleja el valor nuevo`() {
+    fun `reassigns a variable and the print reflects the new value`() {
         val (result, output) =
             runEngine(
                 """
-                let contador: number = 1;
-                println(contador);
-                contador = contador + 9;
-                println(contador);
+                let counter: number = 1;
+                println(counter);
+                counter = counter + 9;
+                println(counter);
                 """.trimIndent(),
             )
 
@@ -87,12 +87,39 @@ class EndToEndTest {
     fun `error 3 - semantic error with incompatible types`() {
         val code =
             """
-            let a: number = "hola";
+            let a: number = "hello";
             """.trimIndent()
 
         val (result, _) = runEngine(code)
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Semantic", result.type)
         assertTrue(result.message.contains("Incompatible types"))
+    }
+
+    @Test
+    fun `error 4 - runtime error when using an uninitialized variable`() {
+        val code =
+            """
+            let x: number;
+            println(x);
+            """.trimIndent()
+
+        val (result, _) = runEngine(code)
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Runtime", result.type)
+    }
+
+    @Test
+    fun `the semantic error reports the line of the failing statement`() {
+        val code =
+            """
+            let a: number = 1;
+            let b: string = 2;
+            """.trimIndent()
+
+        val (result, _) = runEngine(code)
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Semantic", result.type)
+        assertTrue(result.message.contains("line 2"))
     }
 }

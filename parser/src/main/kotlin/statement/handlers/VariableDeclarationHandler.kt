@@ -41,6 +41,8 @@ object VariableDeclarationHandler : StatementHandler {
         val semiResult = stream.consume(TokenType.SEMICOLON, "Expected ';'.")
         if (semiResult is ASTResult.Failure) return semiResult
 
-        return ASTResult.Success(VariableDeclaration(nameToken.value, typeToken?.value ?: "", initializer))
+        return ASTResult.Success(
+            VariableDeclaration(nameToken.value, typeToken?.value ?: "", initializer, nameToken.start),
+        )
     }
 }

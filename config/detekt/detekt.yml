@@ -1,0 +1,10 @@
+complexity:
+  LongMethod:
+    active: true
+    threshold: 40
+  TooManyFunctions:
+    active: false
+
+style:
+  MagicNumber:
+    ignoreNumbers: ['-1', '0', '1', '2']

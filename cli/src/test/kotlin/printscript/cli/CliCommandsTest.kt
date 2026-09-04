@@ -77,13 +77,47 @@ class CliCommandsTest {
     }
 
     @Test
-    fun `analyze runs the same checks as validate`() {
+    fun `analyze reports no warnings for a well-formed file`() {
         val file = prsFile("let saludo: string = \"hola\";\nprintln(saludo);\n")
 
         val result = AnalyzeCommand().test(listOf(file.path))
 
         assertEquals(0, result.statusCode)
-        assertTrue(result.stdout.contains("no errors found"))
+        assertTrue(result.stdout.contains("no warnings found"))
+    }
+
+    @Test
+    fun `analyze reports a warning for a non camelCase identifier`() {
+        val file = prsFile("let saludo_final: string = \"hola\";\n")
+
+        val result = AnalyzeCommand().test(listOf(file.path))
+
+        assertEquals(0, result.statusCode)
+        assertTrue(result.stdout.contains("Warning"))
+        assertTrue(result.stdout.contains("saludo_final"))
+    }
+
+    @Test
+    fun `analyze reports a warning when println receives an expression`() {
+        val file = prsFile("let a: number = 1;\nlet b: number = 2;\nprintln(a + b);\n")
+
+        val result = AnalyzeCommand().test(listOf(file.path))
+
+        assertEquals(0, result.statusCode)
+        assertTrue(result.stdout.contains("Warning"))
+    }
+
+    @Test
+    fun `analyze applies rules loaded from a JSON --config file`() {
+        val file = prsFile("let saludo_final: string = \"hola\";\n")
+        val config = File.createTempFile("printscript-cli-test-linter-rules", ".json")
+        tempFiles += config
+        config.writeText("""{"identifierFormat": "snake case"}""")
+
+        val result = AnalyzeCommand().test(listOf(file.path, "--config", config.path))
+
+        assertEquals(0, result.statusCode)
+        assertTrue(result.stdout.contains("no warnings found"))
     }
 
     @Test

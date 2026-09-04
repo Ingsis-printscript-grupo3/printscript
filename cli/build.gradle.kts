@@ -10,5 +10,6 @@ dependencies {
     implementation(project(":ast"))
     implementation(project(":common"))
     implementation(project(":formatter"))
+    implementation(project(":linter"))
     implementation("com.github.ajalt.clikt:clikt:4.4.0")
 }

@@ -1,5 +1,4 @@
 package printscript.formatter
-
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

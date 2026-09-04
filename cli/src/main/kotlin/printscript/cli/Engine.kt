@@ -8,10 +8,12 @@ import printscript.interpreter.output.Output
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
 import printscript.lexer.LexicalError
+import printscript.linter.Warning
 import printscript.parser.Parser
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
 import printscript.semantic.SemanticAnalyzer
+import printscript.semantic.SemanticError
 import printscript.semantic.SemanticResult
 import java.io.Reader
 import java.io.StringReader
@@ -28,7 +30,11 @@ sealed interface FormatResult {
     data class Failure(val type: String, val message: String) : FormatResult
 }
 
-class SemanticException(message: String) : RuntimeException(message)
+sealed interface LintResult {
+    data class Success(val warnings: List<Warning>) : LintResult
+
+    data class Failure(val type: String, val message: String) : LintResult
+}
 
 class Engine(private val output: Output) {
     fun execute(
@@ -59,6 +65,7 @@ class Engine(private val output: Output) {
         return runPipeline(reader, onProgress) { validStatements -> validStatements.forEach { } }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     fun format(
         reader: Reader,
         onProgress: (Int) -> Unit = {},
@@ -72,6 +79,23 @@ class Engine(private val output: Output) {
             FormatResult.Failure("Syntax", "${e.message} ${formatRange(e.start, e.end)}")
         } catch (e: Exception) {
             FormatResult.Failure("Internal", e.message ?: "Unknown error")
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    fun lint(
+        reader: Reader,
+        onProgress: (Int) -> Unit = {},
+        lint: (List<Statement>) -> List<Warning>,
+    ): LintResult {
+        return try {
+            LintResult.Success(lint(parseStatements(reader, onProgress)))
+        } catch (e: LexicalError) {
+            LintResult.Failure("Lexical", "${e.message} ${formatRange(e.start, e.end)}")
+        } catch (e: SyntaxError) {
+            LintResult.Failure("Syntax", "${e.message} ${formatRange(e.start, e.end)}")
+        } catch (e: Exception) {
+            LintResult.Failure("Internal", e.message ?: "Unknown error")
         }
     }
 
@@ -95,6 +119,25 @@ class Engine(private val output: Output) {
         }
     }
 
+    private fun parseIntoAst(
+        parser: Parser,
+        onProgress: (Int) -> Unit,
+    ): Iterator<Statement> {
+        var parsedCount = 0
+        return iterator {
+            for (result in parser.parse()) {
+                when (result) {
+                    is ParseResult.Success -> {
+                        yield(result.statement)
+                        onProgress(++parsedCount)
+                    }
+                    is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
+                }
+            }
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
     private fun runPipeline(
         reader: Reader,
         onProgress: (Int) -> Unit,
@@ -105,20 +148,7 @@ class Engine(private val output: Output) {
             val parser = Parser(lexer.tokenize())
             val semanticAnalyzer = SemanticAnalyzer()
 
-            var parsedCount = 0
-            val astIterator =
-                iterator {
-                    for (result in parser.parse()) {
-                        when (result) {
-                            is ParseResult.Success -> {
-                                yield(result.statement)
-                                onProgress(++parsedCount)
-                            }
-                            is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
-                        }
-                    }
-                }
-
+            val astIterator = parseIntoAst(parser, onProgress)
             val semanticResultIterator = semanticAnalyzer.analyze(astIterator)
 
             val validStatementIterator =
@@ -126,7 +156,7 @@ class Engine(private val output: Output) {
                     for (result in semanticResultIterator) {
                         when (result) {
                             is SemanticResult.Success -> yield(result.value)
-                            is SemanticResult.Failure -> throw SemanticException(result.message)
+                            is SemanticResult.Failure -> throw SemanticError(result.message, result.position)
                         }
                     }
                 }
@@ -137,8 +167,8 @@ class Engine(private val output: Output) {
             ExecutionResult.Failure("Lexical", "${e.message} ${formatRange(e.start, e.end)}")
         } catch (e: SyntaxError) {
             ExecutionResult.Failure("Syntax", "${e.message} ${formatRange(e.start, e.end)}")
-        } catch (e: SemanticException) {
-            ExecutionResult.Failure("Semantic", e.message ?: "Unknown semantic error")
+        } catch (e: SemanticError) {
+            ExecutionResult.Failure("Semantic", "${e.message} ${formatRange(e.start, e.end)}")
         } catch (e: InterpreterError) {
             ExecutionResult.Failure("Runtime", e.message ?: "Interpreter error")
         } catch (e: Exception) {
