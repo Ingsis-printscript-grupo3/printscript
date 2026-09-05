@@ -18,6 +18,9 @@ import printscript.semantic.SemanticError
 import printscript.semantic.SemanticResult
 import java.io.File
 
+private const val CONFIG_FILE_ARG_INDEX = 3
+
+@Suppress("TooGenericExceptionCaught")
 fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Usage: <Operation> <FilePath> [<Version>] [<ConfigFile>]")
@@ -27,8 +30,7 @@ fun main(args: Array<String>) {
 
     val operation = args[0]
     val filePath = args.getOrNull(1) ?: return println("Error: File path is required.")
-    val version = args.getOrNull(2) ?: "1.0"
-    val configFile = args.getOrNull(3)
+    val configFile = args.getOrNull(CONFIG_FILE_ARG_INDEX)
 
     val code = File(filePath).readText()
 

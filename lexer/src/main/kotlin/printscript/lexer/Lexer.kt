@@ -12,7 +12,8 @@ class Lexer(
     private val charStream: CharStream,
     private val readers: List<TokenReader>,
 ) : LexerInterface {
-    // constructor con los readers de PrintScript para q los tests y el CLI puedan seguir creando el Lexer con un solo argumento
+    // constructor con los readers de PrintScript para q los tests y el CLI puedan
+    // seguir creando el Lexer con un solo argumento
     constructor(charStream: CharStream) : this(
         charStream,
         listOf(

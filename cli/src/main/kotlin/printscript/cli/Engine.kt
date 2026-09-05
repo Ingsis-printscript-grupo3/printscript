@@ -26,6 +26,7 @@ class Engine(private val output: Output) {
         return execute(StringReader(code))
     }
 
+    @Suppress("TooGenericExceptionCaught")
     fun execute(reader: Reader): ExecutionResult {
         return try {
             val lexer = Lexer(CharStream(reader))
