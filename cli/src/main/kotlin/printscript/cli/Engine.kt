@@ -64,7 +64,6 @@ class Engine(private val output: Output) {
     ): ExecutionResult {
         return runPipeline(reader, onProgress) { validStatements -> validStatements.forEach { } }
     }
-
     @Suppress("TooGenericExceptionCaught")
     fun format(
         reader: Reader,
