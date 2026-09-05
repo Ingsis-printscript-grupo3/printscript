@@ -1,118 +1,166 @@
 package printscript.cli
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.ProgramResult
+import com.github.ajalt.clikt.core.subcommands
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.file
 import printscript.formatter.Formatter
 import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
 import printscript.interpreter.output.ConsoleOutput
-import printscript.lexer.CharStream
-import printscript.lexer.Lexer
-import printscript.lexer.LexicalError
 import printscript.linter.Linter
 import printscript.linter.LinterRules
 import printscript.linter.LinterRulesLoader
-import printscript.parser.Parser
-import printscript.parser.SyntaxError
-import printscript.parser.result.ParseResult
-import printscript.semantic.SemanticAnalyzer
-import printscript.semantic.SemanticError
-import printscript.semantic.SemanticResult
-import java.io.File
 
-private const val CONFIG_FILE_ARG_INDEX = 3
+private const val SUPPORTED_VERSION = "1.0"
 
-@Suppress("TooGenericExceptionCaught")
-fun main(args: Array<String>) {
-    if (args.isEmpty()) {
-        println("Usage: <Operation> <FilePath> [<Version>] [<ConfigFile>]")
-        println("Operations: Validation, Execution, Formatting, Analyzing")
-        return
-    }
-
-    val operation = args[0]
-    val filePath = args.getOrNull(1) ?: return println("Error: File path is required.")
-    val configFile = args.getOrNull(CONFIG_FILE_ARG_INDEX)
-
-    val code = File(filePath).readText()
-
-    try {
-        when (operation) {
-            "Validation" -> validatePrintScript(code)
-            "Execution" -> executePrintScript(code)
-            "Formatting" -> formatPrintScript(code, configFile)
-            "Analyzing" -> analyzePrintScript(code, configFile)
-            else -> println("Unknown operation: $operation")
-        }
-    } catch (e: LexicalError) {
-        println("Error lexico: ${e.message} (linea ${e.start.line})")
-    } catch (e: SyntaxError) {
-        println("Error de sintaxis: ${e.message} (linea ${e.start.line})")
-    } catch (e: SemanticError) {
-        println("Error semantico: ${e.message} (linea ${e.start.line})")
-    } catch (e: Exception) {
-        println(e.message)
-    }
+class PrintScriptCli : CliktCommand(name = "printscript") {
+    override fun run() = Unit
 }
 
-fun executePrintScript(code: String) {
-    val engine = Engine(output = ConsoleOutput())
-    when (val result = engine.execute(code)) {
-        is ExecutionResult.Success -> {
-            // Execution finished successfully, outputs are handled by the callback
-        }
-        is ExecutionResult.Failure -> {
-            println("Error ${result.type}: ${result.message}")
+class ExecuteCommand : CliktCommand(name = "execute", help = "Run a .prs file") {
+    private val file by argument(help = "Path to the .prs file to execute")
+        .file(mustExist = true, canBeDir = false, mustBeReadable = true)
+    private val version by versionOption()
+
+    override fun run() {
+        requireSupportedVersion(version)
+        val engine = Engine(output = ConsoleOutput())
+        val progress = ParsingProgress()
+        val result = engine.execute(file.reader(), onProgress = progress::report)
+        progress.finish()
+        when (result) {
+            is ExecutionResult.Success -> Unit
+            is ExecutionResult.Failure -> fail(result.type, result.message)
         }
     }
 }
 
-// corre lexer y parser y pasa lista de Statements
-private fun parseToAST(code: String) =
-    Parser(Lexer(CharStream(java.io.StringReader(code))).tokenize())
-        .parse()
-        .asSequence()
-        .map { result ->
-            when (result) {
-                is ParseResult.Success -> result.statement
-                is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
+class ValidateCommand : CliktCommand(
+    name = "validate",
+    help = "Check a .prs file for lexical, syntax and semantic errors without running it",
+) {
+    private val file by argument(help = "Path to the .prs file to validate")
+        .file(mustExist = true, canBeDir = false, mustBeReadable = true)
+    private val version by versionOption()
+
+    override fun run() {
+        requireSupportedVersion(version)
+        val engine = Engine(output = ConsoleOutput())
+        val progress = ParsingProgress()
+        val result = engine.validate(file.reader(), onProgress = progress::report)
+        progress.finish()
+        when (result) {
+            is ExecutionResult.Success -> echo("${file.path}: no errors found")
+            is ExecutionResult.Failure -> fail(result.type, result.message)
+        }
+    }
+}
+
+class AnalyzeCommand : CliktCommand(
+    name = "analyze",
+    help = "Statically analyze a .prs file for style and best-practice violations",
+) {
+    private val file by argument(help = "Path to the .prs file to analyze")
+        .file(mustExist = true, canBeDir = false, mustBeReadable = true)
+    private val config by option("--config", help = "Path to a JSON or YAML file with linter rules")
+        .file(mustExist = true, canBeDir = false, mustBeReadable = true)
+    private val version by versionOption()
+
+    override fun run() {
+        requireSupportedVersion(version)
+        val rules = config?.let { LinterRulesLoader.fromFile(it.path) } ?: LinterRules()
+        val engine = Engine(output = ConsoleOutput())
+        val progress = ParsingProgress()
+
+        val result =
+            engine.lint(file.reader(), onProgress = progress::report) { statements ->
+                Linter(rules).analyze(statements.iterator())
             }
-        }
-        .toList()
+        progress.finish()
 
-fun validatePrintScript(code: String) {
-    val statementList = parseToAST(code)
-    val semanticResults = SemanticAnalyzer().analyze(statementList.iterator())
-    for (result in semanticResults) {
-        if (result is SemanticResult.Failure) {
-            throw SemanticError(result.message, result.position)
-        }
-    }
-    println("Validation successful.")
-}
-
-fun formatPrintScript(
-    code: String,
-    configFile: String?,
-) {
-    val statementList = parseToAST(code)
-    val rules = if (configFile != null) FormatterRulesLoader.fromFile(configFile) else FormatterRules()
-
-    val formattedCode = Formatter(rules).format(statementList)
-    println(formattedCode)
-}
-
-fun analyzePrintScript(
-    code: String,
-    configFile: String?,
-) {
-    val statementList = parseToAST(code)
-    val rules = if (configFile != null) LinterRulesLoader.fromFile(configFile) else LinterRules()
-
-    val warnings = Linter(rules).analyze(statementList.iterator())
-    if (warnings.isEmpty()) {
-        println("No linting warnings found.")
-    } else {
-        warnings.forEach { w ->
-            println("Warning at [${w.position.line}:${w.position.column}]: ${w.message}")
+        when (result) {
+            is LintResult.Success -> {
+                if (result.warnings.isEmpty()) {
+                    echo("${file.path}: no warnings found")
+                } else {
+                    result.warnings.forEach { warning ->
+                        echo("Warning at [${warning.position.line}:${warning.position.column}]: ${warning.message}")
+                    }
+                }
+            }
+            is LintResult.Failure -> fail(result.type, result.message)
         }
     }
 }
+
+class FormatCommand : CliktCommand(name = "format", help = "Format a .prs file and print the result") {
+    private val file by argument(help = "Path to the .prs file to format")
+        .file(mustExist = true, canBeDir = false, mustBeReadable = true)
+    private val config by option("--config", help = "Path to a JSON or YAML file with formatting rules")
+        .file(mustExist = true, canBeDir = false, mustBeReadable = true)
+    private val version by versionOption()
+
+    override fun run() {
+        requireSupportedVersion(version)
+        val rules = config?.let { FormatterRulesLoader.fromFile(it.path) } ?: FormatterRules()
+        val engine = Engine(output = ConsoleOutput())
+        val progress = ParsingProgress()
+
+        val result =
+            engine.format(file.reader(), onProgress = progress::report) { statements ->
+                Formatter(rules).format(statements)
+            }
+        progress.finish()
+
+        when (result) {
+            is FormatResult.Success -> echo(result.code, trailingNewline = false)
+            is FormatResult.Failure -> fail(result.type, result.message)
+        }
+    }
+}
+
+// Reports progress to stderr as statements are parsed, so it never mixes with a command's own stdout output.
+private class ParsingProgress {
+    private var shown = false
+
+    fun report(parsedStatements: Int) {
+        shown = true
+        System.err.print("\rParsing... $parsedStatements statement(s) parsed")
+    }
+
+    fun finish() {
+        if (shown) System.err.println()
+    }
+}
+
+private fun CliktCommand.versionOption() =
+    option(
+        "--version",
+        help = "Version of the PrintScript language to use. Only \"$SUPPORTED_VERSION\" is supported for now.",
+    ).default(SUPPORTED_VERSION)
+
+private fun CliktCommand.requireSupportedVersion(version: String) {
+    if (version != SUPPORTED_VERSION) {
+        fail(
+            "UnsupportedVersion",
+            "PrintScript version '$version' is not supported. Only '$SUPPORTED_VERSION' is supported for now.",
+        )
+    }
+}
+
+private fun CliktCommand.fail(
+    type: String,
+    message: String,
+): Nothing {
+    echo("Error $type: $message", err = true)
+    throw ProgramResult(1)
+}
+
+fun main(args: Array<String>) =
+    PrintScriptCli()
+        .subcommands(ValidateCommand(), ExecuteCommand(), FormatCommand(), AnalyzeCommand())
+        .main(args)
