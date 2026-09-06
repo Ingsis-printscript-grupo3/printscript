@@ -3,8 +3,12 @@ package printscript.ast
 import printscript.common.Position
 import printscript.common.TokenType
 
-sealed interface Expression {
+interface PositionedNode {
     val position: Position
+}
+
+sealed interface Expression : PositionedNode {
+    override val position: Position
 }
 
 data class BinaryExpression(
@@ -20,8 +24,8 @@ data class StringLiteral(val value: String, override val position: Position = Po
 
 data class Identifier(val name: String, override val position: Position = Position(0, 0)) : Expression
 
-sealed interface Statement {
-    val position: Position
+sealed interface Statement : PositionedNode {
+    override val position: Position
 }
 
 data class VariableDeclaration(

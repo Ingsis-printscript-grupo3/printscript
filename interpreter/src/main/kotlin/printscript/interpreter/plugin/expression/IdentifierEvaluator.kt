@@ -2,22 +2,20 @@ package printscript.interpreter.plugin.expression
 
 import printscript.ast.Expression
 import printscript.ast.Identifier
-import printscript.interpreter.Environment
-import printscript.interpreter.InterpreterInterface
+import printscript.ast.registry.Handler
 import printscript.interpreter.UnknownExpressionError
 import printscript.interpreter.Value
-import printscript.interpreter.plugin.ExpressionEvaluator
+import printscript.interpreter.plugin.InterpreterContext
 
-class IdentifierEvaluator : ExpressionEvaluator {
-    override fun matches(expression: Expression) = expression is Identifier
+class IdentifierEvaluator : Handler<Expression, InterpreterContext, Value> {
+    override fun applies(node: Expression) = node is Identifier
 
-    override fun evaluate(
-        expression: Expression,
-        env: Environment,
-        interpreter: InterpreterInterface,
+    override fun handle(
+        node: Expression,
+        ctx: InterpreterContext,
     ): Value {
-        if (expression !is Identifier) throw UnknownExpressionError(expression)
+        if (node !is Identifier) throw UnknownExpressionError(node)
 
-        return env.lookup(expression.name)
+        return ctx.env.lookup(node.name)
     }
 }
