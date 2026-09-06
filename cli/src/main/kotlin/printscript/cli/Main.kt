@@ -7,6 +7,7 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
+import printscript.common.LanguageVersion
 import printscript.formatter.Formatter
 import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
@@ -15,7 +16,8 @@ import printscript.linter.Linter
 import printscript.linter.LinterRules
 import printscript.linter.LinterRulesLoader
 
-private const val SUPPORTED_VERSION = "1.0"
+private val SUPPORTED_VERSIONS = LanguageVersion.entries.joinToString(", ") { it.label }
+private const val DEFAULT_VERSION = "1.0"
 
 class PrintScriptCli : CliktCommand(name = "printscript") {
     override fun run() = Unit
@@ -140,16 +142,17 @@ private class ParsingProgress {
 private fun CliktCommand.versionOption() =
     option(
         "--version",
-        help = "Version of the PrintScript language to use. Only \"$SUPPORTED_VERSION\" is supported for now.",
-    ).default(SUPPORTED_VERSION)
+        help = "Version of the PrintScript language to use. Supported: $SUPPORTED_VERSIONS.",
+    ).default(DEFAULT_VERSION)
 
 private fun CliktCommand.requireSupportedVersion(version: String) {
-    if (version != SUPPORTED_VERSION) {
-        fail(
-            "UnsupportedVersion",
-            "PrintScript version '$version' is not supported. Only '$SUPPORTED_VERSION' is supported for now.",
-        )
-    }
+    runCatching { LanguageVersion.parse(version) }
+        .onFailure {
+            fail(
+                "UnsupportedVersion",
+                "PrintScript version '$version' is not supported. Supported: $SUPPORTED_VERSIONS.",
+            )
+        }
 }
 
 private fun CliktCommand.fail(
