@@ -1,36 +1,26 @@
 package printscript.semantic
 
-import printscript.ast.BinaryExpression
 import printscript.ast.Expression
-import printscript.ast.Identifier
-import printscript.ast.NumberLiteral
-import printscript.ast.StringLiteral
+import printscript.ast.registry.Registry
+import printscript.semantic.handler.expression.BinaryExpressionHandler
+import printscript.semantic.handler.expression.IdentifierHandler
+import printscript.semantic.handler.expression.NumberLiteralHandler
+import printscript.semantic.handler.expression.StringLiteralHandler
 import printscript.semantic.symbol.SymbolTable
 
-class ExpressionResolver(private val symbolTable: SymbolTable) {
-    fun resolveType(expression: Expression): SemanticResult<String> {
-        return when (expression) {
-            is NumberLiteral -> SemanticResult.Success("number")
-            is StringLiteral -> SemanticResult.Success("string")
-            is Identifier -> symbolTable.lookup(expression.name)
-            is BinaryExpression -> {
-                val leftResult = resolveType(expression.left)
-                val rightResult = resolveType(expression.right)
-
-                if (leftResult is SemanticResult.Failure) return leftResult
-                if (rightResult is SemanticResult.Failure) return rightResult
-
-                val left = (leftResult as SemanticResult.Success).value
-                val right = (rightResult as SemanticResult.Success).value
-
-                if (expression.operator == printscript.common.TokenType.PLUS) {
-                    if (left == "number" && right == "number") return SemanticResult.Success("number")
-                    return SemanticResult.Success("string")
-                }
-
-                if (left == "number" && right == "number") return SemanticResult.Success("number")
-                SemanticResult.Failure("Semantic Error: Incompatible types in operation.")
-            }
-        }
-    }
+class ExpressionResolver(
+    val symbolTable: SymbolTable,
+    private val registry: Registry<Expression, ExpressionResolver, SemanticResult<String>> =
+        Registry(
+            listOf(
+                NumberLiteralHandler(),
+                StringLiteralHandler(),
+                IdentifierHandler(),
+                BinaryExpressionHandler(),
+            ),
+        ),
+) {
+    fun resolveType(expression: Expression): SemanticResult<String> =
+        registry.resolveOrNull(expression, this)
+            ?: SemanticResult.Failure("Semantic Error: Unknown expression type.", expression.position)
 }
