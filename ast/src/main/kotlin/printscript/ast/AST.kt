@@ -24,6 +24,12 @@ data class StringLiteral(val value: String, override val position: Position = Po
 
 data class Identifier(val name: String, override val position: Position = Position(0, 0)) : Expression
 
+data class BooleanLiteral(val value: Boolean, override val position: Position = Position(0, 0)) : Expression
+
+data class ReadInput(val argument: Expression, override val position: Position = Position(0, 0)) : Expression
+
+data class ReadEnv(val argument: Expression, override val position: Position = Position(0, 0)) : Expression
+
 sealed interface Statement : PositionedNode {
     override val position: Position
 }
@@ -33,6 +39,7 @@ data class VariableDeclaration(
     val type: String,
     val value: Expression?,
     override val position: Position = Position(0, 0),
+    val isConst: Boolean = false,
 ) : Statement
 
 data class Assignment(
@@ -43,5 +50,17 @@ data class Assignment(
 
 data class PrintCall(
     val value: Expression,
+    override val position: Position = Position(0, 0),
+) : Statement
+
+data class Block(
+    val statements: List<Statement>,
+    override val position: Position = Position(0, 0),
+) : Statement
+
+data class IfStatement(
+    val condition: Expression,
+    val thenBranch: Block,
+    val elseBranch: Block?,
     override val position: Position = Position(0, 0),
 ) : Statement

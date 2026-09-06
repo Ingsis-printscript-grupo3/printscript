@@ -87,4 +87,54 @@ class AstTest {
         assertNotEquals(a, c)
         assert(a.toString().contains("Assignment"))
     }
+
+    @Test
+    fun `variable declaration defaults to non-const and can be marked const`() {
+        val letDeclaration = VariableDeclaration("x", "number", NumberLiteral(1.0))
+        val constDeclaration = VariableDeclaration("y", "number", NumberLiteral(2.0), isConst = true)
+
+        assertEquals(false, letDeclaration.isConst)
+        assertEquals(true, constDeclaration.isConst)
+    }
+
+    @Test
+    fun `boolean literal exposes its value and position`() {
+        val literal = BooleanLiteral(true, Position(1, 2))
+
+        assertEquals(true, literal.value)
+        assertEquals(Position(1, 2), literal.position)
+        assertEquals(Position(0, 0), BooleanLiteral(false).position)
+    }
+
+    @Test
+    fun `readInput and readEnv wrap their argument expression`() {
+        val readInput = ReadInput(StringLiteral("prompt"), Position(1, 1))
+        val readEnv = ReadEnv(StringLiteral("HOME"))
+
+        assertEquals(StringLiteral("prompt"), readInput.argument)
+        assertEquals(Position(1, 1), readInput.position)
+        assertEquals(StringLiteral("HOME"), readEnv.argument)
+        assertEquals(Position(0, 0), readEnv.position)
+    }
+
+    @Test
+    fun `block holds an ordered list of statements`() {
+        val block = Block(listOf(PrintCall(NumberLiteral(1.0)), PrintCall(NumberLiteral(2.0))), Position(3, 1))
+
+        assertEquals(2, block.statements.size)
+        assertEquals(Position(3, 1), block.position)
+    }
+
+    @Test
+    fun `if statement supports an optional else branch`() {
+        val thenBranch = Block(listOf(PrintCall(NumberLiteral(1.0))))
+        val elseBranch = Block(listOf(PrintCall(NumberLiteral(2.0))))
+        val withElse = IfStatement(BooleanLiteral(true), thenBranch, elseBranch, Position(5, 1))
+        val withoutElse = IfStatement(BooleanLiteral(false), thenBranch, null)
+
+        assertEquals(elseBranch, withElse.elseBranch)
+        assertEquals(Position(5, 1), withElse.position)
+        assertEquals(null, withoutElse.elseBranch)
+        assertEquals(Position(0, 0), withoutElse.position)
+    }
 }
