@@ -1,32 +1,31 @@
 package printscript.interpreter.plugin.expression
+
 import printscript.ast.BinaryExpression
 import printscript.ast.Expression
+import printscript.ast.registry.Handler
 import printscript.common.TokenType
-import printscript.interpreter.Environment
-import printscript.interpreter.InterpreterInterface
 import printscript.interpreter.NumberValue
 import printscript.interpreter.StringValue
 import printscript.interpreter.TypeMismatchError
 import printscript.interpreter.UnknownExpressionError
 import printscript.interpreter.Value
-import printscript.interpreter.plugin.ExpressionEvaluator
+import printscript.interpreter.plugin.InterpreterContext
 import printscript.interpreter.textOf
 import printscript.interpreter.typeName
 
-class BinaryExpressionEvaluator : ExpressionEvaluator {
-    override fun matches(expression: Expression) = expression is BinaryExpression
+class BinaryExpressionEvaluator : Handler<Expression, InterpreterContext, Value> {
+    override fun applies(node: Expression) = node is BinaryExpression
 
-    override fun evaluate(
-        expression: Expression,
-        env: Environment,
-        interpreter: InterpreterInterface,
+    override fun handle(
+        node: Expression,
+        ctx: InterpreterContext,
     ): Value {
-        if (expression !is BinaryExpression) throw UnknownExpressionError(expression)
+        if (node !is BinaryExpression) throw UnknownExpressionError(node)
 
         return applyOperator(
-            expression,
-            interpreter.evaluate(expression.left),
-            interpreter.evaluate(expression.right),
+            node,
+            ctx.interpreter.evaluate(node.left),
+            ctx.interpreter.evaluate(node.right),
         )
     }
 

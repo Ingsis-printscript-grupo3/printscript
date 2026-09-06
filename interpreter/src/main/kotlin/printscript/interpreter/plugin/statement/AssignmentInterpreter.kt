@@ -2,21 +2,19 @@ package printscript.interpreter.plugin.statement
 
 import printscript.ast.Assignment
 import printscript.ast.Statement
-import printscript.interpreter.Environment
-import printscript.interpreter.InterpreterInterface
+import printscript.ast.registry.Handler
 import printscript.interpreter.UnknownStatementError
-import printscript.interpreter.plugin.StatementInterpreter
+import printscript.interpreter.plugin.InterpreterContext
 
-class AssignmentInterpreter : StatementInterpreter {
-    override fun matches(statement: Statement) = statement is Assignment
+class AssignmentInterpreter : Handler<Statement, InterpreterContext, Unit> {
+    override fun applies(node: Statement) = node is Assignment
 
-    override fun execute(
-        statement: Statement,
-        env: Environment,
-        interpreter: InterpreterInterface,
+    override fun handle(
+        node: Statement,
+        ctx: InterpreterContext,
     ) {
-        if (statement !is Assignment) throw UnknownStatementError(statement)
+        if (node !is Assignment) throw UnknownStatementError(node)
 
-        env.assign(statement.name, interpreter.evaluate(statement.value))
+        ctx.env.assign(node.name, ctx.interpreter.evaluate(node.value))
     }
 }

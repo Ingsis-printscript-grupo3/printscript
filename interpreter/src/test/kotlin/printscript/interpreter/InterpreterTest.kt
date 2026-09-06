@@ -12,6 +12,7 @@ import printscript.ast.VariableDeclaration
 import printscript.common.TokenType
 import printscript.interpreter.output.BucketOutput
 import printscript.interpreter.output.MultiOutput
+import printscript.interpreter.plugin.InterpreterContext
 import printscript.interpreter.plugin.expression.BinaryExpressionEvaluator
 import printscript.interpreter.plugin.expression.IdentifierEvaluator
 import printscript.interpreter.plugin.expression.NumberLiteralEvaluator
@@ -169,7 +170,7 @@ class InterpreterTest {
     }
 
     // cada plugin tiene un guard tira error si le llega un nodo q no es suyo
-    // por el flujo normal nunca pasa, pq el Interpreter pregunta matches() antes
+    // por el flujo normal nunca pasa, pq el Interpreter pregunta applies() antes
 
     @Test
     fun `statement plugins reject nodes that are not theirs`() {
@@ -185,7 +186,7 @@ class InterpreterTest {
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownStatementError> {
-                plugin.execute(foreignNode, Environment(), Interpreter())
+                plugin.handle(foreignNode, InterpreterContext(Environment(), Interpreter()))
             }
         }
     }
@@ -205,7 +206,7 @@ class InterpreterTest {
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownExpressionError> {
-                plugin.evaluate(foreignNode, Environment(), Interpreter())
+                plugin.handle(foreignNode, InterpreterContext(Environment(), Interpreter()))
             }
         }
     }

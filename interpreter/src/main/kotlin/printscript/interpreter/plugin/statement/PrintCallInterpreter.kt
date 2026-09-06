@@ -2,24 +2,22 @@ package printscript.interpreter.plugin.statement
 
 import printscript.ast.PrintCall
 import printscript.ast.Statement
-import printscript.interpreter.Environment
-import printscript.interpreter.InterpreterInterface
+import printscript.ast.registry.Handler
 import printscript.interpreter.UnknownStatementError
 import printscript.interpreter.output.Output
-import printscript.interpreter.plugin.StatementInterpreter
+import printscript.interpreter.plugin.InterpreterContext
 import printscript.interpreter.textOf
 
-class PrintCallInterpreter(private val output: Output) : StatementInterpreter {
-    override fun matches(statement: Statement) = statement is PrintCall
+class PrintCallInterpreter(private val output: Output) : Handler<Statement, InterpreterContext, Unit> {
+    override fun applies(node: Statement) = node is PrintCall
 
-    override fun execute(
-        statement: Statement,
-        env: Environment,
-        interpreter: InterpreterInterface,
+    override fun handle(
+        node: Statement,
+        ctx: InterpreterContext,
     ) {
-        if (statement !is PrintCall) throw UnknownStatementError(statement)
+        if (node !is PrintCall) throw UnknownStatementError(node)
 
-        val value = interpreter.evaluate(statement.value)
+        val value = ctx.interpreter.evaluate(node.value)
         output.emit(value.textOf())
     }
 }
