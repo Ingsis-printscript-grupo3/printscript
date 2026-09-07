@@ -1,17 +1,30 @@
 package printscript.formatter
+
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.File
+import java.io.InputStream
 
 object FormatterRulesLoader {
-    private val jsonMapper = ObjectMapper().registerKotlinModule()
-    private val yamlMapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
+    private val jsonMapper = mapperOf(null)
+    private val yamlMapper = mapperOf(YAMLFactory())
 
-    fun fromJson(json: String): FormatterRules = jsonMapper.readValue(json)
+    fun fromJson(json: String): FormatterRules = unwrap { jsonMapper.readValue(json) }
 
-    fun fromYaml(yaml: String): FormatterRules = yamlMapper.readValue(yaml)
+    fun fromYaml(yaml: String): FormatterRules = unwrap { yamlMapper.readValue(yaml) }
+
+    // la config puede llegar como stream, sin extension que mirar
+    fun fromStream(input: InputStream): FormatterRules {
+        val text = input.readBytes().decodeToString()
+        return if (text.trimStart().startsWith("{")) fromJson(text) else fromYaml(text)
+    }
 
     fun fromFile(path: String): FormatterRules {
         val file = File(path)
@@ -25,4 +38,33 @@ object FormatterRulesLoader {
             )
         }
     }
+
+    private fun mapperOf(factory: YAMLFactory?): ObjectMapper {
+        val mapper = if (factory == null) ObjectMapper() else ObjectMapper(factory)
+        mapper.registerKotlinModule()
+        mapper.addHandler(
+            object : DeserializationProblemHandler() {
+                override fun handleUnknownProperty(
+                    ctxt: DeserializationContext,
+                    p: JsonParser,
+                    deserializer: JsonDeserializer<*>,
+                    beanOrClass: Any,
+                    propertyName: String,
+                ): Boolean {
+                    System.err.println("formatter: ignoro la clave desconocida '$propertyName'")
+                    p.skipChildren()
+                    return true
+                }
+            },
+        )
+        return mapper
+    }
+
+    // Jackson envuelve el error del init, lo desenvolvemos
+    private fun unwrap(load: () -> FormatterRules): FormatterRules =
+        try {
+            load()
+        } catch (e: ValueInstantiationException) {
+            throw e.cause ?: e
+        }
 }
