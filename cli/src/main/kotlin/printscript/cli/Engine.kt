@@ -65,6 +65,7 @@ class Engine(private val output: Output) {
         return runPipeline(reader, onProgress) { validStatements -> validStatements.forEach { } }
     }
 
+    // asi un error inesperado no le sale al usuario como stacktrace
     @Suppress("TooGenericExceptionCaught")
     fun format(
         reader: Reader,
@@ -82,6 +83,7 @@ class Engine(private val output: Output) {
         }
     }
 
+    // asi un error inesperado no le sale al usuario como stacktrace
     @Suppress("TooGenericExceptionCaught")
     fun lint(
         reader: Reader,
@@ -137,6 +139,7 @@ class Engine(private val output: Output) {
         }
     }
 
+    // asi un error inesperado no le sale al usuario como stacktrace
     @Suppress("TooGenericExceptionCaught")
     private fun runPipeline(
         reader: Reader,
