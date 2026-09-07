@@ -1,8 +1,6 @@
 package printscript.parser.expression
+
 import printscript.ast.Expression
-import printscript.ast.Identifier
-import printscript.ast.NumberLiteral
-import printscript.ast.StringLiteral
 import printscript.common.Position
 import printscript.common.TokenType
 import printscript.parser.result.ASTResult
@@ -10,6 +8,7 @@ import printscript.parser.stream.TokenStream
 
 class ExpressionParser(
     private val stream: TokenStream,
+    private val prefixParselets: Map<TokenType, PrefixParselet> = DefaultExpressionParselets.prefix(),
     private val infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix,
 ) {
     fun parseExpression(minPrecedence: Int = 0): ASTResult<Expression> {
@@ -32,29 +31,16 @@ class ExpressionParser(
     }
 
     private fun parsePrimary(): ASTResult<Expression> {
-        if (stream.match(TokenType.NUMBERLITERAL)) {
-            val value = stream.previous()?.value?.toDouble() ?: 0.0
-            return ASTResult.Success(NumberLiteral(value))
+        val token = stream.peek()
+        if (token == null) {
+            val pos = stream.previous()?.end ?: Position(0, 0)
+            return ASTResult.Failure("Expected a value or expression.", pos, pos)
         }
-        if (stream.match(TokenType.STRINGLITERAL)) {
-            val value = stream.previous()?.value ?: ""
-            return ASTResult.Success(StringLiteral(value))
-        }
-        if (stream.match(TokenType.IDENTIFIER)) {
-            val value = stream.previous()?.value ?: ""
-            return ASTResult.Success(Identifier(value))
-        }
-        if (stream.match(TokenType.LEFTPAREN)) {
-            val exprResult = parseExpression()
-            if (exprResult is ASTResult.Failure) return exprResult
 
-            val consumeResult = stream.consume(TokenType.RIGHTPAREN, "Expected ')' closing the expression.")
-            if (consumeResult is ASTResult.Failure) return consumeResult
-
-            return exprResult
-        }
-        val errorToken = stream.peek()
-        val pos = errorToken?.start ?: stream.previous()?.end ?: Position(0, 0)
-        return ASTResult.Failure("Expected a value or expression.", pos, errorToken?.end ?: pos)
+        val parselet =
+            prefixParselets[token.type]
+                ?: return ASTResult.Failure("Expected a value or expression.", token.start, token.end)
+        stream.advance()
+        return parselet.parse(token, stream, this)
     }
 }
