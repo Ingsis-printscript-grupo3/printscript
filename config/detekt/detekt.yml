@@ -8,3 +8,11 @@ complexity:
 style:
   MagicNumber:
     ignoreNumbers: ['-1', '0', '1', '2']
+
+  # el parser corta con return apenas falla algo
+  ReturnCount:
+    max: 8
+
+  # el while corta en 3 lugares
+  LoopWithTooManyJumpStatements:
+    maxJumpCount: 4

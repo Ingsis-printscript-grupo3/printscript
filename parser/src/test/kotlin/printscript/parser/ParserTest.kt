@@ -30,7 +30,7 @@ class ParserTest {
         return parser.parse().asSequence().map { result ->
             when (result) {
                 is ParseResult.Success -> result.statement
-                is ParseResult.Failure -> throw RuntimeException(result.message)
+                is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
             }
         }.toList()
     }
@@ -171,7 +171,7 @@ class ParserTest {
     fun `test unhappy path - missing semicolon`() {
         // println(5)
         val exception =
-            assertThrows<RuntimeException> {
+            assertThrows<SyntaxError> {
                 parse(
                     createToken(TokenType.PRINTLN),
                     createToken(TokenType.LEFTPAREN),
@@ -180,14 +180,14 @@ class ParserTest {
                     // Falta TokenType.SEMICOLON
                 )
             }
-        assert(exception.message!!.contains("Expected ';'"))
+        assert(exception.message.contains("Expected ';'"))
     }
 
     @Test
     fun `test unhappy path - missing closing parenthesis in expression`() {
         // println((5 + 2 * 3);
         val exception =
-            assertThrows<RuntimeException> {
+            assertThrows<SyntaxError> {
                 parse(
                     createToken(TokenType.PRINTLN),
                     createToken(TokenType.LEFTPAREN),
@@ -202,14 +202,14 @@ class ParserTest {
                     createToken(TokenType.SEMICOLON),
                 )
             }
-        assert(exception.message!!.contains("Expected ')'"))
+        assert(exception.message.contains("Expected ')'"))
     }
 
     @Test
     fun `test unhappy path - unexpected token in declaration`() {
         // let 5 : number = 5;
         val exception =
-            assertThrows<RuntimeException> {
+            assertThrows<SyntaxError> {
                 parse(
                     createToken(TokenType.LET),
                     // Inesperado
@@ -221,14 +221,14 @@ class ParserTest {
                     createToken(TokenType.SEMICOLON),
                 )
             }
-        assert(exception.message!!.contains("Expected variable name"))
+        assert(exception.message.contains("Expected variable name"))
     }
 
     @Test
     fun `test unhappy path - missing type in declaration`() {
         // let x: = 5;
         val exception =
-            assertThrows<RuntimeException> {
+            assertThrows<SyntaxError> {
                 parse(
                     createToken(TokenType.LET),
                     createToken(TokenType.IDENTIFIER, "x"),
@@ -239,6 +239,6 @@ class ParserTest {
                     createToken(TokenType.SEMICOLON),
                 )
             }
-        assert(exception.message!!.contains("Expected 'number' or 'string'"))
+        assert(exception.message.contains("Expected 'number' or 'string'"))
     }
 }
