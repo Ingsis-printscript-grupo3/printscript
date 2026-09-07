@@ -21,7 +21,7 @@ class StatementPositionTest {
         return Parser(tokenList.iterator()).parse().asSequence().map { result ->
             when (result) {
                 is ParseResult.Success -> result.statement
-                is ParseResult.Failure -> throw RuntimeException(result.message)
+                is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
             }
         }.toList()
     }
