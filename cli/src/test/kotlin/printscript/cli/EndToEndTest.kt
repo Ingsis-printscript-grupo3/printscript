@@ -120,6 +120,26 @@ class EndToEndTest {
         val (result, _) = runEngine(code)
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Semantic", result.type)
-        assertTrue(result.message.contains("line 2"))
+        assertEquals(2, result.start?.line)
+    }
+
+    @Test
+    fun `a lexical error carries the range of the offending character`() {
+        val (result, _) = runEngine("let a: number = 12 @ 4;")
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Lexical", result.type)
+        assertEquals(1, result.start?.line)
+        assertEquals(20, result.start?.column)
+        assertEquals(21, result.end?.column)
+    }
+
+    @Test
+    fun `a syntax error carries a range, not just a line`() {
+        val (result, _) = runEngine("println(5)")
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Syntax", result.type)
+        assertTrue(result.start != null && result.end != null)
     }
 }
