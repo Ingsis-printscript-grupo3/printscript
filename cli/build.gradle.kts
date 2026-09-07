@@ -9,7 +9,7 @@ dependencies {
     implementation(project(":semantic"))
     api(project(":interpreter"))
     api(project(":ast"))
-    implementation(project(":common"))
+    api(project(":common"))
     implementation(project(":formatter"))
     api(project(":linter"))
     implementation("com.github.ajalt.clikt:clikt:4.4.0")

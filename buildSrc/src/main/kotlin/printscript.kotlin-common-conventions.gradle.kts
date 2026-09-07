@@ -13,8 +13,8 @@ kotlin {
     jvmToolchain(21)
 }
 
-group = providers.gradleProperty("group").get()
-version = providers.gradleProperty("version").get()
+group = providers.gradleProperty("group").getOrElse("org.printscript")
+version = providers.gradleProperty("version").getOrElse("0.0.1-SNAPSHOT")
 
 publishing {
     publications {
