@@ -8,13 +8,13 @@ import printscript.interpreter.ValueConverter
 import printscript.interpreter.plugin.InterpreterContext
 
 class VariableDeclaration11Interpreter : Handler<Statement, InterpreterContext, Unit> {
-    override fun applies(node: Statement) = node is VariableDeclaration && !node.isConst
+    override fun applies(node: Statement) = node is VariableDeclaration
 
     override fun handle(
         node: Statement,
         ctx: InterpreterContext,
     ) {
-        if (node !is VariableDeclaration || node.isConst) throw UnknownStatementError(node)
+        if (node !is VariableDeclaration) throw UnknownStatementError(node)
 
         val expression = node.value
         val rawValue = if (expression != null) ctx.interpreter.evaluate(expression) else null
@@ -24,6 +24,6 @@ class VariableDeclaration11Interpreter : Handler<Statement, InterpreterContext, 
             } else {
                 null
             }
-        ctx.env.declare(node.name, value, node.type, isConst = false)
+        ctx.env.declare(node.name, value, node.type, isConst = node.isConst)
     }
 }

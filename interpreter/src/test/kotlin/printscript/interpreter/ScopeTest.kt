@@ -3,7 +3,6 @@ package printscript.interpreter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ScopeTest {
@@ -102,8 +101,6 @@ class ScopeTest {
     @Test
     fun `cannot exit root scope`() {
         val env = Environment()
-        assertTrue(env.isRootScope())
-        assertEquals(1, env.currentScopeDepth())
 
         val error =
             assertFailsWith<IllegalStateException> {
@@ -113,24 +110,26 @@ class ScopeTest {
     }
 
     @Test
-    fun `scope depth reflects nesting`() {
+    fun `nested scopes discard variables at each level on exit`() {
         val env = Environment()
-        assertTrue(env.isRootScope())
-        assertEquals(1, env.currentScopeDepth())
+        env.declare("root", NumberValue(0.0))
 
         env.enterScope()
-        assertFalse(env.isRootScope())
-        assertEquals(2, env.currentScopeDepth())
+        env.declare("level1", NumberValue(1.0))
 
         env.enterScope()
-        assertEquals(3, env.currentScopeDepth())
+        env.declare("level2", NumberValue(2.0))
+        assertEquals(NumberValue(2.0), env.lookup("level2"))
+        assertEquals(NumberValue(1.0), env.lookup("level1"))
+        assertEquals(NumberValue(0.0), env.lookup("root"))
 
         env.exitScope()
-        assertEquals(2, env.currentScopeDepth())
+        assertFailsWith<UndeclaredVariableError> { env.lookup("level2") }
+        assertEquals(NumberValue(1.0), env.lookup("level1"))
 
         env.exitScope()
-        assertTrue(env.isRootScope())
-        assertEquals(1, env.currentScopeDepth())
+        assertFailsWith<UndeclaredVariableError> { env.lookup("level1") }
+        assertEquals(NumberValue(0.0), env.lookup("root"))
     }
 
     @Test

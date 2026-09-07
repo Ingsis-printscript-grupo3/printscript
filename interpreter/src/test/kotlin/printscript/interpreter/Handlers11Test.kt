@@ -22,7 +22,6 @@ import printscript.interpreter.plugin.expression.ReadInputEvaluator
 import printscript.interpreter.plugin.expression.StringLiteralEvaluator
 import printscript.interpreter.plugin.statement.Assignment11Interpreter
 import printscript.interpreter.plugin.statement.BlockInterpreter
-import printscript.interpreter.plugin.statement.ConstDeclarationInterpreter
 import printscript.interpreter.plugin.statement.IfStatementInterpreter
 import printscript.interpreter.plugin.statement.PrintCallInterpreter
 import printscript.interpreter.plugin.statement.VariableDeclaration11Interpreter
@@ -41,7 +40,6 @@ class Handlers11Test {
         val statements =
             listOf(
                 VariableDeclaration11Interpreter(),
-                ConstDeclarationInterpreter(),
                 Assignment11Interpreter(),
                 PrintCallInterpreter(output),
                 IfStatementInterpreter(),
@@ -79,7 +77,9 @@ class Handlers11Test {
         val evaluator = ReadInputEvaluator(input)
         val dummyInterpreter =
             object : InterpreterInterface {
-                override fun interpret(statements: Iterator<printscript.ast.Statement>) {}
+                override fun interpret(statements: Iterator<printscript.ast.Statement>) {
+                    // Unused in dummy interpreter
+                }
 
                 override fun evaluate(expression: printscript.ast.Expression): Value = StringValue("prompt: ")
             }
@@ -101,7 +101,9 @@ class Handlers11Test {
         val evaluator = ReadEnvEvaluator(env)
         val dummyInterpreter =
             object : InterpreterInterface {
-                override fun interpret(statements: Iterator<printscript.ast.Statement>) {}
+                override fun interpret(statements: Iterator<printscript.ast.Statement>) {
+                    // Unused in dummy interpreter
+                }
 
                 override fun evaluate(expression: printscript.ast.Expression): Value = StringValue("MY_VAR")
             }
@@ -123,7 +125,9 @@ class Handlers11Test {
         val evaluator = ReadEnvEvaluator(env)
         val dummyInterpreter =
             object : InterpreterInterface {
-                override fun interpret(statements: Iterator<printscript.ast.Statement>) {}
+                override fun interpret(statements: Iterator<printscript.ast.Statement>) {
+                    // Unused in dummy interpreter
+                }
 
                 override fun evaluate(expression: printscript.ast.Expression): Value = StringValue("UNKNOWN_VAR")
             }
@@ -290,7 +294,7 @@ class Handlers11Test {
             assertFailsWith<ReadEnvConversionError> {
                 ValueConverter.convert(StringValue("bad"), "number", envExpr)
             }
-        assertEquals("StringLiteral(value=MY_ENV, position=Position(line=0, column=0))", numError.name)
+        assertEquals("MY_ENV", numError.name)
         assertEquals("bad", numError.value)
 
         val boolError =
@@ -321,7 +325,9 @@ class Handlers11Test {
         val env = Environment()
         val dummyInterpreter =
             object : InterpreterInterface {
-                override fun interpret(statements: Iterator<printscript.ast.Statement>) {}
+                override fun interpret(statements: Iterator<printscript.ast.Statement>) {
+                    // Unused in dummy interpreter
+                }
 
                 override fun evaluate(expression: printscript.ast.Expression): Value =
                     when (expression) {
@@ -336,7 +342,6 @@ class Handlers11Test {
             }
         val ctx = InterpreterContext(env, dummyInterpreter)
         val varDecl = VariableDeclaration11Interpreter()
-        val constDecl = ConstDeclarationInterpreter()
         val assign = Assignment11Interpreter()
 
         varDecl.handle(
@@ -351,7 +356,7 @@ class Handlers11Test {
         )
         assertEquals(BooleanValue(true), env.lookup("envBool"))
 
-        constDecl.handle(
+        varDecl.handle(
             VariableDeclaration("c", "number", NumberLiteral(10.0), isConst = true),
             ctx,
         )
@@ -372,7 +377,6 @@ class Handlers11Test {
     @Test
     fun `1_1 statement plugins reject foreign nodes`() {
         val varDecl = VariableDeclaration11Interpreter()
-        val constDecl = ConstDeclarationInterpreter()
         val assign = Assignment11Interpreter()
         val ctx = InterpreterContext(Environment(), Interpreter())
 
@@ -381,20 +385,15 @@ class Handlers11Test {
         val assignNode = Assignment("x", NumberLiteral(3.0))
 
         assertTrue(varDecl.applies(letNode))
-        assertFalse(varDecl.applies(constNode))
+        assertTrue(varDecl.applies(constNode))
         assertFalse(varDecl.applies(assignNode))
-
-        assertTrue(constDecl.applies(constNode))
-        assertFalse(constDecl.applies(letNode))
-        assertFalse(constDecl.applies(assignNode))
 
         assertTrue(assign.applies(assignNode))
         assertFalse(assign.applies(letNode))
+        assertFalse(assign.applies(constNode))
 
-        assertFailsWith<UnknownStatementError> { varDecl.handle(constNode, ctx) }
         assertFailsWith<UnknownStatementError> { varDecl.handle(assignNode, ctx) }
-        assertFailsWith<UnknownStatementError> { constDecl.handle(letNode, ctx) }
-        assertFailsWith<UnknownStatementError> { constDecl.handle(assignNode, ctx) }
         assertFailsWith<UnknownStatementError> { assign.handle(letNode, ctx) }
+        assertFailsWith<UnknownStatementError> { assign.handle(constNode, ctx) }
     }
 }
