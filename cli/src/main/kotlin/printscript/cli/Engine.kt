@@ -1,6 +1,7 @@
 package printscript.cli
 
 import printscript.ast.Statement
+import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.interpreter.Interpreter
 import printscript.interpreter.InterpreterError
@@ -54,41 +55,48 @@ sealed interface LintResult {
 class Engine(private val output: Output) {
     fun execute(
         code: String,
+        languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult {
-        return execute(StringReader(code), onProgress)
+        return execute(StringReader(code), languageVersion, onProgress)
     }
 
     fun execute(
         reader: Reader,
+        languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult {
-        return runPipeline(reader, onProgress) { validStatements -> Interpreter(output).interpret(validStatements) }
+        return runPipeline(reader, languageVersion, onProgress) { validStatements ->
+            Interpreter(output).interpret(validStatements)
+        }
     }
 
     fun validate(
         code: String,
+        languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult {
-        return validate(StringReader(code), onProgress)
+        return validate(StringReader(code), languageVersion, onProgress)
     }
 
     fun validate(
         reader: Reader,
+        languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult {
-        return runPipeline(reader, onProgress) { validStatements -> validStatements.forEach { } }
+        return runPipeline(reader, languageVersion, onProgress) { validStatements -> validStatements.forEach { } }
     }
 
     // asi un error inesperado no le sale al usuario como stacktrace
     @Suppress("TooGenericExceptionCaught")
     fun format(
         reader: Reader,
+        languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
         format: (List<Statement>) -> String,
     ): FormatResult {
         return try {
-            FormatResult.Success(format(parseStatements(reader, onProgress)))
+            FormatResult.Success(format(parseStatements(reader, languageVersion, onProgress)))
         } catch (e: Exception) {
             val failure = describe(e)
             FormatResult.Failure(failure.type, failure.message, failure.start, failure.end)
@@ -99,11 +107,12 @@ class Engine(private val output: Output) {
     @Suppress("TooGenericExceptionCaught")
     fun lint(
         reader: Reader,
+        languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
         lint: (List<Statement>) -> List<Warning>,
     ): LintResult {
         return try {
-            LintResult.Success(lint(parseStatements(reader, onProgress)))
+            LintResult.Success(lint(parseStatements(reader, languageVersion, onProgress)))
         } catch (e: Exception) {
             val failure = describe(e)
             LintResult.Failure(failure.type, failure.message, failure.start, failure.end)
@@ -112,10 +121,11 @@ class Engine(private val output: Output) {
 
     private fun parseStatements(
         reader: Reader,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit,
     ): List<Statement> {
         val lexer = Lexer(CharStream(reader))
-        val parser = Parser(lexer.tokenize())
+        val parser = Parser(lexer.tokenize(), languageVersion)
         var parsedCount = 0
         return buildList {
             for (result in parser.parse()) {
@@ -152,12 +162,13 @@ class Engine(private val output: Output) {
     @Suppress("TooGenericExceptionCaught")
     private fun runPipeline(
         reader: Reader,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit,
         consume: (Iterator<Statement>) -> Unit,
     ): ExecutionResult {
         return try {
             val lexer = Lexer(CharStream(reader))
-            val parser = Parser(lexer.tokenize())
+            val parser = Parser(lexer.tokenize(), languageVersion)
             val semanticAnalyzer = SemanticAnalyzer()
 
             val astIterator = parseIntoAst(parser, onProgress)

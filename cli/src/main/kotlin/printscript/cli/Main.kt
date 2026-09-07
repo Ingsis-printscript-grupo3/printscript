@@ -32,10 +32,10 @@ class ExecuteCommand : CliktCommand(name = "execute", help = "Run a .prs file") 
     private val quiet by quietOption()
 
     override fun run() {
-        requireSupportedVersion(version)
+        val languageVersion = requireSupportedVersion(version)
         val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress(showProgress(quiet))
-        val result = engine.execute(file.reader(), onProgress = progress::report)
+        val result = engine.execute(file.reader(), languageVersion, onProgress = progress::report)
         progress.finish()
         when (result) {
             is ExecutionResult.Success -> Unit
@@ -54,10 +54,10 @@ class ValidateCommand : CliktCommand(
     private val quiet by quietOption()
 
     override fun run() {
-        requireSupportedVersion(version)
+        val languageVersion = requireSupportedVersion(version)
         val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress(showProgress(quiet))
-        val result = engine.validate(file.reader(), onProgress = progress::report)
+        val result = engine.validate(file.reader(), languageVersion, onProgress = progress::report)
         progress.finish()
         when (result) {
             is ExecutionResult.Success -> echo("${file.path}: no errors found")
@@ -78,13 +78,13 @@ class AnalyzeCommand : CliktCommand(
     private val quiet by quietOption()
 
     override fun run() {
-        requireSupportedVersion(version)
+        val languageVersion = requireSupportedVersion(version)
         val rules = config?.let { LinterRulesLoader.fromFile(it.path) } ?: LinterRules()
         val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress(showProgress(quiet))
 
         val result =
-            engine.lint(file.reader(), onProgress = progress::report) { statements ->
+            engine.lint(file.reader(), languageVersion, onProgress = progress::report) { statements ->
                 Linter(rules).analyze(statements.iterator())
             }
         progress.finish()
@@ -113,13 +113,13 @@ class FormatCommand : CliktCommand(name = "format", help = "Format a .prs file a
     private val quiet by quietOption()
 
     override fun run() {
-        requireSupportedVersion(version)
+        val languageVersion = requireSupportedVersion(version)
         val rules = config?.let { FormatterRulesLoader.fromFile(it.path) } ?: FormatterRules()
         val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress(showProgress(quiet))
 
         val result =
-            engine.format(file.reader(), onProgress = progress::report) { statements ->
+            engine.format(file.reader(), languageVersion, onProgress = progress::report) { statements ->
                 Formatter(rules).format(statements)
             }
         progress.finish()
@@ -157,15 +157,14 @@ private fun CliktCommand.versionOption() =
         help = "Version of the PrintScript language to use. Supported: $SUPPORTED_VERSIONS.",
     ).default(DEFAULT_VERSION)
 
-private fun CliktCommand.requireSupportedVersion(version: String) {
+private fun CliktCommand.requireSupportedVersion(version: String): LanguageVersion =
     runCatching { LanguageVersion.parse(version) }
-        .onFailure {
+        .getOrElse {
             fail(
                 "UnsupportedVersion",
                 "PrintScript version '$version' is not supported. Supported: $SUPPORTED_VERSIONS.",
             )
         }
-}
 
 private fun CliktCommand.fail(
     type: String,

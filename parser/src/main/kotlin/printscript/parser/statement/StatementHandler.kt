@@ -9,5 +9,6 @@ fun interface StatementHandler {
     fun parse(
         stream: TokenStream,
         expressionParser: ExpressionParser,
+        statementParser: StatementParser,
     ): ASTResult<Statement>
 }

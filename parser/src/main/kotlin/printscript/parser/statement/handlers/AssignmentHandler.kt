@@ -7,12 +7,14 @@ import printscript.common.TokenType
 import printscript.parser.expression.ExpressionParser
 import printscript.parser.result.ASTResult
 import printscript.parser.statement.StatementHandler
+import printscript.parser.statement.StatementParser
 import printscript.parser.stream.TokenStream
 
 object AssignmentHandler : StatementHandler {
     override fun parse(
         stream: TokenStream,
         expressionParser: ExpressionParser,
+        statementParser: StatementParser,
     ): ASTResult<Statement> {
         val nameToken =
             stream.previous()
