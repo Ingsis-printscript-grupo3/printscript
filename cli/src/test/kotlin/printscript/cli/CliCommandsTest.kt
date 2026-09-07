@@ -8,6 +8,7 @@ import java.io.PrintStream
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class CliCommandsTest {
@@ -174,26 +175,44 @@ class CliCommandsTest {
         assertTrue(result.stderr.contains("UnsupportedVersion"))
     }
 
+    private fun stderrOf(block: () -> Unit): String {
+        val original = System.err
+        val captured = ByteArrayOutputStream()
+        System.setErr(PrintStream(captured))
+        try {
+            block()
+        } finally {
+            System.setErr(original)
+        }
+        return captured.toString()
+    }
+
     @Test
-    fun `validate reports parsing progress to stderr`() {
+    fun `no progress is printed when the output is not a terminal`() {
         val file = prsFile("let a: number = 1;\nlet b: number = 2;\nprintln(a + b);\n")
 
-        // The progress reporter writes straight to System.err (not through Clikt's echo),
-        // same reason as ConsoleOutput above.
-        val originalErr = System.err
-        val capturedErr = ByteArrayOutputStream()
-        System.setErr(PrintStream(capturedErr))
-        val result =
-            try {
-                ValidateCommand().test(listOf(file.path))
-            } finally {
-                System.setErr(originalErr)
-            }
+        val stderr = stderrOf { assertEquals(0, ValidateCommand().test(listOf(file.path)).statusCode) }
 
-        assertEquals(0, result.statusCode)
-        val progressOutput = capturedErr.toString()
-        assertTrue(progressOutput.contains("Parsing..."))
-        assertTrue(progressOutput.contains("3 statement(s) parsed"))
+        assertFalse(stderr.contains("Parsing..."))
+    }
+
+    @Test
+    fun `--quiet keeps the progress off`() {
+        val file = prsFile("let a: number = 1;\nprintln(a);\n")
+
+        val stderr = stderrOf { assertEquals(0, ValidateCommand().test(listOf(file.path, "--quiet")).statusCode) }
+
+        assertFalse(stderr.contains("Parsing..."))
+    }
+
+    @Test
+    fun `an error is reported with the full range, not just the line`() {
+        val file = prsFile("let a: number = 12 @ 4;\n")
+
+        val result = ValidateCommand().test(listOf(file.path))
+
+        assertEquals(1, result.statusCode)
+        assertTrue(result.stderr.contains("[1:20-1:21] Lexical:"))
     }
 
     @Test
