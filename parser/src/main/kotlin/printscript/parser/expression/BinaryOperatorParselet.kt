@@ -16,6 +16,6 @@ class BinaryOperatorParselet(override val precedence: Int) : InfixParselet {
         val rightResult = expressionParser.parseExpression(precedence + 1)
         if (rightResult is ASTResult.Failure) return rightResult
         val right = (rightResult as ASTResult.Success).value
-        return ASTResult.Success(BinaryExpression(left, operatorToken.type, right))
+        return ASTResult.Success(BinaryExpression(left, operatorToken.type, right, left.position))
     }
 }

@@ -239,6 +239,6 @@ class ParserTest {
                     createToken(TokenType.SEMICOLON),
                 )
             }
-        assert(exception.message.contains("Expected 'number' or 'string'"))
+        assert(exception.message.contains("Expected 'number', 'string' or 'boolean'"))
     }
 }
