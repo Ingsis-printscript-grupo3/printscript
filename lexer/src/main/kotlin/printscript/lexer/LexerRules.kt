@@ -9,6 +9,14 @@ object LexerRules {
             "println" to TokenType.PRINTLN,
             "number" to TokenType.NUMBERTYPE,
             "string" to TokenType.STRINGTYPE,
+            "const" to TokenType.CONST,
+            "boolean" to TokenType.BOOLEANTYPE,
+            "true" to TokenType.BOOLEANLITERAL,
+            "false" to TokenType.BOOLEANLITERAL,
+            "if" to TokenType.IF,
+            "else" to TokenType.ELSE,
+            "readInput" to TokenType.READINPUT,
+            "readEnv" to TokenType.READENV,
         )
 
     val symbols: Map<Char, TokenType> =
@@ -22,6 +30,8 @@ object LexerRules {
             ';' to TokenType.SEMICOLON,
             '(' to TokenType.LEFTPAREN,
             ')' to TokenType.RIGHTPAREN,
+            '{' to TokenType.LEFTBRACE,
+            '}' to TokenType.RIGHTBRACE,
         )
 
     fun isQuote(c: Char): Boolean = c == '"' || c == '\''

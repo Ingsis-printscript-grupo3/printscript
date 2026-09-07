@@ -1,5 +1,6 @@
 package printscript.lexer
 
+import printscript.common.Position
 import printscript.common.TokenType
 import java.io.StringReader
 import kotlin.test.Test
@@ -200,5 +201,151 @@ class LexerTest {
     @Test
     fun `string sin cerrar lanza LexicalError`() {
         assertFailsWith<LexicalError> { tokenize("\"hola") }
+    }
+
+    @Test
+    fun `reconoce la keyword const`() {
+        assertEquals(listOf(TokenType.CONST, TokenType.EOF), types("const"))
+    }
+
+    @Test
+    fun `reconoce la keyword boolean`() {
+        assertEquals(listOf(TokenType.BOOLEANTYPE, TokenType.EOF), types("boolean"))
+    }
+
+    @Test
+    fun `reconoce la keyword if`() {
+        assertEquals(listOf(TokenType.IF, TokenType.EOF), types("if"))
+    }
+
+    @Test
+    fun `reconoce la keyword else`() {
+        assertEquals(listOf(TokenType.ELSE, TokenType.EOF), types("else"))
+    }
+
+    @Test
+    fun `reconoce la keyword readInput`() {
+        assertEquals(listOf(TokenType.READINPUT, TokenType.EOF), types("readInput"))
+    }
+
+    @Test
+    fun `reconoce la keyword readEnv`() {
+        assertEquals(listOf(TokenType.READENV, TokenType.EOF), types("readEnv"))
+    }
+
+    @Test
+    fun `reconoce true y false como BOOLEANLITERAL`() {
+        assertEquals(listOf(TokenType.BOOLEANLITERAL, TokenType.EOF), types("true"))
+        assertEquals(listOf(TokenType.BOOLEANLITERAL, TokenType.EOF), types("false"))
+        val tokens = tokenize("true")
+        assertEquals("true", tokens[0].value)
+    }
+
+    @Test
+    fun `reconoce llave izquierda y derecha con posicion`() {
+        val tokens = tokenize("{}")
+        assertEquals(
+            listOf(TokenType.LEFTBRACE, TokenType.RIGHTBRACE, TokenType.EOF),
+            tokens.map { it.type },
+        )
+        assertEquals(Position(1, 1), tokens[0].start)
+        assertEquals(Position(1, 2), tokens[1].start)
+    }
+
+    @Test
+    fun `identificador constante no se confunde con la keyword const`() {
+        val tokens = tokenize("constante")
+        assertEquals(TokenType.IDENTIFIER, tokens[0].type)
+        assertEquals("constante", tokens[0].value)
+    }
+
+    @Test
+    fun `identificador booleanx no se confunde con la keyword boolean`() {
+        val tokens = tokenize("booleanx")
+        assertEquals(TokenType.IDENTIFIER, tokens[0].type)
+        assertEquals("booleanx", tokens[0].value)
+    }
+
+    @Test
+    fun `identificador truex no se confunde con la keyword true`() {
+        val tokens = tokenize("truex")
+        assertEquals(TokenType.IDENTIFIER, tokens[0].type)
+        assertEquals("truex", tokens[0].value)
+    }
+
+    @Test
+    fun `identificador falsex no se confunde con la keyword false`() {
+        val tokens = tokenize("falsex")
+        assertEquals(TokenType.IDENTIFIER, tokens[0].type)
+        assertEquals("falsex", tokens[0].value)
+    }
+
+    @Test
+    fun `identificador ifx no se confunde con la keyword if`() {
+        val tokens = tokenize("ifx")
+        assertEquals(TokenType.IDENTIFIER, tokens[0].type)
+        assertEquals("ifx", tokens[0].value)
+    }
+
+    @Test
+    fun `identificador elsewhere no se confunde con la keyword else`() {
+        val tokens = tokenize("elsewhere")
+        assertEquals(TokenType.IDENTIFIER, tokens[0].type)
+        assertEquals("elsewhere", tokens[0].value)
+    }
+
+    @Test
+    fun `identificador readInputX no se confunde con la keyword readInput`() {
+        val tokens = tokenize("readInputX")
+        assertEquals(TokenType.IDENTIFIER, tokens[0].type)
+        assertEquals("readInputX", tokens[0].value)
+    }
+
+    @Test
+    fun `identificador readEnvX no se confunde con la keyword readEnv`() {
+        val tokens = tokenize("readEnvX")
+        assertEquals(TokenType.IDENTIFIER, tokens[0].type)
+        assertEquals("readEnvX", tokens[0].value)
+    }
+
+    @Test
+    fun `ejemplo mixto de tokens 1_0 y 1_1 con const y boolean`() {
+        val source = "const flag: boolean = true;"
+
+        val tokens = tokenize(source)
+        assertEquals(
+            listOf(
+                TokenType.CONST,
+                TokenType.IDENTIFIER,
+                TokenType.COLON,
+                TokenType.BOOLEANTYPE,
+                TokenType.ASSIGN,
+                TokenType.BOOLEANLITERAL,
+                TokenType.SEMICOLON,
+                TokenType.EOF,
+            ),
+            tokens.map { it.type },
+        )
+        assertEquals(Position(1, 1), tokens[0].start)
+        val booleanLiteralToken = tokens[5]
+        assertEquals(TokenType.BOOLEANLITERAL, booleanLiteralToken.type)
+        assertEquals(Position(1, 23), booleanLiteralToken.start)
+    }
+
+    @Test
+    fun `ejemplo mixto de if else llaves readInput y readEnv`() {
+        val source = "if (cond) { println(readInput()); } else { println(readEnv()); }"
+
+        assertEquals(
+            listOf(
+                TokenType.IF, TokenType.LEFTPAREN, TokenType.IDENTIFIER, TokenType.RIGHTPAREN,
+                TokenType.LEFTBRACE, TokenType.PRINTLN, TokenType.LEFTPAREN, TokenType.READINPUT,
+                TokenType.LEFTPAREN, TokenType.RIGHTPAREN, TokenType.RIGHTPAREN, TokenType.SEMICOLON,
+                TokenType.RIGHTBRACE, TokenType.ELSE, TokenType.LEFTBRACE, TokenType.PRINTLN,
+                TokenType.LEFTPAREN, TokenType.READENV, TokenType.LEFTPAREN, TokenType.RIGHTPAREN,
+                TokenType.RIGHTPAREN, TokenType.SEMICOLON, TokenType.RIGHTBRACE, TokenType.EOF,
+            ),
+            types(source),
+        )
     }
 }
