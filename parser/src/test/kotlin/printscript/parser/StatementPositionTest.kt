@@ -27,7 +27,7 @@ class StatementPositionTest {
     }
 
     @Test
-    fun `a declaration takes the position of the variable name`() {
+    fun `a declaration takes the position of the let keyword`() {
         val statements =
             parse(
                 token(TokenType.LET, "let", line = 3, column = 1),
@@ -37,7 +37,7 @@ class StatementPositionTest {
                 token(TokenType.SEMICOLON, ";", line = 3, column = 14),
             )
 
-        assertEquals(Position(3, 5), statements[0].position)
+        assertEquals(Position(3, 1), statements[0].position)
     }
 
     @Test
@@ -83,6 +83,6 @@ class StatementPositionTest {
                 token(TokenType.SEMICOLON, ";", line = 2, column = 11),
             )
 
-        assertEquals(listOf(Position(1, 5), Position(2, 1)), statements.map { it.position })
+        assertEquals(listOf(Position(1, 1), Position(2, 1)), statements.map { it.position })
     }
 }
