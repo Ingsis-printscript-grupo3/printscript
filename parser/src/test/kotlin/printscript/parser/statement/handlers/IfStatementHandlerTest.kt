@@ -10,6 +10,7 @@ import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
 import printscript.parser.Parser
+import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,7 +37,7 @@ class IfStatementHandlerTest {
         parse(LanguageVersion.V1_1, *tokens).map { result ->
             when (result) {
                 is ParseResult.Success -> result.statement
-                is ParseResult.Failure -> throw RuntimeException(result.message)
+                is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
             }
         }
 

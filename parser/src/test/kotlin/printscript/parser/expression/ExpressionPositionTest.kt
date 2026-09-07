@@ -5,6 +5,7 @@ import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
+import printscript.parser.SyntaxError
 import printscript.parser.result.ASTResult
 import printscript.parser.stream.TokenStream
 import kotlin.test.Test
@@ -29,7 +30,7 @@ class ExpressionPositionTest {
             )
         return when (val result = expressionParser.parseExpression()) {
             is ASTResult.Success -> result.value
-            is ASTResult.Failure -> throw RuntimeException(result.message)
+            is ASTResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
         }
     }
 
