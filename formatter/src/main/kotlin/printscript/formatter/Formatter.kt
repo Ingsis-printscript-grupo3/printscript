@@ -38,10 +38,10 @@ class Formatter(
     override fun format(statements: List<Statement>): String {
         val builder = StringBuilder()
         statements.forEachIndexed { index, stmt ->
-            if (index > 0) {
-                builder.append(if (stmt is PrintCall) "\n".repeat(rules.lineBreaksBeforePrintln) else "\n")
-            }
+            if (index > 0) builder.append("\n")
             builder.append(formatStatement(stmt))
+            val isLast = index == statements.lastIndex
+            if (stmt is PrintCall && !isLast) builder.append("\n".repeat(rules.lineBreaksAfterPrintln))
         }
         builder.append("\n")
         return builder.toString()

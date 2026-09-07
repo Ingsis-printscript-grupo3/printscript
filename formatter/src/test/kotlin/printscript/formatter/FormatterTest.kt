@@ -11,6 +11,7 @@ import printscript.common.TokenType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 
 class FormatterTest {
     private fun format(
@@ -22,14 +23,14 @@ class FormatterTest {
     fun `formats a variable declaration with an initial value using default rules`() {
         val statements = listOf(VariableDeclaration("x", "number", NumberLiteral(5.0)))
 
-        assertEquals("let x: number = 5;\n", format(statements))
+        assertEquals("let x:number = 5;\n", format(statements))
     }
 
     @Test
     fun `formats a variable declaration without an initial value`() {
         val statements = listOf(VariableDeclaration("x", "number", null))
 
-        assertEquals("let x: number;\n", format(statements))
+        assertEquals("let x:number;\n", format(statements))
     }
 
     @Test
@@ -160,72 +161,84 @@ class FormatterTest {
         val statements = listOf(VariableDeclaration("x", "number", null))
         val rules = FormatterRules(spaceBeforeColon = true)
 
-        assertEquals("let x : number;\n", format(statements, rules))
+        assertEquals("let x :number;\n", format(statements, rules))
     }
 
     @Test
-    fun `does not add a space after the colon when the rule is off`() {
+    fun `adds a space after the colon when the rule is on`() {
         val statements = listOf(VariableDeclaration("x", "number", null))
-        val rules = FormatterRules(spaceAfterColon = false)
+        val rules = FormatterRules(spaceAfterColon = true)
 
-        assertEquals("let x:number;\n", format(statements, rules))
+        assertEquals("let x: number;\n", format(statements, rules))
     }
 
     @Test
     fun `does not add spaces around the equals sign in a declaration when the rule is off`() {
         val statements = listOf(VariableDeclaration("x", "number", NumberLiteral(5.0)))
-        val rules = FormatterRules(spaceAroundAssignment = false)
+        val rules = FormatterRules(noSpacingAroundEquals = true)
 
-        assertEquals("let x: number=5;\n", format(statements, rules))
+        assertEquals("let x:number=5;\n", format(statements, rules))
     }
 
     @Test
     fun `does not add spaces around the equals sign in an assignment when the rule is off`() {
         val statements = listOf(Assignment("x", NumberLiteral(5.0)))
-        val rules = FormatterRules(spaceAroundAssignment = false)
+        val rules = FormatterRules(noSpacingAroundEquals = true)
 
         assertEquals("x=5;\n", format(statements, rules))
     }
 
     @Test
-    fun `does not add a line break before println when the rule is 0`() {
-        val statements =
-            listOf(
-                VariableDeclaration("x", "number", NumberLiteral(1.0)),
-                PrintCall(Identifier("x")),
-            )
-        val rules = FormatterRules(lineBreaksBeforePrintln = 0)
-
-        assertEquals("let x: number = 1;println(x);\n", format(statements, rules))
-    }
-
-    @Test
-    fun `adds a single line break before println by default`() {
+    fun `every statement goes on its own line, with no extra breaks by default`() {
         val statements =
             listOf(
                 VariableDeclaration("x", "number", NumberLiteral(1.0)),
                 PrintCall(Identifier("x")),
             )
 
-        assertEquals("let x: number = 1;\nprintln(x);\n", format(statements))
+        assertEquals("let x:number = 1;\nprintln(x);\n", format(statements))
     }
 
     @Test
-    fun `adds two line breaks before println when the rule is 2`() {
+    fun `asking for 0 extra breaks still leaves the mandatory one`() {
         val statements =
             listOf(
                 VariableDeclaration("x", "number", NumberLiteral(1.0)),
                 PrintCall(Identifier("x")),
             )
-        val rules = FormatterRules(lineBreaksBeforePrintln = 2)
+        val rules = FormatterRules(lineBreaksAfterPrintln = 0)
 
-        assertEquals("let x: number = 1;\n\nprintln(x);\n", format(statements, rules))
+        assertEquals("let x:number = 1;\nprintln(x);\n", format(statements, rules))
     }
 
     @Test
-    fun `the println rule does not affect the first statement in the list`() {
+    fun `puts one blank line after the println when the rule is 1`() {
+        val statements = listOf(PrintCall(NumberLiteral(1.0)), PrintCall(NumberLiteral(2.0)))
+        val rules = FormatterRules(lineBreaksAfterPrintln = 1)
+
+        assertEquals("println(1);\n\nprintln(2);\n", format(statements, rules))
+    }
+
+    @Test
+    fun `puts two blank lines after the println when the rule is 2`() {
+        val statements = listOf(PrintCall(NumberLiteral(1.0)), PrintCall(NumberLiteral(2.0)))
+        val rules = FormatterRules(lineBreaksAfterPrintln = 2)
+
+        assertEquals("println(1);\n\n\nprintln(2);\n", format(statements, rules))
+    }
+
+    @Test
+    fun `the breaks go after the println, not before it`() {
+        val statements = listOf(PrintCall(NumberLiteral(1.0)), VariableDeclaration("x", "number", null))
+        val rules = FormatterRules(lineBreaksAfterPrintln = 2)
+
+        assertEquals("println(1);\n\n\nlet x:number;\n", format(statements, rules))
+    }
+
+    @Test
+    fun `no extra breaks are added after the last statement`() {
         val statements = listOf(PrintCall(NumberLiteral(1.0)))
-        val rules = FormatterRules(lineBreaksBeforePrintln = 2)
+        val rules = FormatterRules(lineBreaksAfterPrintln = 2)
 
         assertEquals("println(1);\n", format(statements, rules))
     }
@@ -247,12 +260,37 @@ class FormatterTest {
             )
 
         val expected =
-            "let x: number = 5;\n" +
+            "let x:number = 5;\n" +
                 "x = x + 1;\n" +
                 "println(x);\n" +
-                "let greeting: string = \"hello\";\n" +
+                "let greeting:string = \"hello\";\n" +
                 "println(greeting);\n"
 
         assertEquals(expected, format(statements))
+    }
+
+    @Test
+    fun `the rules the config cannot turn off are always applied`() {
+        val statements =
+            listOf(
+                VariableDeclaration(
+                    "x",
+                    "number",
+                    BinaryExpression(NumberLiteral(1.0), TokenType.PLUS, NumberLiteral(2.0)),
+                ),
+                PrintCall(Identifier("x")),
+            )
+        val rules =
+            FormatterRules(
+                spaceBeforeColon = true,
+                spaceAfterColon = true,
+                noSpacingAroundEquals = true,
+                lineBreaksAfterPrintln = 2,
+            )
+
+        val output = format(statements, rules)
+
+        assertEquals("let x : number=1 + 2;\nprintln(x);\n", output)
+        assertFalse(output.contains("  "))
     }
 }

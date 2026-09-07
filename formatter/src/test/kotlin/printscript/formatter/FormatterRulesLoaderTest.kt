@@ -1,8 +1,12 @@
 package printscript.formatter
+
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.PrintStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class FormatterRulesLoaderTest {
     private fun tempConfig(
@@ -14,111 +18,128 @@ class FormatterRulesLoaderTest {
             deleteOnExit()
         }
 
+    private fun capturingStderr(block: () -> Unit): String {
+        val buffer = ByteArrayOutputStream()
+        val original = System.err
+        System.setErr(PrintStream(buffer))
+        try {
+            block()
+        } finally {
+            System.setErr(original)
+        }
+        return buffer.toString()
+    }
+
     @Test
-    fun `loads all fields from a complete JSON config`() {
+    fun `loads every TCK key from a JSON config`() {
         val json =
             """
             {
-              "spaceBeforeColon": true,
-              "spaceAfterColon": false,
-              "spaceAroundAssignment": true,
-              "lineBreaksBeforePrintln": 2
+              "enforce-spacing-before-colon-in-declaration": true,
+              "enforce-spacing-after-colon-in-declaration": true,
+              "enforce-spacing-around-equals": true,
+              "line-breaks-after-println": 2,
+              "indent-inside-if": 2,
+              "if-brace-below-line": true
             }
             """.trimIndent()
 
         val rules = FormatterRulesLoader.fromJson(json)
 
-        assertEquals(FormatterRules(true, false, true, 2), rules)
+        assertTrue(rules.spaceBeforeColon)
+        assertTrue(rules.spaceAfterColon)
+        assertTrue(rules.spaceAroundAssignment)
+        assertEquals(2, rules.lineBreaksAfterPrintln)
+        assertEquals(2, rules.indentInsideIf)
+        assertEquals(false, rules.braceOnSameLine)
     }
 
     @Test
-    fun `falls back to defaults for fields missing from a JSON config`() {
-        val json = """{ "spaceBeforeColon": true }"""
-
-        val rules = FormatterRulesLoader.fromJson(json)
-
-        assertEquals(FormatterRules(spaceBeforeColon = true), rules)
-    }
-
-    @Test
-    fun `loads all fields from a complete YAML config`() {
+    fun `loads every TCK key from a YAML config`() {
         val yaml =
             """
-            spaceBeforeColon: true
-            spaceAfterColon: false
-            spaceAroundAssignment: true
-            lineBreaksBeforePrintln: 2
+            enforce-spacing-before-colon-in-declaration: true
+            enforce-no-spacing-around-equals: true
+            line-breaks-after-println: 1
             """.trimIndent()
 
         val rules = FormatterRulesLoader.fromYaml(yaml)
 
-        assertEquals(FormatterRules(true, false, true, 2), rules)
+        assertTrue(rules.spaceBeforeColon)
+        assertEquals(false, rules.spaceAroundAssignment)
+        assertEquals(1, rules.lineBreaksAfterPrintln)
     }
 
     @Test
-    fun `falls back to defaults for fields missing from a YAML config`() {
-        val yaml = "lineBreaksBeforePrintln: 0"
+    fun `falls back to defaults for keys the config does not mention`() {
+        val rules = FormatterRulesLoader.fromJson("""{ "line-breaks-after-println": 2 }""")
 
-        val rules = FormatterRulesLoader.fromYaml(yaml)
+        assertEquals(FormatterRules(lineBreaksAfterPrintln = 2), rules)
+    }
 
-        assertEquals(FormatterRules(lineBreaksBeforePrintln = 0), rules)
+    @Test
+    fun `an unknown key does not break the load and is reported on stderr`() {
+        var rules: FormatterRules? = null
+
+        val stderr = capturingStderr { rules = FormatterRulesLoader.fromJson("""{ "no-existe": true }""") }
+
+        assertEquals(FormatterRules(), rules)
+        assertTrue(stderr.contains("no-existe"))
+    }
+
+    @Test
+    fun `reads a JSON config from a stream, like the TCK hands it over`() {
+        val stream = """{ "line-breaks-after-println": 2 }""".byteInputStream()
+
+        assertEquals(2, FormatterRulesLoader.fromStream(stream).lineBreaksAfterPrintln)
+    }
+
+    @Test
+    fun `reads a YAML config from a stream, like the TCK hands it over`() {
+        val stream = "line-breaks-after-println: 1".byteInputStream()
+
+        assertEquals(1, FormatterRulesLoader.fromStream(stream).lineBreaksAfterPrintln)
     }
 
     @Test
     fun `JSON and YAML configs representing the same rules produce equal results`() {
-        val json = """{"spaceBeforeColon": true, "lineBreaksBeforePrintln": 2}"""
-        val yaml = "spaceBeforeColon: true\nlineBreaksBeforePrintln: 2"
+        val json = """{"enforce-spacing-before-colon-in-declaration": true, "line-breaks-after-println": 2}"""
+        val yaml = "enforce-spacing-before-colon-in-declaration: true\nline-breaks-after-println: 2"
 
         assertEquals(FormatterRulesLoader.fromJson(json), FormatterRulesLoader.fromYaml(yaml))
     }
 
     @Test
     fun `reads the rules from a json file`() {
-        val file = tempConfig("json", """{"spaceBeforeColon": true, "lineBreaksBeforePrintln": 2}""")
+        val file = tempConfig("json", """{"line-breaks-after-println": 2}""")
 
-        val rules = FormatterRulesLoader.fromFile(file.path)
-
-        assertEquals(FormatterRules(spaceBeforeColon = true, lineBreaksBeforePrintln = 2), rules)
+        assertEquals(FormatterRules(lineBreaksAfterPrintln = 2), FormatterRulesLoader.fromFile(file.path))
     }
 
     @Test
     fun `reads the rules from a yaml file`() {
-        val file = tempConfig("yaml", "spaceAfterColon: false")
+        val file = tempConfig("yaml", "enforce-spacing-after-colon-in-declaration: true")
 
-        val rules = FormatterRulesLoader.fromFile(file.path)
-
-        assertEquals(FormatterRules(spaceAfterColon = false), rules)
+        assertEquals(FormatterRules(spaceAfterColon = true), FormatterRulesLoader.fromFile(file.path))
     }
 
     @Test
     fun `reads the rules from a yml file`() {
-        val file = tempConfig("yml", "spaceAroundAssignment: false")
+        val file = tempConfig("yml", "enforce-no-spacing-around-equals: true")
 
-        val rules = FormatterRulesLoader.fromFile(file.path)
-
-        assertEquals(FormatterRules(spaceAroundAssignment = false), rules)
+        assertEquals(FormatterRules(noSpacingAroundEquals = true), FormatterRulesLoader.fromFile(file.path))
     }
 
     @Test
     fun `ignores the casing of the extension`() {
-        val file = tempConfig("JSON", """{"spaceBeforeColon": true}""")
+        val file = tempConfig("JSON", """{"line-breaks-after-println": 1}""")
 
-        val rules = FormatterRulesLoader.fromFile(file.path)
-
-        assertEquals(FormatterRules(spaceBeforeColon = true), rules)
-    }
-
-    @Test
-    fun `a json file and a yaml file with the same rules produce equal results`() {
-        val json = tempConfig("json", """{"spaceBeforeColon": true, "lineBreaksBeforePrintln": 2}""")
-        val yaml = tempConfig("yaml", "spaceBeforeColon: true\nlineBreaksBeforePrintln: 2")
-
-        assertEquals(FormatterRulesLoader.fromFile(json.path), FormatterRulesLoader.fromFile(yaml.path))
+        assertEquals(FormatterRules(lineBreaksAfterPrintln = 1), FormatterRulesLoader.fromFile(file.path))
     }
 
     @Test
     fun `rejects a config file with an extension that is not json or yaml`() {
-        val file = tempConfig("txt", "spaceAfterColon: false")
+        val file = tempConfig("txt", "line-breaks-after-println: 1")
 
         assertFailsWith<IllegalArgumentException> { FormatterRulesLoader.fromFile(file.path) }
     }
@@ -126,5 +147,12 @@ class FormatterRulesLoaderTest {
     @Test
     fun `rejects a config file that does not exist`() {
         assertFailsWith<IllegalArgumentException> { FormatterRulesLoader.fromFile("no-existe.json") }
+    }
+
+    @Test
+    fun `rejects a line breaks value the formatter cannot honour`() {
+        assertFailsWith<IllegalArgumentException> {
+            FormatterRulesLoader.fromJson("""{ "line-breaks-after-println": 5 }""")
+        }
     }
 }
