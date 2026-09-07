@@ -1,6 +1,7 @@
 package printscript.parser.statement.handlers
 
 import printscript.ast.Block
+import printscript.ast.Expression
 import printscript.ast.IfStatement
 import printscript.ast.Statement
 import printscript.common.LanguageVersion
@@ -24,15 +25,9 @@ class IfStatementHandler(private val version: LanguageVersion) : StatementHandle
                 ?: return ASTResult.Failure("Expected 'if'.", Position(0, 0), Position(0, 0))
         VersionGate.check("if statements", LanguageVersion.V1_1, version, ifToken.start, ifToken.end)?.let { return it }
 
-        val leftParenResult = stream.consume(TokenType.LEFTPAREN, "Expected '(' after 'if'.")
-        if (leftParenResult is ASTResult.Failure) return leftParenResult
-
-        val conditionResult = expressionParser.parseExpression()
+        val conditionResult = parseCondition(stream, expressionParser)
         if (conditionResult is ASTResult.Failure) return conditionResult
         val condition = (conditionResult as ASTResult.Success).value
-
-        val rightParenResult = stream.consume(TokenType.RIGHTPAREN, "Expected ')' after if condition.")
-        if (rightParenResult is ASTResult.Failure) return rightParenResult
 
         val thenBranchResult = parseBlock(stream, statementParser)
         if (thenBranchResult is ASTResult.Failure) return thenBranchResult
@@ -54,6 +49,22 @@ class IfStatementHandler(private val version: LanguageVersion) : StatementHandle
         }
 
         return ASTResult.Success(IfStatement(condition, thenBranch, elseBranch, ifToken.start))
+    }
+
+    private fun parseCondition(
+        stream: TokenStream,
+        expressionParser: ExpressionParser,
+    ): ASTResult<Expression> {
+        val leftParenResult = stream.consume(TokenType.LEFTPAREN, "Expected '(' after 'if'.")
+        if (leftParenResult is ASTResult.Failure) return leftParenResult
+
+        val conditionResult = expressionParser.parseExpression()
+        if (conditionResult is ASTResult.Failure) return conditionResult
+
+        val rightParenResult = stream.consume(TokenType.RIGHTPAREN, "Expected ')' after if condition.")
+        if (rightParenResult is ASTResult.Failure) return rightParenResult
+
+        return conditionResult
     }
 
     private fun parseBlock(
