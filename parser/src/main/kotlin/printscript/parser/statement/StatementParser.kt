@@ -10,7 +10,7 @@ import printscript.parser.stream.TokenStream
 class StatementParser(
     private val stream: TokenStream,
     private val expressionParser: ExpressionParser,
-    private val handlers: Map<TokenType, StatementHandler> = DefaultStatementHandlers.map,
+    private val handlers: Map<TokenType, StatementHandler> = DefaultStatementHandlers.map(),
 ) {
     fun parseStatement(): ASTResult<Statement> {
         val token = stream.peek()
@@ -27,6 +27,6 @@ class StatementParser(
                     token.end,
                 )
         stream.advance()
-        return handler.parse(stream, expressionParser)
+        return handler.parse(stream, expressionParser, this)
     }
 }
