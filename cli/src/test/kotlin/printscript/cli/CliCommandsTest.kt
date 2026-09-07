@@ -112,7 +112,7 @@ class CliCommandsTest {
         val file = prsFile("let saludo_final: string = \"hola\";\n")
         val config = File.createTempFile("printscript-cli-test-linter-rules", ".json")
         tempFiles += config
-        config.writeText("""{"identifierFormat": "snake case"}""")
+        config.writeText("""{"identifier_format": "snake case"}""")
 
         val result = AnalyzeCommand().test(listOf(file.path, "--config", config.path))
 
@@ -128,7 +128,7 @@ class CliCommandsTest {
         val result = FormatCommand().test(listOf(file.path))
 
         assertEquals(0, result.statusCode)
-        assertEquals("let saludo: string = \"hola\";\nprintln(saludo);\n", result.stdout)
+        assertEquals("let saludo:string = \"hola\";\nprintln(saludo);\n", result.stdout)
         assertEquals(originalCode, file.readText())
     }
 
@@ -137,7 +137,7 @@ class CliCommandsTest {
         val file = prsFile("let saludo: string = \"hola\";\n")
         val config = File.createTempFile("printscript-cli-test-rules", ".json")
         tempFiles += config
-        config.writeText("""{"spaceBeforeColon": true, "spaceAfterColon": false}""")
+        config.writeText("""{"enforce-spacing-before-colon-in-declaration": true}""")
 
         val result = FormatCommand().test(listOf(file.path, "--config", config.path))
 
