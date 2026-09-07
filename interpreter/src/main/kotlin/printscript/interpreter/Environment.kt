@@ -58,6 +58,8 @@ class Environment {
 
     fun isConst(name: String): Boolean = find(name)?.isConst ?: false
 
+    fun isDeclared(name: String): Boolean = find(name) != null
+
     private fun find(name: String): Binding? {
         for (i in scopes.indices.reversed()) {
             val scope = scopes[i]
