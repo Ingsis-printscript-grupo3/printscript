@@ -2,6 +2,7 @@ import org.gradle.kotlin.dsl.kotlin
 
 plugins {
     kotlin("jvm")
+    `java-library`
     id("org.jlleitschuh.gradle.ktlint")
     id("io.gitlab.arturbosch.detekt")
     jacoco
@@ -12,8 +13,8 @@ kotlin {
     jvmToolchain(21)
 }
 
-group = "org.printscript"
-version = project.findProperty("version")?.takeIf { it != "unspecified" } ?: "0.0.1-SNAPSHOT"
+group = providers.gradleProperty("group").getOrElse("org.printscript")
+version = providers.gradleProperty("version").getOrElse("0.0.1-SNAPSHOT")
 
 publishing {
     publications {
