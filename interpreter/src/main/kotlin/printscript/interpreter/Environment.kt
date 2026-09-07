@@ -21,10 +21,14 @@ class Environment {
         scopes.removeLast()
     }
 
-    fun isRootScope(): Boolean = scopes.size == 1
-
-    fun currentScopeDepth(): Int = scopes.size
-
+    /**
+     * Declares a variable in the current lexical scope.
+     *
+     * Shadowing Policy:
+     * - Redeclaring a variable within the same scope is disallowed (throws [VariableAlreadyDeclaredError]).
+     * - Shadowing an outer-scope variable from an inner scope is allowed; lookups will resolve to the
+     *   innermost binding while that scope is active, without altering the outer binding.
+     */
     fun declare(
         name: String,
         value: Value?,
