@@ -1,0 +1,11 @@
+#!/bin/sh
+# Para q git lo use hay q correr una vez:  ./gradlew installGitHooks
+
+echo "pre-push: corriendo ./gradlew check "
+
+if ! ./gradlew check --console=plain; then
+    echo "pre-push: el check fallo, el push se cancelo."
+    exit 1
+fi
+
+echo "pre-push: check ok"
