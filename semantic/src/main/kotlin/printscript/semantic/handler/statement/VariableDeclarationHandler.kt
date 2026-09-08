@@ -47,11 +47,19 @@ class VariableDeclarationHandler : Handler<Statement, StatementValidator, Semant
                 val exprType = (exprResult as? SemanticResult.Success)?.value
                 when {
                     exprResult is SemanticResult.Failure -> exprResult
-                    exprType != node.type -> SemanticResult.Failure("Incompatible types.")
+                    exprType != node.type ->
+                        SemanticResult.Failure("Semantic Error: Incompatible types.", node.position)
                     else -> null
                 }
             }
 
-        return typeMismatch ?: ctx.symbolTable.define(node.name, node.type, node.isConst)
+        if (typeMismatch != null) return typeMismatch
+
+        val defineResult = ctx.symbolTable.define(node.name, node.type, node.isConst)
+        return if (defineResult is SemanticResult.Failure) {
+            SemanticResult.Failure(defineResult.message, node.position)
+        } else {
+            defineResult
+        }
     }
 }

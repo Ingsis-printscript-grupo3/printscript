@@ -3,6 +3,7 @@ package printscript.semantic.handler.expression
 import printscript.ast.BinaryExpression
 import printscript.ast.Expression
 import printscript.ast.registry.Handler
+import printscript.common.Position
 import printscript.common.TokenType
 import printscript.semantic.ExpressionResolver
 import printscript.semantic.SemanticResult
@@ -36,7 +37,7 @@ class BinaryExpressionHandler : Handler<Expression, ExpressionResolver, Semantic
         operator: TokenType,
         left: String,
         right: String,
-        position: printscript.common.Position = printscript.common.Position(0, 0),
+        position: Position,
     ): SemanticResult<String> {
         if (left == "boolean" || right == "boolean") {
             return SemanticResult.Failure(

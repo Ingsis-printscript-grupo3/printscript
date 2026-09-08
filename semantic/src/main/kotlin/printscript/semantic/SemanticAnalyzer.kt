@@ -2,6 +2,7 @@ package printscript.semantic
 
 import printscript.ast.Statement
 import printscript.common.LanguageVersion
+import printscript.common.Position
 import printscript.semantic.symbol.SymbolTable
 
 class SemanticAnalyzer(
@@ -18,7 +19,8 @@ class SemanticAnalyzer(
                 val result = statementValidator.validate(statement)
                 when (result) {
                     is SemanticResult.Failure -> {
-                        yield(SemanticResult.Failure(result.message, statement.position))
+                        val position = if (result.position == Position(0, 0)) statement.position else result.position
+                        yield(SemanticResult.Failure(result.message, position))
                         break
                     }
                     is SemanticResult.Success -> {

@@ -19,7 +19,7 @@ class AssignmentHandler : Handler<Statement, StatementValidator, SemanticResult<
 
         val variableResult = ctx.symbolTable.lookupVariable(node.name)
         if (variableResult is SemanticResult.Failure) {
-            return variableResult
+            return SemanticResult.Failure(variableResult.message, node.position)
         }
 
         val variable = (variableResult as SemanticResult.Success).value
@@ -37,7 +37,10 @@ class AssignmentHandler : Handler<Statement, StatementValidator, SemanticResult<
 
         val exprType = (exprResult as SemanticResult.Success).value
         if (exprType != variable.type) {
-            return SemanticResult.Failure("Incompatible types in assignment.")
+            return SemanticResult.Failure(
+                "Semantic Error: Incompatible types in assignment.",
+                node.position,
+            )
         }
 
         return SemanticResult.Success(Unit)
