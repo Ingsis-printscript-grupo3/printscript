@@ -7,6 +7,8 @@ import printscript.ast.Identifier
 import printscript.ast.IfStatement
 import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
+import printscript.ast.ReadEnv
+import printscript.ast.ReadInput
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.LanguageVersion
@@ -183,5 +185,86 @@ class SemanticAnalyzerTest {
         assertIs<SemanticResult.Failure>(failure)
         assertEquals(Position(5, 1), failure.position)
         assertTrue(failure.message.contains("Variable 'scopedVar' not declared"))
+    }
+
+    @Test
+    fun `semantic analyzer validates program with readInput in declaration, assignment and println in 1_1`() {
+        val statements =
+            listOf(
+                VariableDeclaration("name", "string", ReadInput(StringLiteral("Name: "))),
+                VariableDeclaration("age", "number", ReadInput(StringLiteral("Age: "))),
+                Assignment("name", ReadInput(StringLiteral("New Name: "))),
+                PrintCall(ReadInput(StringLiteral("Echo: "))),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(4, results.size)
+        results.forEach { assertIs<SemanticResult.Success<*>>(it) }
+    }
+
+    @Test
+    fun `semantic analyzer validates program with readEnv in declaration, assignment and println in 1_1`() {
+        val statements =
+            listOf(
+                VariableDeclaration("user", "string", ReadEnv(StringLiteral("USER"))),
+                VariableDeclaration("port", "number", ReadEnv(StringLiteral("PORT"))),
+                Assignment("user", ReadEnv(StringLiteral("NEW_USER"))),
+                PrintCall(ReadEnv(StringLiteral("PATH"))),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(4, results.size)
+        results.forEach { assertIs<SemanticResult.Success<*>>(it) }
+    }
+
+    @Test
+    fun `semantic analyzer rejects readInput in 1_0 and reports statement position`() {
+        val statements =
+            listOf(
+                VariableDeclaration("x", "string", ReadInput(StringLiteral("prompt")), Position(4, 2)),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(1, results.size)
+        val failure = results.single()
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals(Position(4, 2), failure.position)
+        assertTrue(failure.message.contains("'readInput' is not supported in PrintScript 1.0"))
+    }
+
+    @Test
+    fun `semantic analyzer rejects readEnv in 1_0 and reports statement position`() {
+        val statements =
+            listOf(
+                VariableDeclaration("x", "string", ReadEnv(StringLiteral("PATH")), Position(3, 1)),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(1, results.size)
+        val failure = results.single()
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals(Position(3, 1), failure.position)
+        assertTrue(failure.message.contains("'readEnv' is not supported in PrintScript 1.0"))
+    }
+
+    @Test
+    fun `semantic analyzer fails and stops when readInput receives invalid argument type`() {
+        val statements =
+            listOf(
+                VariableDeclaration("x", "string", ReadInput(NumberLiteral(123.0)), Position(2, 5)),
+                PrintCall(StringLiteral("unreachable")),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(1, results.size)
+        val failure = results.single()
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals(Position(2, 5), failure.position)
+        assertTrue(failure.message.contains("'readInput' argument must be a string, found 'number'"))
     }
 }

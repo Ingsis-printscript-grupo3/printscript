@@ -14,6 +14,8 @@ import printscript.semantic.handler.expression.BinaryExpressionHandler
 import printscript.semantic.handler.expression.BooleanLiteralHandler
 import printscript.semantic.handler.expression.IdentifierHandler
 import printscript.semantic.handler.expression.NumberLiteralHandler
+import printscript.semantic.handler.expression.ReadEnvHandler
+import printscript.semantic.handler.expression.ReadInputHandler
 import printscript.semantic.handler.expression.StringLiteralHandler
 import printscript.semantic.handler.statement.AssignmentHandler
 import printscript.semantic.handler.statement.BlockHandler
@@ -51,6 +53,8 @@ class HandlerGuardsTest {
                 BooleanLiteralHandler() to number,
                 IdentifierHandler() to number,
                 BinaryExpressionHandler() to number,
+                ReadInputHandler() to number,
+                ReadEnvHandler() to number,
             )
 
         for ((handler, foreignNode) in cases) {
