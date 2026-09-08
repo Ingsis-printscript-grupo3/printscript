@@ -132,7 +132,7 @@ class FormatCommand : CliktCommand(name = "format", help = "Format a .prs file a
 }
 
 // Reports progress to stderr as statements are parsed, so it never mixes with a command's own stdout output.
-private class ParsingProgress(private val enabled: Boolean) {
+internal class ParsingProgress(private val enabled: Boolean) {
     private var shown = false
 
     fun report(parsedStatements: Int) {
