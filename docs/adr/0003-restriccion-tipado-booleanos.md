@@ -1,4 +1,4 @@
-# ADR 0003: Restricción de tipado en operaciones con booleanos y shadowing léxico
+# ADR 0003: Restricción de tipado en operaciones con booleanos
 
 ## Estado
 
@@ -6,27 +6,19 @@ Aceptado.
 
 ## Contexto
 
-Con la introducción de PrintScript 1.1 (Ticket 2.2), se incorporan el tipo `boolean`, literales `true`/`false`, sentencias condicionales `if` y bloques con scopes léxicos.
-Surgieron dos decisiones de diseño relevantes para el módulo `semantic`:
-
-1. **Operaciones binarias con booleanos**: El operador `+` admite suma de números y concatenación de cadenas con números (`string + number`, `number + string`). TypeScript permite concatenar booleanos con strings (`"flag: " + true -> "flag: true"`).
-2. **Shadowing léxico**: Declarar una variable dentro de un bloque anidado (`thenBranch`, `elseBranch` o `Block`) con el mismo identificador que una variable de un scope superior.
+Con la introducción de PrintScript 1.1 (Ticket 2.2), se incorporan el tipo `boolean` y los literales `true`/`false`.
+Surgió la necesidad de definir el comportamiento de las expresiones binarias ante operandos booleanos:
+- En algunos lenguajes como JavaScript/TypeScript, el operador `+` permite la concatenación implícita de cadenas con booleanos (por ejemplo, `"flag: " + true` resulta en `"flag: true"`).
+- Asimismo, podría plantearse la coerción de booleanos a números (`true + 1 -> 2`).
 
 ## Decisión
 
-### 1. Tipado estricto en operaciones binarias
-Se prohíbe explícitamente el uso de expresiones de tipo `boolean` en todos los operadores binarios aritméticos (`+`, `-`, `*`, `/`).
-- No se realiza coerción implícita de `boolean` a `string` en expresiones binarias (`"flag: " + true` resulta en error semántico).
-- Para imprimir booleanos, se utiliza directamente `println(boolean)` o se manipulan mediante sentencias condicionales `if (flag)`.
-- Esta decisión favorece un sistema de tipos estático y explícito, evitando conversiones implícitas no documentadas en la especificación del lenguaje.
-
-### 2. Shadowing léxico en ámbitos anidados
-Se permite el shadowing léxico de variables:
-- Una declaración `let` o `const` dentro de un bloque anidado puede reutilizar un nombre previamente declarado en un ámbito exterior.
-- La búsqueda en `SymbolTable` se realiza de manera inversa (desde el scope actual hacia los ancestros), resolviendo siempre la definición más cercana.
-- El ciclo de vida del scope anidado está protegido por `try/finally { symbolTable.exitScope() }` en `BlockHandler`, asegurando que al salir del bloque la variable externa recupere su visibilidad intacta.
+Se prohíbe explícitamente el uso de operandos de tipo `boolean` en todos los operadores binarios aritméticos y de concatenación (`+`, `-`, `*`, `/`).
+- No se realiza coerción implícita de `boolean` a `string` ni a `number` en expresiones binarias (`"flag: " + true` resulta en un error semántico `Semantic Error: Operator '+' cannot be applied to boolean types.`).
+- Para imprimir o representar valores booleanos, se utiliza directamente la llamada a `println(boolean)` o se controlan los flujos mediante sentencias condicionales `if (cond)`.
+- Esta decisión favorece un sistema de tipos estático, explícito y predecible, alineado estrictamente con la especificación de PrintScript y evitando efectos colaterales de conversión automática de tipos.
 
 ## Consecuencias
 
-- **Mayor robustez y previsibilidad**: Los errores de tipado con booleanos se detectan tempranamente en la fase semántica antes de alcanzar el intérprete.
-- **Aislamiento de ámbitos**: Los bloques pueden declarar identificadores temporales sin riesgo de colisión accidental o mutación del estado del ámbito contenedor.
+- **Mayor robustez y previsibilidad**: Los errores de tipado con booleanos se detectan tempranamente en la fase de análisis semántico antes de alcanzar la ejecución en el intérprete.
+- **Sin efectos colaterales**: El comportamiento de los operadores `+`, `-`, `*`, `/` se mantiene puro y reservado únicamente para las combinaciones válidas de `number` y `string`.
