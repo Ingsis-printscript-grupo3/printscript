@@ -255,7 +255,12 @@ class SemanticAnalyzerTest {
     fun `semantic analyzer fails and stops when readInput receives invalid argument type`() {
         val statements =
             listOf(
-                VariableDeclaration("x", "string", ReadInput(NumberLiteral(123.0)), Position(2, 5)),
+                VariableDeclaration(
+                    "x",
+                    "string",
+                    ReadInput(NumberLiteral(123.0, Position(2, 23))),
+                    Position(2, 5),
+                ),
                 PrintCall(StringLiteral("unreachable")),
             )
 
@@ -264,7 +269,31 @@ class SemanticAnalyzerTest {
         assertEquals(1, results.size)
         val failure = results.single()
         assertIs<SemanticResult.Failure>(failure)
-        assertEquals(Position(2, 5), failure.position)
+        assertEquals(Position(2, 23), failure.position)
         assertTrue(failure.message.contains("'readInput' argument must be a string, found 'number'"))
+    }
+
+    @Test
+    fun `semantic analyzer preserves fine-grained position of error inside a nested block statement`() {
+        val statements =
+            listOf(
+                IfStatement(
+                    BooleanLiteral(true),
+                    Block(
+                        listOf(
+                            VariableDeclaration("y", "number", StringLiteral("err"), Position(15, 8)),
+                        ),
+                    ),
+                    null,
+                    Position(1, 1),
+                ),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(1, results.size)
+        val failure = results.single()
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals(Position(15, 8), failure.position)
     }
 }

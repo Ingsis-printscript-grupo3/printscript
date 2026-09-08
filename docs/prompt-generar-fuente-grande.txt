@@ -1,0 +1,84 @@
+PROMPT PARA OTRA IA - GENERAR UN FUENTE PRINTSCRIPT GRANDE
+==========================================================
+
+Copiar todo lo que esta debajo de la linea y pegarlo como prompt. Es autocontenido: no
+hace falta que lea el proyecto.
+
+--------------------------------------------------------------------------------
+
+Necesito un script que genere un archivo de codigo fuente valido del lenguaje
+PrintScript 1.0, de un tamano configurable en MB, para probar que un interprete no lo
+carga entero en memoria.
+
+REQUISITOS DEL SCRIPT
+
+- Lenguaje: Java single-file (java Gen.java salida.ps 50), o bash/PowerShell/Python.
+- Argumentos: path de salida y tamano en MB.
+- Tiene que escribir con un writer BUFFERIZADO, de a bloques. NO armar el contenido
+  completo en un String y escribirlo de una: el script tendria el mismo problema que el
+  programa que quiero probar.
+- Al terminar, imprimir en stdout: bytes escritos y cantidad de statements generados.
+
+GRAMATICA DE PRINTSCRIPT 1.0 - ES TODO LO QUE HAY
+
+    let <nombre>: number = <expresion>;
+    let <nombre>: string = "<texto>";
+    <nombre> = <expresion>;
+    println(<expresion>);
+
+- Toda sentencia termina en ';'.
+- Los unicos tipos son 'number' y 'string'. No hay inferencia: el tipo va siempre.
+- Los strings van con comillas simples o dobles.
+- Operadores: + - * / . El '+' tambien concatena strings.
+- NO existen: if, while, for, funciones, comentarios, booleanos, arrays, objetos.
+  Si generas cualquiera de esas cosas, el archivo no sirve.
+
+EL ARCHIVO TIENE QUE SER SEMANTICAMENTE VALIDO, NO SOLO SINTACTICAMENTE
+
+Esto es lo mas importante y lo mas facil de errar:
+
+- Cada variable se declara UNA SOLA VEZ. Un segundo 'let' con el mismo nombre es error.
+- Una variable se usa solo DESPUES de declararla.
+- Los tipos tienen que cerrar: no asignar un string a un number ni al reves.
+
+Si algo de esto falla, el interprete corta con un error semantico en la primera linea
+mala y la prueba no mide nada.
+
+ESTRUCTURA QUE QUIERO
+
+Declarar POCAS variables (3 o 4) al principio, una sola vez, y despues repetir
+asignaciones sobre esas mismas variables hasta llegar al tamano pedido. Asi:
+
+    let a: number = 1;
+    let b: number = 2;
+    let texto: string = "arranca";
+    println(texto);
+    a = b + 1;
+    b = a - 1;
+    a = b + 1;
+    b = a - 1;
+    ... (repetir el par de asignaciones)
+
+Por que asi y no un 'let' distinto por linea: el analizador semantico y el interprete
+guardan una entrada por cada variable DISTINTA. Con millones de nombres unicos, la
+memoria crece por la tabla de simbolos y no por el fuente, y entonces la prueba mide la
+tabla de simbolos en vez de medir si el archivo se carga entero. Con 3 variables y
+asignaciones repetidas, lo unico que crece es el archivo.
+
+Elegir valores que se mantengan acotados (por ejemplo a = b + 1 / b = a - 1 deja los
+valores estables). Evitar que crezcan sin techo.
+
+POCOS println
+
+Un println al principio y listo. Si generas millones de println, la salida por consola
+tapa todo y la prueba se vuelve incomoda de leer.
+
+QUE ME TENES QUE DEVOLVER
+
+El codigo del script y nada mas. Sin explicacion previa, sin markdown alrededor.
+
+--------------------------------------------------------------------------------
+
+NOTA: ya hay una implementacion que funciona, embebida en
+docs/demo-streaming-paso-a-paso.txt (paso 1). Este prompt esta por si se quiere
+regenerar desde cero o variar la estructura del fuente.

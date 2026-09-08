@@ -26,11 +26,11 @@ class Version11EndToEndTest {
         """.trimIndent()
 
     @Test
-    fun `un programa 1_1 bajo version 1_1 no falla en el parser`() {
-        val result = runEngine(program, LanguageVersion.V1_1)
+    fun `un programa 1_1 bajo version 1_1 pasa la validacion sintactica y semantica`() {
+        val engine = Engine(output = BucketOutput())
+        val result = engine.validate(program, LanguageVersion.V1_1)
 
-        assertTrue(result is ExecutionResult.Failure)
-        assertTrue(result.type != "Syntax", "expected the parser to accept the 1.1 program, but got: $result")
+        assertEquals(ExecutionResult.Success, result)
     }
 
     @Test

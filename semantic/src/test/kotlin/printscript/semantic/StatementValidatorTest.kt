@@ -570,6 +570,6 @@ class StatementValidatorTest {
         val decl = VariableDeclaration("n", "number", binExpr)
         val result = validator().validate(decl)
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Incompatible types.", result.message)
+        assertEquals("Semantic Error: Incompatible types.", result.message)
     }
 }
