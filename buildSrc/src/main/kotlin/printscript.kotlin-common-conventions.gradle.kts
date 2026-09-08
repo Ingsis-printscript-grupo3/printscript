@@ -13,6 +13,13 @@ kotlin {
     jvmToolchain(21)
 }
 
+// detekt saca su JDK de aca
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
 group = providers.gradleProperty("group").getOrElse("org.printscript")
 version = providers.gradleProperty("version").getOrElse("0.0.1-SNAPSHOT")
 
