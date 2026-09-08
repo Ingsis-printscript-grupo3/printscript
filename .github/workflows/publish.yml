@@ -28,4 +28,6 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew publish -Pversion=${{ github.event.release.tag_name }}
+          TAG: ${{ github.event.release.tag_name }}
+        # saca la v del tag del release: v1.0.0 se publica como 1.0.0
+        run: ./gradlew publish -Pversion=${TAG#v}
