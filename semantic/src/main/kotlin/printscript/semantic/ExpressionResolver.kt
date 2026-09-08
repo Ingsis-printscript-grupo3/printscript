@@ -12,7 +12,7 @@ import printscript.semantic.symbol.SymbolTable
 
 class ExpressionResolver(
     val symbolTable: SymbolTable,
-    val version: LanguageVersion,
+    val rules: SemanticRules,
     private val registry: Registry<Expression, ExpressionResolver, SemanticResult<String>> =
         Registry(
             listOf(
@@ -24,6 +24,23 @@ class ExpressionResolver(
             ),
         ),
 ) {
+    val version: LanguageVersion get() = rules.version
+
+    constructor(
+        symbolTable: SymbolTable,
+        version: LanguageVersion,
+        registry: Registry<Expression, ExpressionResolver, SemanticResult<String>> =
+            Registry(
+                listOf(
+                    NumberLiteralHandler(),
+                    StringLiteralHandler(),
+                    BooleanLiteralHandler(),
+                    IdentifierHandler(),
+                    BinaryExpressionHandler(),
+                ),
+            ),
+    ) : this(symbolTable, SemanticRules.from(version), registry)
+
     fun resolveType(expression: Expression): SemanticResult<String> =
         registry.resolveOrNull(expression, this)
             ?: SemanticResult.Failure("Semantic Error: Unknown expression type.", expression.position)

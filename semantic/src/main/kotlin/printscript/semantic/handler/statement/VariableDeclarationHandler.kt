@@ -20,6 +20,27 @@ class VariableDeclarationHandler : Handler<Statement, StatementValidator, Semant
             )
         }
 
+        if (node.isConst && !ctx.rules.allowsConst) {
+            return SemanticResult.Failure(
+                "Semantic Error: 'const' declarations are not supported in PrintScript ${ctx.rules.version.label}.",
+                node.position,
+            )
+        }
+
+        if (node.isConst && node.value == null) {
+            return SemanticResult.Failure(
+                "Semantic Error: Constant '${node.name}' must be initialized.",
+                node.position,
+            )
+        }
+
+        if (node.type !in ctx.rules.supportedTypes) {
+            return SemanticResult.Failure(
+                "Semantic Error: Type '${node.type}' is not supported in PrintScript ${ctx.rules.version.label}.",
+                node.position,
+            )
+        }
+
         val typeMismatch =
             node.value?.let { value ->
                 val exprResult = ctx.expressionResolver.resolveType(value)
@@ -31,6 +52,6 @@ class VariableDeclarationHandler : Handler<Statement, StatementValidator, Semant
                 }
             }
 
-        return typeMismatch ?: ctx.symbolTable.define(node.name, node.type)
+        return typeMismatch ?: ctx.symbolTable.define(node.name, node.type, node.isConst)
     }
 }
