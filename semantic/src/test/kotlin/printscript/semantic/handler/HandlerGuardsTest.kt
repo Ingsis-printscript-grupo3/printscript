@@ -16,6 +16,8 @@ import printscript.semantic.handler.expression.IdentifierHandler
 import printscript.semantic.handler.expression.NumberLiteralHandler
 import printscript.semantic.handler.expression.StringLiteralHandler
 import printscript.semantic.handler.statement.AssignmentHandler
+import printscript.semantic.handler.statement.BlockHandler
+import printscript.semantic.handler.statement.IfStatementHandler
 import printscript.semantic.handler.statement.PrintCallHandler
 import printscript.semantic.handler.statement.VariableDeclarationHandler
 import printscript.semantic.symbol.SymbolTable
@@ -66,6 +68,8 @@ class HandlerGuardsTest {
                 VariableDeclarationHandler() to print,
                 AssignmentHandler() to print,
                 PrintCallHandler() to assignment,
+                IfStatementHandler() to print,
+                BlockHandler() to print,
             )
 
         for ((handler, foreignNode) in cases) {

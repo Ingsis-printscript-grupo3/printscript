@@ -1,4 +1,4 @@
-﻿package printscript.semantic
+package printscript.semantic
 
 import printscript.common.LanguageVersion
 
@@ -6,6 +6,7 @@ data class SemanticRules(
     val version: LanguageVersion,
     val allowsConst: Boolean,
     val allowsBooleans: Boolean,
+    val allowsConditionals: Boolean,
     val supportedTypes: Set<String>,
 ) {
     companion object {
@@ -16,6 +17,7 @@ data class SemanticRules(
                         version = version,
                         allowsConst = false,
                         allowsBooleans = false,
+                        allowsConditionals = false,
                         supportedTypes = setOf("number", "string"),
                     )
                 LanguageVersion.V1_1 ->
@@ -23,6 +25,7 @@ data class SemanticRules(
                         version = version,
                         allowsConst = true,
                         allowsBooleans = true,
+                        allowsConditionals = true,
                         supportedTypes = setOf("number", "string", "boolean"),
                     )
             }
