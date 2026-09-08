@@ -1,8 +1,10 @@
 package printscript.cli
 
 import printscript.interpreter.output.BucketOutput
+import java.io.StringReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class EndToEndTest {
@@ -120,6 +122,43 @@ class EndToEndTest {
         val (result, _) = runEngine(code)
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Semantic", result.type)
-        assertTrue(result.message.contains("line 2"))
+        assertEquals(2, result.start?.line)
+        // apunta al let, que es donde arranca el statement
+        assertEquals(1, result.start?.column)
+        // el semantico no produce un end propio: el AST guarda un solo punto por nodo
+        assertEquals(result.start, result.end)
+    }
+
+    @Test
+    fun `a lexical error carries the range of the offending character`() {
+        val (result, _) = runEngine("let a: number = 12 @ 4;")
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Lexical", result.type)
+        assertEquals(1, result.start?.line)
+        assertEquals(20, result.start?.column)
+        assertEquals(21, result.end?.column)
+    }
+
+    @Test
+    fun `a syntax error carries a range, not just a line`() {
+        val (result, _) = runEngine("println(5)")
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Syntax", result.type)
+        assertEquals(1, result.start?.line)
+        assertEquals(1, result.end?.line)
+        assertNotNull(result.start?.column)
+        assertNotNull(result.end?.column)
+    }
+
+    @Test
+    fun `the engine reports progress once per parsed statement`() {
+        val reported = mutableListOf<Int>()
+        val code = "let a: number = 1;\nlet b: number = 2;\nprintln(a + b);"
+
+        Engine(BucketOutput()).validate(StringReader(code), onProgress = reported::add)
+
+        assertEquals(listOf(1, 2, 3), reported)
     }
 }

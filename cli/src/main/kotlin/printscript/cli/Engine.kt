@@ -22,19 +22,34 @@ import java.io.StringReader
 sealed interface ExecutionResult {
     object Success : ExecutionResult
 
-    data class Failure(val type: String, val message: String) : ExecutionResult
+    data class Failure(
+        val type: String,
+        val message: String,
+        val start: Position? = null,
+        val end: Position? = null,
+    ) : ExecutionResult
 }
 
 sealed interface FormatResult {
     data class Success(val code: String) : FormatResult
 
-    data class Failure(val type: String, val message: String) : FormatResult
+    data class Failure(
+        val type: String,
+        val message: String,
+        val start: Position? = null,
+        val end: Position? = null,
+    ) : FormatResult
 }
 
 sealed interface LintResult {
     data class Success(val warnings: List<Warning>) : LintResult
 
-    data class Failure(val type: String, val message: String) : LintResult
+    data class Failure(
+        val type: String,
+        val message: String,
+        val start: Position? = null,
+        val end: Position? = null,
+    ) : LintResult
 }
 
 class Engine(private val output: Output) {
@@ -82,12 +97,9 @@ class Engine(private val output: Output) {
     ): FormatResult {
         return try {
             FormatResult.Success(format(parseStatements(reader, languageVersion, onProgress)))
-        } catch (e: LexicalError) {
-            FormatResult.Failure("Lexical", "${e.message} ${formatRange(e.start, e.end)}")
-        } catch (e: SyntaxError) {
-            FormatResult.Failure("Syntax", "${e.message} ${formatRange(e.start, e.end)}")
         } catch (e: Exception) {
-            FormatResult.Failure("Internal", e.message ?: "Unknown error")
+            val failure = describe(e)
+            FormatResult.Failure(failure.type, failure.message, failure.start, failure.end)
         }
     }
 
@@ -101,12 +113,9 @@ class Engine(private val output: Output) {
     ): LintResult {
         return try {
             LintResult.Success(lint(parseStatements(reader, languageVersion, onProgress)))
-        } catch (e: LexicalError) {
-            LintResult.Failure("Lexical", "${e.message} ${formatRange(e.start, e.end)}")
-        } catch (e: SyntaxError) {
-            LintResult.Failure("Syntax", "${e.message} ${formatRange(e.start, e.end)}")
         } catch (e: Exception) {
-            LintResult.Failure("Internal", e.message ?: "Unknown error")
+            val failure = describe(e)
+            LintResult.Failure(failure.type, failure.message, failure.start, failure.end)
         }
     }
 
@@ -177,21 +186,26 @@ class Engine(private val output: Output) {
 
             consume(validStatementIterator)
             ExecutionResult.Success
-        } catch (e: LexicalError) {
-            ExecutionResult.Failure("Lexical", "${e.message} ${formatRange(e.start, e.end)}")
-        } catch (e: SyntaxError) {
-            ExecutionResult.Failure("Syntax", "${e.message} ${formatRange(e.start, e.end)}")
-        } catch (e: SemanticError) {
-            ExecutionResult.Failure("Semantic", "${e.message} ${formatRange(e.start, e.end)}")
-        } catch (e: InterpreterError) {
-            ExecutionResult.Failure("Runtime", e.message ?: "Interpreter error")
         } catch (e: Exception) {
-            ExecutionResult.Failure("Internal", e.message ?: "Unknown error")
+            val failure = describe(e)
+            ExecutionResult.Failure(failure.type, failure.message, failure.start, failure.end)
         }
     }
 
-    private fun formatRange(
-        start: Position,
-        end: Position,
-    ): String = "(from line ${start.line}, column ${start.column} to line ${end.line}, column ${end.column})"
+    private data class ErrorInfo(
+        val type: String,
+        val message: String,
+        val start: Position? = null,
+        val end: Position? = null,
+    )
+
+    // un solo lugar que traduce la excepcion de cada capa al resultado del cli
+    private fun describe(error: Exception): ErrorInfo =
+        when (error) {
+            is LexicalError -> ErrorInfo("Lexical", error.message, error.start, error.end)
+            is SyntaxError -> ErrorInfo("Syntax", error.message, error.start, error.end)
+            is SemanticError -> ErrorInfo("Semantic", error.message, error.start, error.end)
+            is InterpreterError -> ErrorInfo("Runtime", error.message ?: "Interpreter error")
+            else -> ErrorInfo("Internal", error.message ?: "Unknown error")
+        }
 }
