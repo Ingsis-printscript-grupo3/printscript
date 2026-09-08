@@ -17,15 +17,32 @@ class AssignmentHandler : Handler<Statement, StatementValidator, SemanticResult<
             return SemanticResult.Failure("Semantic Error: Unexpected node in AssignmentHandler.", node.position)
         }
 
-        val exprResult = ctx.expressionResolver.resolveType(node.value)
-        val expectedResult = ctx.symbolTable.lookup(node.name)
-
-        return when {
-            exprResult is SemanticResult.Failure -> exprResult
-            expectedResult is SemanticResult.Failure -> expectedResult
-            (exprResult as SemanticResult.Success).value != (expectedResult as SemanticResult.Success).value ->
-                SemanticResult.Failure("Incompatible types in assignment.")
-            else -> SemanticResult.Success(Unit)
+        val variableResult = ctx.symbolTable.lookupVariable(node.name)
+        if (variableResult is SemanticResult.Failure) {
+            return SemanticResult.Failure(variableResult.message, node.position)
         }
+
+        val variable = (variableResult as SemanticResult.Success).value
+        if (variable.isConst) {
+            return SemanticResult.Failure(
+                "Semantic Error: Cannot reassign constant '${node.name}'.",
+                node.position,
+            )
+        }
+
+        val exprResult = ctx.expressionResolver.resolveType(node.value, expectedType = variable.type)
+        if (exprResult is SemanticResult.Failure) {
+            return exprResult
+        }
+
+        val exprType = (exprResult as SemanticResult.Success).value
+        if (exprType != variable.type) {
+            return SemanticResult.Failure(
+                "Semantic Error: Incompatible types in assignment.",
+                node.position,
+            )
+        }
+
+        return SemanticResult.Success(Unit)
     }
 }
