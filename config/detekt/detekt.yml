@@ -6,13 +6,10 @@ complexity:
     active: true
 
 style:
-  MagicNumber:
-    ignoreNumbers: ['-1', '0', '1', '2']
-
   # el parser corta con return apenas falla algo
   ReturnCount:
     max: 8
 
-  # el while corta en 3 lugares
+  # el while de precedencia sale por 4 break
   LoopWithTooManyJumpStatements:
     maxJumpCount: 4
