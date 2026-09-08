@@ -226,4 +226,33 @@ class CliCommandsTest {
             assertTrue(result.stdout.contains(name), "expected --help output to mention '$name'")
         }
     }
+
+    @Test
+    fun `the progress prints to stderr and counts the statements`() {
+        val progress = ParsingProgress(enabled = true)
+
+        val stderr =
+            stderrOf {
+                progress.report(1)
+                progress.report(2)
+                progress.report(3)
+                progress.finish()
+            }
+
+        assertTrue(stderr.contains("Parsing..."))
+        assertTrue(stderr.contains("3 statement(s) parsed"))
+    }
+
+    @Test
+    fun `the progress prints nothing when it is off`() {
+        val progress = ParsingProgress(enabled = false)
+
+        val stderr =
+            stderrOf {
+                progress.report(1)
+                progress.finish()
+            }
+
+        assertEquals("", stderr)
+    }
 }
