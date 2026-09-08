@@ -18,3 +18,17 @@ dependencies {
 application {
     mainClass.set("printscript.cli.MainKt")
 }
+
+tasks.test {
+    useJUnitPlatform { excludeTags("load") }
+}
+
+// Prueba que el pipeline no materializa: 32.768 statements con 16 MB de heap
+tasks.register<Test>("loadTest") {
+    group = "verification"
+    description = "Runs the streaming load test with a small heap"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform { includeTags("load") }
+    maxHeapSize = "16m"
+}
