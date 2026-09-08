@@ -18,7 +18,7 @@ class AssignmentHandler : Handler<Statement, StatementValidator, SemanticResult<
         }
 
         val exprResult = ctx.expressionResolver.resolveType(node.value)
-        val expectedResult = ctx.symbolTable.lookup(node.name)
+        val expectedResult = ctx.symbolTable.lookupType(node.name)
 
         return when {
             exprResult is SemanticResult.Failure -> exprResult
