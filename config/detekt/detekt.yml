@@ -3,7 +3,7 @@ complexity:
     active: true
     threshold: 40
   TooManyFunctions:
-    active: false
+    active: true
 
 style:
   MagicNumber:
