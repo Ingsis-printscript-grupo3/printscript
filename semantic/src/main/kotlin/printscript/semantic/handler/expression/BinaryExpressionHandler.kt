@@ -27,7 +27,7 @@ class BinaryExpressionHandler : Handler<Expression, ExpressionResolver, Semantic
             else -> {
                 val left = (leftResult as SemanticResult.Success).value
                 val right = (rightResult as SemanticResult.Success).value
-                resultFor(node.operator, left, right)
+                resultFor(node.operator, left, right, node.position)
             }
         }
     }
@@ -36,11 +36,21 @@ class BinaryExpressionHandler : Handler<Expression, ExpressionResolver, Semantic
         operator: TokenType,
         left: String,
         right: String,
-    ): SemanticResult<String> =
-        when {
-            operator == TokenType.PLUS && left == "number" && right == "number" -> SemanticResult.Success("number")
-            operator == TokenType.PLUS -> SemanticResult.Success("string")
-            left == "number" && right == "number" -> SemanticResult.Success("number")
-            else -> SemanticResult.Failure("Semantic Error: Incompatible types in operation.")
+        position: printscript.common.Position = printscript.common.Position(0, 0),
+    ): SemanticResult<String> {
+        if (left == "boolean" || right == "boolean") {
+            return SemanticResult.Failure(
+                "Semantic Error: Operator '$operator' cannot be applied to boolean types.",
+                position,
+            )
         }
+
+        return when {
+            operator == TokenType.PLUS && left == "number" && right == "number" -> SemanticResult.Success("number")
+            operator == TokenType.PLUS && (left == "string" || right == "string") -> SemanticResult.Success("string")
+            operator in listOf(TokenType.MINUS, TokenType.MULTIPLY, TokenType.DIVIDE) &&
+                left == "number" && right == "number" -> SemanticResult.Success("number")
+            else -> SemanticResult.Failure("Semantic Error: Incompatible types in operation.", position)
+        }
+    }
 }

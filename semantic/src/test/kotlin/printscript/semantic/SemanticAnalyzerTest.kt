@@ -4,6 +4,7 @@ import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
+import printscript.common.LanguageVersion
 import printscript.common.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,7 +20,7 @@ class SemanticAnalyzerTest {
                 PrintCall(printscript.ast.Identifier("x")),
             )
 
-        val results = SemanticAnalyzer().analyze(statements.iterator()).asSequence().toList()
+        val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
 
         assertEquals(2, results.size)
         results.forEach { assertIs<SemanticResult.Success<*>>(it) }
@@ -30,7 +31,7 @@ class SemanticAnalyzerTest {
         val badStatement = VariableDeclaration("x", "number", StringLiteral("oops"), Position(7, 3))
         val statements = listOf(badStatement, PrintCall(NumberLiteral(1.0)))
 
-        val results = SemanticAnalyzer().analyze(statements.iterator()).asSequence().toList()
+        val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
 
         assertEquals(1, results.size)
         val failure = results.single()
@@ -41,7 +42,7 @@ class SemanticAnalyzerTest {
     @Test
     fun `an empty program yields no results`() {
         val empty = emptyList<printscript.ast.Statement>().iterator()
-        val results = SemanticAnalyzer().analyze(empty).asSequence().toList()
+        val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(empty).asSequence().toList()
 
         assertTrue(results.isEmpty())
     }
