@@ -7,6 +7,8 @@ data class SemanticRules(
     val allowsConst: Boolean,
     val allowsBooleans: Boolean,
     val allowsConditionals: Boolean,
+    val allowsReadInput: Boolean,
+    val allowsReadEnv: Boolean,
     val supportedTypes: Set<String>,
 ) {
     companion object {
@@ -18,6 +20,8 @@ data class SemanticRules(
                         allowsConst = false,
                         allowsBooleans = false,
                         allowsConditionals = false,
+                        allowsReadInput = false,
+                        allowsReadEnv = false,
                         supportedTypes = setOf("number", "string"),
                     )
                 LanguageVersion.V1_1 ->
@@ -26,6 +30,8 @@ data class SemanticRules(
                         allowsConst = true,
                         allowsBooleans = true,
                         allowsConditionals = true,
+                        allowsReadInput = true,
+                        allowsReadEnv = true,
                         supportedTypes = setOf("number", "string", "boolean"),
                     )
             }

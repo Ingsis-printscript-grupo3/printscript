@@ -15,6 +15,8 @@ class SemanticRulesTest {
         assertFalse(rules.allowsConst)
         assertFalse(rules.allowsBooleans)
         assertFalse(rules.allowsConditionals)
+        assertFalse(rules.allowsReadInput)
+        assertFalse(rules.allowsReadEnv)
         assertEquals(setOf("number", "string"), rules.supportedTypes)
     }
 
@@ -26,6 +28,8 @@ class SemanticRulesTest {
         assertTrue(rules.allowsConst)
         assertTrue(rules.allowsBooleans)
         assertTrue(rules.allowsConditionals)
+        assertTrue(rules.allowsReadInput)
+        assertTrue(rules.allowsReadEnv)
         assertEquals(setOf("number", "string", "boolean"), rules.supportedTypes)
     }
 }

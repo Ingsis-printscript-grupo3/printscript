@@ -30,7 +30,7 @@ class AssignmentHandler : Handler<Statement, StatementValidator, SemanticResult<
             )
         }
 
-        val exprResult = ctx.expressionResolver.resolveType(node.value)
+        val exprResult = ctx.expressionResolver.resolveType(node.value, expectedType = variable.type)
         if (exprResult is SemanticResult.Failure) {
             return exprResult
         }

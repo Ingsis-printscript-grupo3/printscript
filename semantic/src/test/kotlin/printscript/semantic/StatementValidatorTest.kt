@@ -1,18 +1,22 @@
 package printscript.semantic
 
 import printscript.ast.Assignment
+import printscript.ast.BinaryExpression
 import printscript.ast.Block
 import printscript.ast.BooleanLiteral
 import printscript.ast.Identifier
 import printscript.ast.IfStatement
 import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
+import printscript.ast.ReadEnv
+import printscript.ast.ReadInput
 import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.ast.registry.Registry
 import printscript.common.LanguageVersion
 import printscript.common.Position
+import printscript.common.TokenType
 import printscript.semantic.symbol.SymbolTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -441,5 +445,131 @@ class StatementValidatorTest {
 
         assertEquals(SemanticResult.Success(Unit), result)
         assertIs<SemanticResult.Failure>(validator.validate(Assignment("b", NumberLiteral(10.0))))
+    }
+
+    @Test
+    fun `declaring a variable initialized with readInput infers declared type`() {
+        val types = listOf("number", "string", "boolean")
+        for (type in types) {
+            val v = validator()
+            val stmt = VariableDeclaration("x", type, ReadInput(StringLiteral("prompt:")))
+            val result = v.validate(stmt)
+            assertEquals(SemanticResult.Success(Unit), result)
+        }
+    }
+
+    @Test
+    fun `declaring a const variable initialized with readInput succeeds in 1_1`() {
+        val stmt = VariableDeclaration("c", "number", ReadInput(StringLiteral("num:")), isConst = true)
+        val result = validator().validate(stmt)
+        assertEquals(SemanticResult.Success(Unit), result)
+    }
+
+    @Test
+    fun `declaring a variable initialized with readEnv infers declared type`() {
+        val types = listOf("number", "string", "boolean")
+        for (type in types) {
+            val v = validator()
+            val stmt = VariableDeclaration("envVar", type, ReadEnv(StringLiteral("SOME_ENV")))
+            val result = v.validate(stmt)
+            assertEquals(SemanticResult.Success(Unit), result)
+        }
+    }
+
+    @Test
+    fun `assigning readInput to a declared variable infers variable type`() {
+        val types = listOf("number", "string", "boolean")
+        for (type in types) {
+            val table = SymbolTable()
+            table.define("x", type)
+            val v = validator(table)
+            val assign = Assignment("x", ReadInput(StringLiteral("prompt:")))
+            val result = v.validate(assign)
+            assertEquals(SemanticResult.Success(Unit), result)
+        }
+    }
+
+    @Test
+    fun `assigning readEnv to a declared variable infers variable type`() {
+        val table = SymbolTable()
+        table.define("port", "number")
+        val v = validator(table)
+        val assign = Assignment("port", ReadEnv(StringLiteral("PORT")))
+        val result = v.validate(assign)
+        assertEquals(SemanticResult.Success(Unit), result)
+    }
+
+    @Test
+    fun `printing a readInput expression defaults to string and succeeds`() {
+        val print = PrintCall(ReadInput(StringLiteral("Enter name:")))
+        val result = validator().validate(print)
+        assertEquals(SemanticResult.Success(Unit), result)
+    }
+
+    @Test
+    fun `printing a readEnv expression defaults to string and succeeds`() {
+        val print = PrintCall(ReadEnv(StringLiteral("USER")))
+        val result = validator().validate(print)
+        assertEquals(SemanticResult.Success(Unit), result)
+    }
+
+    @Test
+    fun `declaring variable with readInput having non-string argument fails and propagates failure`() {
+        val stmt = VariableDeclaration("x", "string", ReadInput(NumberLiteral(123.0)))
+        val result = validator().validate(stmt)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Semantic Error: 'readInput' argument must be a string, found 'number'.", result.message)
+    }
+
+    @Test
+    fun `assigning readInput with non-string argument fails and propagates failure`() {
+        val table = SymbolTable()
+        table.define("x", "string")
+        val v = validator(table)
+        val assign = Assignment("x", ReadInput(BooleanLiteral(false)))
+        val result = v.validate(assign)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Semantic Error: 'readInput' argument must be a string, found 'boolean'.", result.message)
+    }
+
+    @Test
+    fun `printing readInput with non-string argument fails and propagates failure`() {
+        val print = PrintCall(ReadInput(NumberLiteral(99.0)))
+        val result = validator().validate(print)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Semantic Error: 'readInput' argument must be a string, found 'number'.", result.message)
+    }
+
+    @Test
+    fun `declaring variable with readInput in 1_0 fails`() {
+        val stmt = VariableDeclaration("x", "string", ReadInput(StringLiteral("prompt:")))
+        val result = validator(version = LanguageVersion.V1_0).validate(stmt)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Semantic Error: 'readInput' is not supported in PrintScript 1.0.", result.message)
+    }
+
+    @Test
+    fun `declaring variable with readEnv in 1_0 fails`() {
+        val stmt = VariableDeclaration("x", "string", ReadEnv(StringLiteral("PATH")))
+        val result = validator(version = LanguageVersion.V1_0).validate(stmt)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Semantic Error: 'readEnv' is not supported in PrintScript 1.0.", result.message)
+    }
+
+    @Test
+    fun `binary addition with readInput defaults readInput to string and produces string`() {
+        val binExpr = BinaryExpression(ReadInput(StringLiteral("First name: ")), TokenType.PLUS, StringLiteral("Doe"))
+        val decl = VariableDeclaration("fullName", "string", binExpr)
+        val result = validator().validate(decl)
+        assertEquals(SemanticResult.Success(Unit), result)
+    }
+
+    @Test
+    fun `declaring number variable with readInput in binary addition fails due to type mismatch`() {
+        val binExpr = BinaryExpression(ReadInput(StringLiteral("A: ")), TokenType.PLUS, NumberLiteral(5.0))
+        val decl = VariableDeclaration("n", "number", binExpr)
+        val result = validator().validate(decl)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Incompatible types.", result.message)
     }
 }

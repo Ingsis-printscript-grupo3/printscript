@@ -43,7 +43,7 @@ class VariableDeclarationHandler : Handler<Statement, StatementValidator, Semant
 
         val typeMismatch =
             node.value?.let { value ->
-                val exprResult = ctx.expressionResolver.resolveType(value)
+                val exprResult = ctx.expressionResolver.resolveType(value, expectedType = node.type)
                 val exprType = (exprResult as? SemanticResult.Success)?.value
                 when {
                     exprResult is SemanticResult.Failure -> exprResult
