@@ -1,14 +1,13 @@
 #!/bin/sh
-# Este script lo corre git antes de crear un commit
 # Para q git lo use hay q correr una vez:  ./gradlew installGitHooks
 
-echo "pre-commit: corriendo ktlintCheck..."
+echo "pre-commit: corriendo ktlintCheck y detekt..."
 
-if ! ./gradlew ktlintCheck --console=plain --quiet; then
-    echo "pre-commit: hay errores de estilo, el commit se cancelo."
-    echo "arreglalos con:  ./gradlew ktlintFormat"
-    echo "y despues volve a commitear."
+if ! ./gradlew ktlintCheck detekt --console=plain --quiet; then
+    echo "pre-commit: hay errores de estilo o de analisis estatico, el commit se cancelo."
+    echo "el formato se arregla solo con:  ./gradlew ktlintFormat"
+    echo "los de detekt hay que mirarlos uno por uno."
     exit 1
 fi
 
-echo "pre-commit: estilo ok"
+echo "pre-commit: estilo y analisis estatico ok"
