@@ -7,6 +7,7 @@ import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.ast.registry.Registry
+import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.semantic.symbol.SymbolTable
 import kotlin.test.Test
@@ -15,7 +16,7 @@ import kotlin.test.assertIs
 
 class StatementValidatorTest {
     private fun validator(symbolTable: SymbolTable = SymbolTable()) =
-        StatementValidator(symbolTable, ExpressionResolver(symbolTable))
+        StatementValidator(symbolTable, ExpressionResolver(symbolTable, LanguageVersion.V1_1))
 
     @Test
     fun `declaring a variable without an initializer succeeds`() {
@@ -96,7 +97,8 @@ class StatementValidatorTest {
     fun `a statement with no handler registered fails explicitly with the node position`() {
         val symbolTable = SymbolTable()
         val emptyRegistry = Registry<Statement, StatementValidator, SemanticResult<Unit>>()
-        val validator = StatementValidator(symbolTable, ExpressionResolver(symbolTable), emptyRegistry)
+        val validator =
+            StatementValidator(symbolTable, ExpressionResolver(symbolTable, LanguageVersion.V1_1), emptyRegistry)
         val node = PrintCall(NumberLiteral(1.0), Position(9, 1))
 
         val result = validator.validate(node)

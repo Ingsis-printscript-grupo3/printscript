@@ -1,13 +1,16 @@
 package printscript.semantic
 
 import printscript.ast.Statement
+import printscript.common.LanguageVersion
 import printscript.semantic.symbol.SymbolTable
 
-class SemanticAnalyzer {
+class SemanticAnalyzer(
+    val version: LanguageVersion,
+) {
     fun analyze(ast: Iterator<Statement>): Iterator<SemanticResult<Statement>> =
         iterator {
             val symbolTable = SymbolTable()
-            val expressionResolver = ExpressionResolver(symbolTable)
+            val expressionResolver = ExpressionResolver(symbolTable, version)
             val statementValidator = StatementValidator(symbolTable, expressionResolver)
 
             for (statement in ast) {

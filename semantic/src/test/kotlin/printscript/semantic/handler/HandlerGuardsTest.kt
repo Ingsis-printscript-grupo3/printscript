@@ -6,10 +6,12 @@ import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
+import printscript.common.LanguageVersion
 import printscript.semantic.ExpressionResolver
 import printscript.semantic.SemanticResult
 import printscript.semantic.StatementValidator
 import printscript.semantic.handler.expression.BinaryExpressionHandler
+import printscript.semantic.handler.expression.BooleanLiteralHandler
 import printscript.semantic.handler.expression.IdentifierHandler
 import printscript.semantic.handler.expression.NumberLiteralHandler
 import printscript.semantic.handler.expression.StringLiteralHandler
@@ -24,11 +26,11 @@ import kotlin.test.assertIs
 // por el flujo normal nunca pasa, pq el Registry pregunta applies() antes
 
 class HandlerGuardsTest {
-    private fun resolverContext() = ExpressionResolver(SymbolTable())
+    private fun resolverContext() = ExpressionResolver(SymbolTable(), LanguageVersion.V1_1)
 
     private fun validatorContext(): StatementValidator {
         val symbolTable = SymbolTable()
-        return StatementValidator(symbolTable, ExpressionResolver(symbolTable))
+        return StatementValidator(symbolTable, ExpressionResolver(symbolTable, LanguageVersion.V1_1))
     }
 
     @Test
@@ -40,6 +42,7 @@ class HandlerGuardsTest {
             listOf(
                 NumberLiteralHandler() to string,
                 StringLiteralHandler() to number,
+                BooleanLiteralHandler() to number,
                 IdentifierHandler() to number,
                 BinaryExpressionHandler() to number,
             )
@@ -70,7 +73,7 @@ class HandlerGuardsTest {
     fun `identifier handler looks up the symbol table from the context`() {
         val symbolTable = SymbolTable()
         symbolTable.define("a", "string")
-        val resolver = ExpressionResolver(symbolTable)
+        val resolver = ExpressionResolver(symbolTable, LanguageVersion.V1_1)
 
         val result = IdentifierHandler().handle(Identifier("a"), resolver)
 
