@@ -1,6 +1,10 @@
 package printscript.semantic
 
 import printscript.ast.Assignment
+import printscript.ast.Block
+import printscript.ast.BooleanLiteral
+import printscript.ast.Identifier
+import printscript.ast.IfStatement
 import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
 import printscript.ast.StringLiteral
@@ -94,5 +98,90 @@ class SemanticAnalyzerTest {
         assertIs<SemanticResult.Failure>(failure)
         assertEquals(Position(1, 1), failure.position)
         assertTrue(failure.message.contains("not supported in PrintScript 1.0"))
+    }
+
+    @Test
+    fun `semantic analyzer accepts valid if statement in 1_1`() {
+        val statements =
+            listOf(
+                VariableDeclaration("flag", "boolean", BooleanLiteral(true)),
+                IfStatement(
+                    Identifier("flag"),
+                    Block(listOf(PrintCall(StringLiteral("inside")))),
+                    Block(listOf(PrintCall(StringLiteral("else")))),
+                ),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(2, results.size)
+        results.forEach { assertIs<SemanticResult.Success<*>>(it) }
+    }
+
+    @Test
+    fun `semantic analyzer rejects if statement in 1_0`() {
+        val statements =
+            listOf(
+                IfStatement(
+                    BooleanLiteral(true),
+                    Block(emptyList()),
+                    null,
+                    Position(3, 1),
+                ),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(1, results.size)
+        val failure = results.single()
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals(Position(3, 1), failure.position)
+        assertTrue(failure.message.contains("'if' statements are not supported in PrintScript 1.0"))
+    }
+
+    @Test
+    fun `semantic analyzer stops and reports position on invalid if condition type`() {
+        val statements =
+            listOf(
+                VariableDeclaration("num", "number", NumberLiteral(5.0)),
+                IfStatement(
+                    Identifier("num"),
+                    Block(emptyList()),
+                    null,
+                    Position(2, 1),
+                ),
+                PrintCall(StringLiteral("should not reach here")),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(2, results.size)
+        assertIs<SemanticResult.Success<*>>(results[0])
+        val failure = results[1]
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals(Position(2, 1), failure.position)
+        assertTrue(failure.message.contains("must be a boolean expression"))
+    }
+
+    @Test
+    fun `variables declared inside if block are not visible to subsequent statements`() {
+        val statements =
+            listOf(
+                IfStatement(
+                    BooleanLiteral(true),
+                    Block(listOf(VariableDeclaration("scopedVar", "number", NumberLiteral(42.0)))),
+                    null,
+                ),
+                PrintCall(Identifier("scopedVar"), Position(5, 1)),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(2, results.size)
+        assertIs<SemanticResult.Success<*>>(results[0])
+        val failure = results[1]
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals(Position(5, 1), failure.position)
+        assertTrue(failure.message.contains("Variable 'scopedVar' not declared"))
     }
 }

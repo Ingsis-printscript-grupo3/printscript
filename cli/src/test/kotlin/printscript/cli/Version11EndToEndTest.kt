@@ -74,4 +74,39 @@ class Version11EndToEndTest {
         assertEquals("Semantic", result.type)
         assertTrue(result.message.contains("Cannot reassign constant 'a'"))
     }
+
+    @Test
+    fun `invalid argument in if fails in semantic validation matching Austral TCK`() {
+        val code =
+            """
+            let a: number = 21;
+            if(a) {
+                println("this should fail, invalid argument in if statement");
+            }
+            """.trimIndent()
+
+        val result = runEngine(code, LanguageVersion.V1_1)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Semantic", result.type)
+        assertTrue(result.message.contains("must be a boolean expression"))
+    }
+
+    @Test
+    fun `valid if else conditional passes semantic validation in 1_1`() {
+        val code =
+            """
+            const flag: boolean = true;
+            if (flag) {
+                println("then branch");
+            } else {
+                println("else branch");
+            }
+            """.trimIndent()
+
+        val engine = Engine(output = BucketOutput())
+        val result = engine.validate(code, LanguageVersion.V1_1)
+
+        assertEquals(ExecutionResult.Success, result)
+    }
 }
