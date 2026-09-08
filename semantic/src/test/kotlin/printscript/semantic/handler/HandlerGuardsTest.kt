@@ -30,7 +30,11 @@ class HandlerGuardsTest {
 
     private fun validatorContext(): StatementValidator {
         val symbolTable = SymbolTable()
-        return StatementValidator(symbolTable, ExpressionResolver(symbolTable, LanguageVersion.V1_1))
+        return StatementValidator(
+            symbolTable,
+            ExpressionResolver(symbolTable, LanguageVersion.V1_1),
+            LanguageVersion.V1_1,
+        )
     }
 
     @Test

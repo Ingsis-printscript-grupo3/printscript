@@ -59,4 +59,19 @@ class Version11EndToEndTest {
         assertTrue(result.message.contains("if statements"))
         assertTrue(result.message.contains("1.0"))
     }
+
+    @Test
+    fun `reassigning a const variable fails in semantic validation`() {
+        val code =
+            """
+            const a: number = 1;
+            a = 2;
+            """.trimIndent()
+
+        val result = runEngine(code, LanguageVersion.V1_1)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Semantic", result.type)
+        assertTrue(result.message.contains("Cannot reassign constant 'a'"))
+    }
 }

@@ -3,7 +3,6 @@ package printscript.semantic.handler.expression
 import printscript.ast.BooleanLiteral
 import printscript.ast.Expression
 import printscript.ast.registry.Handler
-import printscript.common.LanguageVersion
 import printscript.semantic.ExpressionResolver
 import printscript.semantic.SemanticResult
 
@@ -17,9 +16,9 @@ class BooleanLiteralHandler : Handler<Expression, ExpressionResolver, SemanticRe
         if (node !is BooleanLiteral) {
             return SemanticResult.Failure("Semantic Error: Unexpected node in BooleanLiteralHandler.", node.position)
         }
-        if (ctx.version == LanguageVersion.V1_0) {
+        if (!ctx.rules.allowsBooleans) {
             return SemanticResult.Failure(
-                "Semantic Error: Booleans are not supported in PrintScript 1.0.",
+                "Semantic Error: Booleans are not supported in PrintScript ${ctx.rules.version.label}.",
                 node.position,
             )
         }
