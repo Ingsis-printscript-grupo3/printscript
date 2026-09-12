@@ -21,6 +21,7 @@ import printscript.runner.Engine
 import printscript.runner.ExecutionResult
 import printscript.runner.FormatResult
 import printscript.runner.LintResult
+import java.io.Writer
 
 private val SUPPORTED_VERSIONS = LanguageVersion.entries.joinToString(", ") { it.label }
 private const val DEFAULT_VERSION = "1.0"

@@ -13,7 +13,6 @@ import printscript.interpreter.output.Output
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
 import printscript.lexer.LexicalError
-import printscript.linter.Warning
 import printscript.parser.Parser
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
@@ -35,7 +34,7 @@ sealed interface ExecutionResult {
 }
 
 sealed interface FormatResult {
-    data class Success(val code: String) : FormatResult
+    object Success : FormatResult
 
     data class Failure(
         val type: String,
@@ -46,7 +45,7 @@ sealed interface FormatResult {
 }
 
 sealed interface LintResult {
-    data class Success(val warnings: List<Warning>) : LintResult
+    object Success : LintResult
 
     data class Failure(
         val type: String,
@@ -102,10 +101,11 @@ class Engine(
         reader: Reader,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
-        format: (List<Statement>) -> String,
+        format: (Iterator<Statement>) -> Unit,
     ): FormatResult {
         return try {
-            FormatResult.Success(format(parseStatements(reader, languageVersion, onProgress)))
+            format(parseIntoAst(parserFor(reader, languageVersion), onProgress))
+            FormatResult.Success
         } catch (e: Exception) {
             val failure = describe(e)
             FormatResult.Failure(failure.type, failure.message, failure.start, failure.end)
@@ -118,36 +118,21 @@ class Engine(
         reader: Reader,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
-        lint: (List<Statement>) -> List<Warning>,
+        lint: (Iterator<Statement>) -> Unit,
     ): LintResult {
         return try {
-            LintResult.Success(lint(parseStatements(reader, languageVersion, onProgress)))
+            lint(parseIntoAst(parserFor(reader, languageVersion), onProgress))
+            LintResult.Success
         } catch (e: Exception) {
             val failure = describe(e)
             LintResult.Failure(failure.type, failure.message, failure.start, failure.end)
         }
     }
 
-    private fun parseStatements(
+    private fun parserFor(
         reader: Reader,
         languageVersion: LanguageVersion,
-        onProgress: (Int) -> Unit,
-    ): List<Statement> {
-        val lexer = Lexer(CharStream(reader))
-        val parser = Parser(lexer.tokenize(), languageVersion)
-        var parsedCount = 0
-        return buildList {
-            for (result in parser.parse()) {
-                when (result) {
-                    is ParseResult.Success -> {
-                        add(result.statement)
-                        onProgress(++parsedCount)
-                    }
-                    is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
-                }
-            }
-        }
-    }
+    ): Parser = Parser(Lexer(CharStream(reader)).tokenize(), languageVersion)
 
     private fun parseIntoAst(
         parser: Parser,
