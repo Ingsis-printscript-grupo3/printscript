@@ -1,4 +1,4 @@
-package printscript.cli
+package printscript.runner
 
 import printscript.interpreter.output.BucketOutput
 import java.io.StringReader
@@ -160,5 +160,40 @@ class EndToEndTest {
         Engine(BucketOutput()).validate(StringReader(code), onProgress = reported::add)
 
         assertEquals(listOf(1, 2, 3), reported)
+    }
+
+    @Test
+    fun `format formats successfully through engine`() {
+        val engine = Engine(BucketOutput())
+        val result =
+            engine.format(StringReader("let a:number=5;")) {
+                "formatted code"
+            }
+        assertTrue(result is FormatResult.Success)
+        assertEquals("formatted code", result.code)
+    }
+
+    @Test
+    fun `format returns failure on syntax error`() {
+        val engine = Engine(BucketOutput())
+        val result = engine.format(StringReader("let a:number =")) { "" }
+        assertTrue(result is FormatResult.Failure)
+        assertEquals("Syntax", result.type)
+    }
+
+    @Test
+    fun `lint analyzes successfully through engine`() {
+        val engine = Engine(BucketOutput())
+        val result = engine.lint(StringReader("let a: number = 5;")) { emptyList() }
+        assertTrue(result is LintResult.Success)
+        assertTrue(result.warnings.isEmpty())
+    }
+
+    @Test
+    fun `lint returns failure on syntax error`() {
+        val engine = Engine(BucketOutput())
+        val result = engine.lint(StringReader("let a: number =")) { emptyList() }
+        assertTrue(result is LintResult.Failure)
+        assertEquals("Syntax", result.type)
     }
 }

@@ -1,10 +1,14 @@
-package printscript.cli
+package printscript.runner
 
 import printscript.ast.Statement
 import printscript.common.LanguageVersion
 import printscript.common.Position
-import printscript.interpreter.Interpreter
 import printscript.interpreter.InterpreterError
+import printscript.interpreter.InterpreterFactory
+import printscript.interpreter.env.EnvProvider
+import printscript.interpreter.env.SystemEnvProvider
+import printscript.interpreter.input.ConsoleInput
+import printscript.interpreter.input.InputProvider
 import printscript.interpreter.output.Output
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
@@ -52,7 +56,11 @@ sealed interface LintResult {
     ) : LintResult
 }
 
-class Engine(private val output: Output) {
+class Engine(
+    private val output: Output,
+    private val input: InputProvider = ConsoleInput(),
+    private val env: EnvProvider = SystemEnvProvider(),
+) {
     fun execute(
         code: String,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
@@ -67,7 +75,8 @@ class Engine(private val output: Output) {
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult {
         return runPipeline(reader, languageVersion, onProgress) { validStatements ->
-            Interpreter(output).interpret(validStatements)
+            val interpreter = InterpreterFactory.create(languageVersion, output, input, env)
+            interpreter.interpret(validStatements)
         }
     }
 
@@ -186,7 +195,7 @@ class Engine(private val output: Output) {
 
             consume(validStatementIterator)
             ExecutionResult.Success
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             val failure = describe(e)
             ExecutionResult.Failure(failure.type, failure.message, failure.start, failure.end)
         }
@@ -200,8 +209,9 @@ class Engine(private val output: Output) {
     )
 
     // un solo lugar que traduce la excepcion de cada capa al resultado del cli
-    private fun describe(error: Exception): ErrorInfo =
+    private fun describe(error: Throwable): ErrorInfo =
         when (error) {
+            is OutOfMemoryError -> ErrorInfo("OutOfMemory", "Java heap space")
             is LexicalError -> ErrorInfo("Lexical", error.message, error.start, error.end)
             is SyntaxError -> ErrorInfo("Syntax", error.message, error.start, error.end)
             is SemanticError -> ErrorInfo("Semantic", error.message, error.start, error.end)

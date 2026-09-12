@@ -4,14 +4,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":lexer"))
-    implementation(project(":parser"))
-    implementation(project(":semantic"))
-    api(project(":interpreter"))
-    api(project(":ast"))
-    api(project(":common"))
-    implementation(project(":formatter"))
-    api(project(":linter"))
+    implementation(project(":runner"))
     implementation("com.github.ajalt.clikt:clikt:4.4.0")
 }
 
