@@ -1,7 +1,10 @@
 package printscript.runner
 
+import printscript.formatter.Formatter
+import printscript.formatter.FormatterRules
 import printscript.interpreter.output.BucketOutput
 import java.io.StringReader
+import java.io.StringWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -165,18 +168,22 @@ class EndToEndTest {
     @Test
     fun `format formats successfully through engine`() {
         val engine = Engine(BucketOutput())
+        var called = false
         val result =
-            engine.format(StringReader("let a:number=5;")) {
-                "formatted code"
+            engine.format(StringReader("let a:number=5;")) { statements ->
+                statements.forEach { called = true }
             }
         assertTrue(result is FormatResult.Success)
-        assertEquals("formatted code", result.code)
+        assertTrue(called)
     }
 
     @Test
     fun `format returns failure on syntax error`() {
         val engine = Engine(BucketOutput())
-        val result = engine.format(StringReader("let a:number =")) { "" }
+        val result =
+            engine.format(StringReader("let a:number =")) { statements ->
+                statements.forEach { }
+            }
         assertTrue(result is FormatResult.Failure)
         assertEquals("Syntax", result.type)
     }
@@ -184,16 +191,40 @@ class EndToEndTest {
     @Test
     fun `lint analyzes successfully through engine`() {
         val engine = Engine(BucketOutput())
-        val result = engine.lint(StringReader("let a: number = 5;")) { emptyList() }
+        var called = false
+        val result =
+            engine.lint(StringReader("let a: number = 5;")) { statements ->
+                statements.forEach { called = true }
+            }
         assertTrue(result is LintResult.Success)
-        assertTrue(result.warnings.isEmpty())
+        assertTrue(called)
     }
 
     @Test
     fun `lint returns failure on syntax error`() {
         val engine = Engine(BucketOutput())
-        val result = engine.lint(StringReader("let a: number =")) { emptyList() }
+        val result =
+            engine.lint(StringReader("let a: number =")) { statements ->
+                statements.forEach { }
+            }
         assertTrue(result is LintResult.Failure)
         assertEquals("Syntax", result.type)
+    }
+
+    private fun formatOnce(code: String): String {
+        val writer = StringWriter()
+        Engine(BucketOutput()).format(StringReader(code)) { statements ->
+            Formatter(FormatterRules()).format(statements, writer)
+        }
+        return writer.toString()
+    }
+
+    @Test
+    fun `formatting twice gives the same result`() {
+        val code = "let   x :number=5;\nif(true){println(x);}"
+
+        val once = formatOnce(code)
+
+        assertEquals(once, formatOnce(once))
     }
 }

@@ -76,11 +76,8 @@ object PrintScriptRunner {
                 }
             val engine = Engine(dummyOutput)
 
-            when (val result = engine.format(reader, version) { Formatter(rules).format(it) }) {
-                is FormatResult.Success -> {
-                    writer.write(result.code)
-                    writer.flush()
-                }
+            when (val result = engine.format(reader, version) { Formatter(rules).format(it, writer) }) {
+                is FormatResult.Success -> Unit
                 is FormatResult.Failure -> onError(result.message)
             }
         } catch (e: OutOfMemoryError) {
@@ -111,8 +108,13 @@ object PrintScriptRunner {
                 }
             val engine = Engine(dummyOutput)
 
-            when (val result = engine.lint(reader, version) { Linter(rules).analyze(it.iterator()) }) {
-                is LintResult.Success -> result.warnings.forEach { onError(it.message) }
+            when (
+                val result =
+                    engine.lint(reader, version) { statements ->
+                        Linter(rules).analyze(statements) { warning -> onError(warning.message) }
+                    }
+            ) {
+                is LintResult.Success -> Unit
                 is LintResult.Failure -> onError(result.message)
             }
         } catch (e: OutOfMemoryError) {
