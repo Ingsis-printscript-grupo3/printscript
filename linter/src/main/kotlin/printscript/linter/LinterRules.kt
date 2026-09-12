@@ -12,7 +12,6 @@ data class LinterRules(
     val identifierFormat: String = CAMEL_CASE,
     @JsonProperty("mandatory-variable-or-literal-in-println")
     val printCallArgumentsMustBeLiteralOrIdentifier: Boolean = true,
-    // la regla todavia no existe, se acepta la clave para no romper la config
     @JsonProperty("mandatory-variable-or-literal-in-readInput")
     val readInputArgumentsMustBeLiteralOrIdentifier: Boolean = true,
 ) {
