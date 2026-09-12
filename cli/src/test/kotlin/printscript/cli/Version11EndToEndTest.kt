@@ -26,11 +26,11 @@ class Version11EndToEndTest {
         """.trimIndent()
 
     @Test
-    fun `un programa 1_1 bajo version 1_1 no falla en el parser`() {
-        val result = runEngine(program, LanguageVersion.V1_1)
+    fun `un programa 1_1 bajo version 1_1 pasa la validacion sintactica y semantica`() {
+        val engine = Engine(output = BucketOutput())
+        val result = engine.validate(program, LanguageVersion.V1_1)
 
-        assertTrue(result is ExecutionResult.Failure)
-        assertTrue(result.type != "Syntax", "expected the parser to accept the 1.1 program, but got: $result")
+        assertEquals(ExecutionResult.Success, result)
     }
 
     @Test
@@ -58,5 +58,55 @@ class Version11EndToEndTest {
         assertEquals("Syntax", result.type)
         assertTrue(result.message.contains("if statements"))
         assertTrue(result.message.contains("1.0"))
+    }
+
+    @Test
+    fun `reassigning a const variable fails in semantic validation`() {
+        val code =
+            """
+            const a: number = 1;
+            a = 2;
+            """.trimIndent()
+
+        val result = runEngine(code, LanguageVersion.V1_1)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Semantic", result.type)
+        assertTrue(result.message.contains("Cannot reassign constant 'a'"))
+    }
+
+    @Test
+    fun `invalid argument in if fails in semantic validation matching Austral TCK`() {
+        val code =
+            """
+            let a: number = 21;
+            if(a) {
+                println("this should fail, invalid argument in if statement");
+            }
+            """.trimIndent()
+
+        val result = runEngine(code, LanguageVersion.V1_1)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Semantic", result.type)
+        assertTrue(result.message.contains("must be a boolean expression"))
+    }
+
+    @Test
+    fun `valid if else conditional passes semantic validation in 1_1`() {
+        val code =
+            """
+            const flag: boolean = true;
+            if (flag) {
+                println("then branch");
+            } else {
+                println("else branch");
+            }
+            """.trimIndent()
+
+        val engine = Engine(output = BucketOutput())
+        val result = engine.validate(code, LanguageVersion.V1_1)
+
+        assertEquals(ExecutionResult.Success, result)
     }
 }
