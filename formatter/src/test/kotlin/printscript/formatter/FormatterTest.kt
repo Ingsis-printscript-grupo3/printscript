@@ -400,4 +400,30 @@ class FormatterTest {
 
         assertEquals(expected, format(statements))
     }
+
+    @Test
+    fun `respects the line breaks after println inside a block`() {
+        val statements = ifWith(listOf(PrintCall(NumberLiteral(1.0)), PrintCall(NumberLiteral(2.0))))
+        val rules = FormatterRules(lineBreaksAfterPrintln = 1)
+
+        assertEquals("if (true) {\n    println(1);\n\n    println(2);\n}", format(statements, rules))
+    }
+
+    @Test
+    fun `leaves the blank lines of a nested block without spaces`() {
+        val innerBody = Block(listOf(PrintCall(NumberLiteral(1.0)), PrintCall(NumberLiteral(2.0))))
+        val statements = ifWith(listOf(IfStatement(BooleanLiteral(false), innerBody, null)))
+        val rules = FormatterRules(lineBreaksAfterPrintln = 1)
+
+        val expected =
+            "if (true) {\n" +
+                "    if (false) {\n" +
+                "        println(1);\n" +
+                "\n" +
+                "        println(2);\n" +
+                "    }\n" +
+                "}"
+
+        assertEquals(expected, format(statements, rules))
+    }
 }

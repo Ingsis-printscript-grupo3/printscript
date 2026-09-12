@@ -14,11 +14,14 @@ class BlockHandler : Handler<Statement, Formatter, String> {
     ): String {
         check(node is Block) { "Expected Block, got $node" }
         val indent = " ".repeat(ctx.rules.indentInsideIf)
-        // agrega la sangria a todas las lineas p los if anidados
-        val body =
-            node.statements.joinToString("\n") { statement ->
-                ctx.formatStatement(statement).lines().joinToString("\n") { indent + it }
-            }
+        val body = StringBuilder()
+        node.statements.forEachIndexed { index, statement ->
+            if (index > 0) body.append("\n")
+            // agrega la sangria a todas las lineas p los if anidados, menos a las vacias
+            val lines = ctx.formatStatement(statement).lines()
+            body.append(lines.joinToString("\n") { if (it.isEmpty()) it else indent + it })
+            if (index < node.statements.lastIndex) body.append(ctx.lineBreaksAfter(statement))
+        }
         return if (body.isEmpty()) "{\n}" else "{\n$body\n}"
     }
 }
