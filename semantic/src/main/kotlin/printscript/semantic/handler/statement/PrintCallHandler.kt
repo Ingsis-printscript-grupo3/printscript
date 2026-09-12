@@ -17,7 +17,7 @@ class PrintCallHandler : Handler<Statement, StatementValidator, SemanticResult<U
             return SemanticResult.Failure("Semantic Error: Unexpected node in PrintCallHandler.", node.position)
         }
 
-        return when (val exprResult = ctx.expressionResolver.resolveType(node.value)) {
+        return when (val exprResult = ctx.expressionResolver.resolveType(node.value, expectedType = "string")) {
             is SemanticResult.Failure -> exprResult
             is SemanticResult.Success -> SemanticResult.Success(Unit)
         }

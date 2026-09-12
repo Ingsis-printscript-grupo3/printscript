@@ -154,7 +154,7 @@ class Engine(private val output: Output) {
         return try {
             val lexer = Lexer(CharStream(reader))
             val parser = Parser(lexer.tokenize(), languageVersion)
-            val semanticAnalyzer = SemanticAnalyzer()
+            val semanticAnalyzer = SemanticAnalyzer(languageVersion)
 
             val astIterator = parseIntoAst(parser, onProgress)
             val semanticResultIterator = semanticAnalyzer.analyze(astIterator)

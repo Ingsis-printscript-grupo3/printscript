@@ -6,14 +6,20 @@ import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
+import printscript.common.LanguageVersion
 import printscript.semantic.ExpressionResolver
 import printscript.semantic.SemanticResult
 import printscript.semantic.StatementValidator
 import printscript.semantic.handler.expression.BinaryExpressionHandler
+import printscript.semantic.handler.expression.BooleanLiteralHandler
 import printscript.semantic.handler.expression.IdentifierHandler
 import printscript.semantic.handler.expression.NumberLiteralHandler
+import printscript.semantic.handler.expression.ReadEnvHandler
+import printscript.semantic.handler.expression.ReadInputHandler
 import printscript.semantic.handler.expression.StringLiteralHandler
 import printscript.semantic.handler.statement.AssignmentHandler
+import printscript.semantic.handler.statement.BlockHandler
+import printscript.semantic.handler.statement.IfStatementHandler
 import printscript.semantic.handler.statement.PrintCallHandler
 import printscript.semantic.handler.statement.VariableDeclarationHandler
 import printscript.semantic.symbol.SymbolTable
@@ -24,11 +30,15 @@ import kotlin.test.assertIs
 // por el flujo normal nunca pasa, pq el Registry pregunta applies() antes
 
 class HandlerGuardsTest {
-    private fun resolverContext() = ExpressionResolver(SymbolTable())
+    private fun resolverContext() = ExpressionResolver(SymbolTable(), LanguageVersion.V1_1)
 
     private fun validatorContext(): StatementValidator {
         val symbolTable = SymbolTable()
-        return StatementValidator(symbolTable, ExpressionResolver(symbolTable))
+        return StatementValidator(
+            symbolTable,
+            ExpressionResolver(symbolTable, LanguageVersion.V1_1),
+            LanguageVersion.V1_1,
+        )
     }
 
     @Test
@@ -40,8 +50,11 @@ class HandlerGuardsTest {
             listOf(
                 NumberLiteralHandler() to string,
                 StringLiteralHandler() to number,
+                BooleanLiteralHandler() to number,
                 IdentifierHandler() to number,
                 BinaryExpressionHandler() to number,
+                ReadInputHandler() to number,
+                ReadEnvHandler() to number,
             )
 
         for ((handler, foreignNode) in cases) {
@@ -59,6 +72,8 @@ class HandlerGuardsTest {
                 VariableDeclarationHandler() to print,
                 AssignmentHandler() to print,
                 PrintCallHandler() to assignment,
+                IfStatementHandler() to print,
+                BlockHandler() to print,
             )
 
         for ((handler, foreignNode) in cases) {
@@ -70,7 +85,7 @@ class HandlerGuardsTest {
     fun `identifier handler looks up the symbol table from the context`() {
         val symbolTable = SymbolTable()
         symbolTable.define("a", "string")
-        val resolver = ExpressionResolver(symbolTable)
+        val resolver = ExpressionResolver(symbolTable, LanguageVersion.V1_1)
 
         val result = IdentifierHandler().handle(Identifier("a"), resolver)
 
