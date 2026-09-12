@@ -5,10 +5,15 @@ import printscript.ast.PrintCall
 import printscript.ast.Statement
 import printscript.ast.registry.Registry
 import printscript.formatter.handler.expression.BinaryExpressionHandler
+import printscript.formatter.handler.expression.BooleanLiteralHandler
 import printscript.formatter.handler.expression.IdentifierHandler
 import printscript.formatter.handler.expression.NumberLiteralHandler
+import printscript.formatter.handler.expression.ReadEnvHandler
+import printscript.formatter.handler.expression.ReadInputHandler
 import printscript.formatter.handler.expression.StringLiteralHandler
 import printscript.formatter.handler.statement.AssignmentHandler
+import printscript.formatter.handler.statement.BlockHandler
+import printscript.formatter.handler.statement.IfStatementHandler
 import printscript.formatter.handler.statement.PrintCallHandler
 import printscript.formatter.handler.statement.VariableDeclarationHandler
 import java.io.Writer
@@ -22,6 +27,8 @@ class Formatter(
                 VariableDeclarationHandler(),
                 AssignmentHandler(),
                 PrintCallHandler(),
+                IfStatementHandler(),
+                BlockHandler(),
             ),
         )
 
@@ -32,6 +39,9 @@ class Formatter(
                 StringLiteralHandler(),
                 IdentifierHandler(),
                 BinaryExpressionHandler(),
+                BooleanLiteralHandler(),
+                ReadInputHandler(),
+                ReadEnvHandler(),
             ),
         )
 
@@ -47,12 +57,9 @@ class Formatter(
             next = if (statements.hasNext()) statements.next() else null
             if (!first) output.write("\n")
             output.write(formatStatement(current))
-            if (current is PrintCall && next != null) {
-                output.write("\n".repeat(rules.lineBreaksAfterPrintln))
-            }
+            if (next != null) output.write(lineBreaksAfter(current))
             first = false
         }
-        output.write("\n")
         output.flush()
     }
 
@@ -61,4 +68,7 @@ class Formatter(
     fun formatExpression(expr: Expression): String = expressionRegistry.resolve(expr, this)
 
     fun assignmentOperator(): String = if (rules.spaceAroundAssignment) " = " else "="
+
+    fun lineBreaksAfter(statement: Statement): String =
+        if (statement is PrintCall) "\n".repeat(rules.lineBreaksAfterPrintln) else ""
 }
