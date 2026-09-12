@@ -23,14 +23,15 @@ class Linter(
         },
     )
 
-    override fun analyze(statements: Iterator<Statement>): List<Warning> {
-        val warnings = mutableListOf<Warning>()
+    override fun analyze(
+        statements: Iterator<Statement>,
+        onWarning: (Warning) -> Unit,
+    ) {
         while (statements.hasNext()) {
             val statement = statements.next()
             rules.forEach { rule ->
-                warnings.addAll(rule.check(statement))
+                rule.check(statement).forEach(onWarning)
             }
         }
-        return warnings
     }
 }

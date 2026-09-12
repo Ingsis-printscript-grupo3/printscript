@@ -8,6 +8,7 @@ import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.TokenType
+import java.io.StringWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -17,7 +18,11 @@ class FormatterTest {
     private fun format(
         statements: List<Statement>,
         rules: FormatterRules = FormatterRules(),
-    ): String = Formatter(rules).format(statements)
+    ): String {
+        val writer = StringWriter()
+        Formatter(rules).format(statements.iterator(), writer)
+        return writer.toString()
+    }
 
     @Test
     fun `formats a variable declaration with an initial value using default rules`() {
