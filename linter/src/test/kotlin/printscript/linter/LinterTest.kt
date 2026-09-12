@@ -1,14 +1,20 @@
 package printscript.linter
 
+import printscript.ast.Assignment
 import printscript.ast.BinaryExpression
+import printscript.ast.Block
 import printscript.ast.Identifier
+import printscript.ast.IfStatement
 import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
+import printscript.ast.ReadInput
 import printscript.ast.Statement
+import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.common.TokenType
 import printscript.linter.rule.IdentifierFormatRule
+import printscript.linter.rule.ReadInputCallArgumentRule
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -26,6 +32,8 @@ class LinterTest {
     private fun num(v: Double) = NumberLiteral(v, pos())
 
     private fun id(n: String) = Identifier(n, pos())
+
+    private fun str(s: String) = StringLiteral(s, pos())
 
     @Test
     fun `camel case variable declaration is valid`() {
@@ -89,6 +97,60 @@ class LinterTest {
         val stmt = PrintCall(expr, pos())
         val warnings = analyze(listOf(stmt), LinterRules(printCallArgumentsMustBeLiteralOrIdentifier = false))
         assertEquals(0, warnings.size)
+    }
+
+    @Test
+    fun `readInput with literal is valid`() {
+        val readInput = ReadInput(str("name:"), pos())
+        val stmt = VariableDeclaration("name", "string", readInput, pos())
+        val warnings = analyze(listOf(stmt))
+        assertEquals(0, warnings.size)
+    }
+
+    @Test
+    fun `readInput with identifier is valid`() {
+        val readInput = ReadInput(id("prompt"), pos())
+        val stmt = VariableDeclaration("name", "string", readInput, pos())
+        val warnings = analyze(listOf(stmt))
+        assertEquals(0, warnings.size)
+    }
+
+    @Test
+    fun `readInput with binary expression warns when rule is on`() {
+        val binExpr = BinaryExpression(str("Enter: "), TokenType.PLUS, id("suffix"), pos())
+        val readInput = ReadInput(binExpr, pos())
+        val stmt = VariableDeclaration("name", "string", readInput, pos())
+        val warnings = analyze(listOf(stmt))
+        assertEquals(1, warnings.size)
+        assertEquals(
+            "readInput can only be called with an identifier or a literal, not an expression",
+            warnings[0].message,
+        )
+    }
+
+    @Test
+    fun `readInput with binary expression is valid when rule is off`() {
+        val binExpr = BinaryExpression(str("Enter: "), TokenType.PLUS, id("suffix"), pos())
+        val readInput = ReadInput(binExpr, pos())
+        val stmt = VariableDeclaration("name", "string", readInput, pos())
+        val warnings = analyze(listOf(stmt), LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = false))
+        assertEquals(0, warnings.size)
+    }
+
+    @Test
+    fun `readInput in assignment and if statement warns`() {
+        val binExpr = BinaryExpression(str("a"), TokenType.PLUS, str("b"), pos())
+        val assign = Assignment("x", ReadInput(binExpr, pos()), pos())
+        val ifStmt =
+            IfStatement(
+                condition = id("cond"),
+                thenBranch = Block(listOf(assign), pos()),
+                elseBranch = Block(listOf(PrintCall(ReadInput(binExpr, pos()), pos())), pos()),
+                position = pos(),
+            )
+        val rule = ReadInputCallArgumentRule()
+        val warnings = rule.check(ifStmt)
+        assertEquals(2, warnings.size)
     }
 
     @Test
