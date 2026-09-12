@@ -1,7 +1,10 @@
 package printscript.cli
 
+import printscript.formatter.Formatter
+import printscript.formatter.FormatterRules
 import printscript.interpreter.output.BucketOutput
 import java.io.StringReader
+import java.io.StringWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -160,5 +163,22 @@ class EndToEndTest {
         Engine(BucketOutput()).validate(StringReader(code), onProgress = reported::add)
 
         assertEquals(listOf(1, 2, 3), reported)
+    }
+
+    private fun formatOnce(code: String): String {
+        val writer = StringWriter()
+        Engine(BucketOutput()).format(StringReader(code)) { statements ->
+            Formatter(FormatterRules()).format(statements, writer)
+        }
+        return writer.toString()
+    }
+
+    @Test
+    fun `formatting twice gives the same result`() {
+        val code = "let   x :number=5;\nif(true){println(x);}"
+
+        val once = formatOnce(code)
+
+        assertEquals(once, formatOnce(once))
     }
 }
