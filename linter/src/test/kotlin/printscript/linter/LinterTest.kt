@@ -1,5 +1,6 @@
 package printscript.linter
 
+import printscript.ast.Assignment
 import printscript.ast.BinaryExpression
 import printscript.ast.Identifier
 import printscript.ast.NumberLiteral
@@ -115,6 +116,80 @@ class LinterTest {
 
         assertEquals(3, warnings.size)
         assertEquals(listOf(Position(1, 1), Position(2, 1), Position(3, 1)), warnings.map { it.position })
+    }
+
+    @Test
+    fun `snake case assignment warns when camel case is expected`() {
+        val stmt = Assignment("mi_variable", num(3.0), pos())
+
+        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = "camel case"))
+
+        assertEquals(1, warnings.size)
+        assertEquals("Identifier 'mi_variable' does not match format camel case", warnings[0].message)
+    }
+
+    @Test
+    fun `camel case assignment warns when snake case is expected`() {
+        val stmt = Assignment("miVariable", num(3.0), pos())
+
+        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = "snake case"))
+
+        assertEquals(1, warnings.size)
+        assertEquals("Identifier 'miVariable' does not match format snake case", warnings[0].message)
+    }
+
+    @Test
+    fun `a well formatted assignment is valid`() {
+        val stmt = Assignment("miVariable", num(3.0), pos())
+
+        assertEquals(0, analyze(listOf(stmt), LinterRules(identifierFormat = "camel case")).size)
+    }
+
+    @Test
+    fun `the assignment warning points at the real row and column`() {
+        val stmt = Assignment("mi_variable", num(3.0), Position(5, 3))
+
+        assertEquals(Position(5, 3), analyze(listOf(stmt))[0].position)
+    }
+
+    @Test
+    fun `a const declaration with a bad name warns just like a let`() {
+        val stmt = VariableDeclaration("mi_constante", "number", num(3.0), Position(2, 1), isConst = true)
+
+        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = "camel case"))
+
+        assertEquals(1, warnings.size)
+        assertEquals("Identifier 'mi_constante' does not match format camel case", warnings[0].message)
+        assertEquals(Position(2, 1), warnings[0].position)
+    }
+
+    @Test
+    fun `a well formatted const declaration is valid`() {
+        val stmt = VariableDeclaration("miConstante", "number", num(3.0), pos(), isConst = true)
+
+        assertEquals(0, analyze(listOf(stmt), LinterRules(identifierFormat = "camel case")).size)
+    }
+
+    @Test
+    fun `identifiers with digits are valid in camel case`() {
+        val statements =
+            listOf(
+                VariableDeclaration("dato1", "number", null, pos()),
+                Assignment("valor2", num(1.0), pos()),
+            )
+
+        assertEquals(0, analyze(statements, LinterRules(identifierFormat = "camel case")).size)
+    }
+
+    @Test
+    fun `identifiers with digits are valid in snake case`() {
+        val statements =
+            listOf(
+                VariableDeclaration("dato1", "number", null, pos()),
+                Assignment("mi_valor2", num(1.0), pos()),
+            )
+
+        assertEquals(0, analyze(statements, LinterRules(identifierFormat = "snake case")).size)
     }
 
     @Test

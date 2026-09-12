@@ -1,21 +1,13 @@
 package printscript.linter
 
 import printscript.ast.Statement
-import printscript.linter.rule.IdentifierFormatRule
 import printscript.linter.rule.LinterRule
-import printscript.linter.rule.PrintCallArgumentRule
+import printscript.linter.rule.LinterRuleRegistry
 
 class Linter(
     private val rules: List<LinterRule>,
 ) : LinterInterface {
-    constructor(config: LinterRules = LinterRules()) : this(
-        buildList {
-            add(IdentifierFormatRule(config.identifierFormat))
-            if (config.printCallArgumentsMustBeLiteralOrIdentifier) {
-                add(PrintCallArgumentRule())
-            }
-        },
-    )
+    constructor(config: LinterRules = LinterRules()) : this(LinterRuleRegistry.rulesFor(config))
 
     override fun analyze(
         statements: Iterator<Statement>,
