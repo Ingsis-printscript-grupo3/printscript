@@ -2,10 +2,14 @@ package printscript.linter
 
 import printscript.ast.Assignment
 import printscript.ast.BinaryExpression
+import printscript.ast.Block
 import printscript.ast.Identifier
+import printscript.ast.IfStatement
 import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
+import printscript.ast.ReadInput
 import printscript.ast.Statement
+import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.common.TokenType
@@ -29,6 +33,8 @@ class LinterTest {
     private fun num(v: Double) = NumberLiteral(v, pos())
 
     private fun id(n: String) = Identifier(n, pos())
+
+    private fun str(v: String) = StringLiteral(v, pos())
 
     @Test
     fun `camel case variable declaration is valid`() {
@@ -190,6 +196,101 @@ class LinterTest {
             )
 
         assertEquals(0, analyze(statements, LinterRules(identifierFormat = "snake case")).size)
+    }
+
+    private fun block(vararg statements: Statement) = Block(statements.toList(), pos())
+
+    private fun ifStmt(
+        thenBranch: Block,
+        elseBranch: Block? = null,
+    ) = IfStatement(id("x"), thenBranch, elseBranch, pos())
+
+    @Test
+    fun `a badly formatted declaration inside an if block warns`() {
+        val stmt = ifStmt(block(VariableDeclaration("mi_variable", "number", num(1.0), Position(2, 5))))
+
+        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = "camel case"))
+
+        assertEquals(1, warnings.size)
+        assertEquals("Identifier 'mi_variable' does not match format camel case", warnings[0].message)
+        assertEquals(Position(2, 5), warnings[0].position)
+    }
+
+    @Test
+    fun `a badly formatted const inside an if block warns`() {
+        val declaration = VariableDeclaration("mi_constante", "number", num(1.0), Position(2, 5), isConst = true)
+        val stmt = ifStmt(block(declaration))
+
+        assertEquals(1, analyze(listOf(stmt), LinterRules(identifierFormat = "camel case")).size)
+    }
+
+    @Test
+    fun `a badly formatted assignment inside an if block warns`() {
+        val stmt = ifStmt(block(Assignment("mi_variable", num(2.0), Position(3, 5))))
+
+        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = "camel case"))
+
+        assertEquals(1, warnings.size)
+        assertEquals(Position(3, 5), warnings[0].position)
+    }
+
+    @Test
+    fun `a badly formatted assignment inside an else block warns`() {
+        val stmt = ifStmt(block(), block(Assignment("mi_variable", num(2.0), Position(5, 5))))
+
+        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = "camel case"))
+
+        assertEquals(1, warnings.size)
+        assertEquals(Position(5, 5), warnings[0].position)
+    }
+
+    @Test
+    fun `a readInput with an expression inside an if block warns`() {
+        val readInput = ReadInput(BinaryExpression(str("a"), TokenType.PLUS, str("b"), pos()), Position(3, 20))
+        val stmt = ifStmt(block(VariableDeclaration("dato", "string", readInput, Position(3, 5))))
+
+        val warnings = analyze(listOf(stmt))
+
+        assertEquals(1, warnings.size)
+        assertEquals(
+            "readInput can only be called with an identifier or a literal, not an expression",
+            warnings[0].message,
+        )
+        assertEquals(Position(3, 20), warnings[0].position)
+    }
+
+    @Test
+    fun `warns on a declaration nested two if blocks deep`() {
+        val inner = ifStmt(block(VariableDeclaration("mi_variable", "number", num(1.0), Position(4, 9))))
+        val stmt = ifStmt(block(inner))
+
+        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = "camel case"))
+
+        assertEquals(1, warnings.size)
+        assertEquals(Position(4, 9), warnings[0].position)
+    }
+
+    @Test
+    fun `a well formatted if block produces no warnings`() {
+        val stmt =
+            ifStmt(
+                block(
+                    VariableDeclaration("miVariable", "number", num(1.0), pos()),
+                    Assignment("miVariable", num(2.0), pos()),
+                ),
+                block(PrintCall(id("miVariable"), pos())),
+            )
+
+        assertEquals(0, analyze(listOf(stmt), LinterRules(identifierFormat = "camel case")).size)
+    }
+
+    // la condicion del if la mira la regla, y el if lo visita el aplanado: no debe contarse dos veces
+    @Test
+    fun `a readInput in the if condition warns exactly once`() {
+        val readInput = ReadInput(BinaryExpression(str("a"), TokenType.PLUS, str("b"), pos()), Position(1, 5))
+        val stmt = IfStatement(readInput, block(), null, Position(1, 1))
+
+        assertEquals(1, analyze(listOf(stmt)).size)
     }
 
     @Test

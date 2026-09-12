@@ -194,6 +194,119 @@ class LinterTckCasesTest {
         assertTrue(lint("""let nombre: string = readInput("a" + "b");""", config).isEmpty())
     }
 
+    // ---------- 1.1: sentencias dentro de bloques ----------
+
+    // el caso exacto del informe de QA: hoy esto reportaba 0 warnings
+    @Test
+    fun `11 - every infraction inside an if block is reported`() {
+        val source =
+            """
+            let x: number = 1;
+            if (x) {
+                let mi_variable: number = 1;
+                mi_variable = 2;
+                let dato: string = readInput("a" + "b");
+            }
+            """.trimIndent()
+
+        val warnings = lint(source, camelCaseConfig)
+
+        assertEquals(3, warnings.size)
+        assertEquals(
+            listOf(
+                "Identifier 'mi_variable' does not match format camel case",
+                "Identifier 'mi_variable' does not match format camel case",
+                "readInput can only be called with an identifier or a literal, not an expression",
+            ),
+            warnings.map { it.message },
+        )
+    }
+
+    @Test
+    fun `11 - the warnings point at the inner lines, not at the if`() {
+        val source =
+            """
+            let x: number = 1;
+            if (x) {
+                let mi_variable: number = 1;
+                mi_variable = 2;
+            }
+            """.trimIndent()
+
+        val warnings = lint(source, camelCaseConfig)
+
+        assertEquals(listOf(3, 4), warnings.map { it.position.line })
+        assertTrue(warnings.none { it.position == Position(2, 1) })
+    }
+
+    @Test
+    fun `11 - a badly formatted const inside an if block warns`() {
+        val source =
+            """
+            let x: number = 1;
+            if (x) {
+                const mi_constante: number = 1;
+            }
+            """.trimIndent()
+
+        val warnings = lint(source, camelCaseConfig)
+
+        assertEquals(1, warnings.size)
+        assertEquals(3, warnings[0].position.line)
+    }
+
+    @Test
+    fun `11 - readInput with an expression warns inside then and inside else`() {
+        val source =
+            """
+            let x: number = 1;
+            if (x) {
+                let uno: string = readInput("a" + "b");
+            } else {
+                let dos: string = readInput("c" + "d");
+            }
+            """.trimIndent()
+
+        val warnings = lint(source, camelCaseConfig)
+
+        assertEquals(2, warnings.size)
+        assertEquals(listOf(3, 5), warnings.map { it.position.line })
+    }
+
+    @Test
+    fun `11 - infractions nested two blocks deep are reported`() {
+        val source =
+            """
+            let x: number = 1;
+            if (x) {
+                if (x) {
+                    let mi_variable: number = 1;
+                }
+            }
+            """.trimIndent()
+
+        val warnings = lint(source, camelCaseConfig)
+
+        assertEquals(1, warnings.size)
+        assertEquals(4, warnings[0].position.line)
+    }
+
+    @Test
+    fun `11 - clean code with if and else produces no warnings`() {
+        val source =
+            """
+            let miVariable: number = 1;
+            if (miVariable) {
+                const miConstante: string = "hola";
+                println(miConstante);
+            } else {
+                let otroDato: string = readInput(miVariable);
+            }
+            """.trimIndent()
+
+        assertTrue(lint(source, camelCaseConfig).isEmpty())
+    }
+
     // ---------- transversales ----------
 
     @Test
