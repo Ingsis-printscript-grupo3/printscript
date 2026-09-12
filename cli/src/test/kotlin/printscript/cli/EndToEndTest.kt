@@ -167,8 +167,9 @@ class EndToEndTest {
 
     private fun formatOnce(code: String): String {
         val writer = StringWriter()
-        Engine(BucketOutput()).format(StringReader(code)) { statements ->
-            Formatter(FormatterRules()).format(statements, writer)
+        val rules = FormatterRules(spaceAfterColon = true, spacingAroundEquals = true, indentInsideIf = 2)
+        Engine(BucketOutput()).format({ StringReader(code) }) { tokens ->
+            Formatter(rules).format(tokens, writer)
         }
         return writer.toString()
     }

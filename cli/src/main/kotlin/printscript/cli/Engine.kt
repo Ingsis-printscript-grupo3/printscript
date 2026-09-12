@@ -3,6 +3,7 @@ package printscript.cli
 import printscript.ast.Statement
 import printscript.common.LanguageVersion
 import printscript.common.Position
+import printscript.common.Token
 import printscript.interpreter.Interpreter
 import printscript.interpreter.InterpreterError
 import printscript.interpreter.output.Output
@@ -89,13 +90,15 @@ class Engine(private val output: Output) {
     // asi un error inesperado no le sale al usuario como stacktrace
     @Suppress("TooGenericExceptionCaught")
     fun format(
-        reader: Reader,
+        openReader: () -> Reader,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
-        format: (Iterator<Statement>) -> Unit,
+        format: (Iterator<Token>) -> Unit,
     ): FormatResult {
         return try {
-            format(parseIntoAst(parserFor(reader, languageVersion), onProgress))
+            // una pasada valida la sintaxis y otra formatea con los espacios originales
+            openReader().use { parseIntoAst(parserFor(it, languageVersion), onProgress).forEach { } }
+            openReader().use { format(Lexer(CharStream(it)).tokenize()) }
             FormatResult.Success
         } catch (e: Exception) {
             val failure = describe(e)
