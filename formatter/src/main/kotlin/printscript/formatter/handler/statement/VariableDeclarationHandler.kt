@@ -16,7 +16,8 @@ class VariableDeclarationHandler : Handler<Statement, Formatter, String> {
 
         val rules = ctx.rules
         val colon = "${if (rules.spaceBeforeColon) " " else ""}:${if (rules.spaceAfterColon) " " else ""}"
-        val declaration = "let ${node.name}$colon${node.type}"
+        val keyword = if (node.isConst) "const" else "let"
+        val declaration = "$keyword ${node.name}$colon${node.type}"
         return node.value?.let { "$declaration${ctx.assignmentOperator()}${ctx.formatExpression(it)};" }
             ?: "$declaration;"
     }
