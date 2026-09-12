@@ -1,11 +1,11 @@
 package printscript.formatter
 
-import printscript.ast.Statement
+import printscript.common.Token
 import java.io.Writer
 
 interface FormatterInterface {
     fun format(
-        statements: Iterator<Statement>,
+        tokens: Iterator<Token>,
         output: Writer,
     )
 }

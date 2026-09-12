@@ -48,10 +48,10 @@ class FormatterRulesLoaderTest {
 
         assertTrue(rules.spaceBeforeColon)
         assertTrue(rules.spaceAfterColon)
-        assertTrue(rules.spaceAroundAssignment)
+        assertTrue(rules.spacingAroundEquals)
         assertEquals(2, rules.lineBreaksAfterPrintln)
         assertEquals(2, rules.indentInsideIf)
-        assertEquals(false, rules.braceOnSameLine)
+        assertTrue(rules.ifBraceBelowLine)
     }
 
     @Test
@@ -66,7 +66,7 @@ class FormatterRulesLoaderTest {
         val rules = FormatterRulesLoader.fromYaml(yaml)
 
         assertTrue(rules.spaceBeforeColon)
-        assertEquals(false, rules.spaceAroundAssignment)
+        assertTrue(rules.noSpacingAroundEquals)
         assertEquals(1, rules.lineBreaksAfterPrintln)
     }
 

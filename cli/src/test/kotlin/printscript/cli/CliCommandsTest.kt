@@ -129,7 +129,7 @@ class CliCommandsTest {
         val result = FormatCommand().test(listOf(file.path))
 
         assertEquals(0, result.statusCode)
-        assertEquals("let saludo:string = \"hola\";\nprintln(saludo);", result.stdout)
+        assertEquals("let   saludo :string=\"hola\";\nprintln(saludo);", result.stdout)
         assertEquals(originalCode, file.readText())
     }
 
@@ -143,7 +143,7 @@ class CliCommandsTest {
         val result = FormatCommand().test(listOf(file.path, "--config", config.path))
 
         assertEquals(0, result.statusCode)
-        assertEquals("let saludo :string = \"hola\";", result.stdout)
+        assertEquals("let saludo : string = \"hola\";", result.stdout)
     }
 
     @Test

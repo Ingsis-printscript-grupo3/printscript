@@ -116,8 +116,8 @@ class FormatCommand : CliktCommand(name = "format", help = "Format a .prs file a
         val progress = ParsingProgress(showProgress(quiet))
 
         val result =
-            engine.format(file.reader(), languageVersion, onProgress = progress::report) { statements ->
-                Formatter(rules).format(statements, echoWriter())
+            engine.format({ file.reader() }, languageVersion, onProgress = progress::report) { tokens ->
+                Formatter(rules).format(tokens, echoWriter())
             }
         progress.finish()
 
