@@ -18,7 +18,9 @@ class LinterTest {
         statements: List<Statement>,
         config: LinterRules = LinterRules(),
     ): List<Warning> {
-        return Linter(config).analyze(statements.iterator())
+        val warnings = mutableListOf<Warning>()
+        Linter(config).analyze(statements.iterator(), warnings::add)
+        return warnings
     }
 
     private fun pos() = Position(0, 0)

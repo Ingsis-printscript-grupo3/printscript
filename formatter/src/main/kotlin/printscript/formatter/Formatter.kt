@@ -11,6 +11,7 @@ import printscript.formatter.handler.expression.StringLiteralHandler
 import printscript.formatter.handler.statement.AssignmentHandler
 import printscript.formatter.handler.statement.PrintCallHandler
 import printscript.formatter.handler.statement.VariableDeclarationHandler
+import java.io.Writer
 
 class Formatter(
     val rules: FormatterRules,
@@ -34,17 +35,25 @@ class Formatter(
             ),
         )
 
-    // Recorre el programa y pega cada statement con su separador
-    override fun format(statements: List<Statement>): String {
-        val builder = StringBuilder()
-        statements.forEachIndexed { index, stmt ->
-            if (index > 0) builder.append("\n")
-            builder.append(formatStatement(stmt))
-            val isLast = index == statements.lastIndex
-            if (stmt is PrintCall && !isLast) builder.append("\n".repeat(rules.lineBreaksAfterPrintln))
+    // leo el siguiente antes, para saber si el actual es el ultimo
+    override fun format(
+        statements: Iterator<Statement>,
+        output: Writer,
+    ) {
+        var next: Statement? = if (statements.hasNext()) statements.next() else null
+        var first = true
+        while (next != null) {
+            val current = next
+            next = if (statements.hasNext()) statements.next() else null
+            if (!first) output.write("\n")
+            output.write(formatStatement(current))
+            if (current is PrintCall && next != null) {
+                output.write("\n".repeat(rules.lineBreaksAfterPrintln))
+            }
+            first = false
         }
-        builder.append("\n")
-        return builder.toString()
+        output.write("\n")
+        output.flush()
     }
 
     fun formatStatement(stmt: Statement): String = statementRegistry.resolve(stmt, this)

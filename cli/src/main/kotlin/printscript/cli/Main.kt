@@ -17,6 +17,7 @@ import printscript.interpreter.output.ConsoleOutput
 import printscript.linter.Linter
 import printscript.linter.LinterRules
 import printscript.linter.LinterRulesLoader
+import java.io.Writer
 
 private val SUPPORTED_VERSIONS = LanguageVersion.entries.joinToString(", ") { it.label }
 private const val DEFAULT_VERSION = "1.0"
@@ -83,22 +84,18 @@ class AnalyzeCommand : CliktCommand(
         val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress(showProgress(quiet))
 
+        var warningCount = 0
         val result =
             engine.lint(file.reader(), languageVersion, onProgress = progress::report) { statements ->
-                Linter(rules).analyze(statements.iterator())
+                Linter(rules).analyze(statements) { warning ->
+                    warningCount++
+                    echo("Warning at [${warning.position.line}:${warning.position.column}]: ${warning.message}")
+                }
             }
         progress.finish()
 
         when (result) {
-            is LintResult.Success -> {
-                if (result.warnings.isEmpty()) {
-                    echo("${file.path}: no warnings found")
-                } else {
-                    result.warnings.forEach { warning ->
-                        echo("Warning at [${warning.position.line}:${warning.position.column}]: ${warning.message}")
-                    }
-                }
-            }
+            is LintResult.Success -> if (warningCount == 0) echo("${file.path}: no warnings found")
             is LintResult.Failure -> fail(result.type, result.message, result.start, result.end)
         }
     }
@@ -120,15 +117,29 @@ class FormatCommand : CliktCommand(name = "format", help = "Format a .prs file a
 
         val result =
             engine.format(file.reader(), languageVersion, onProgress = progress::report) { statements ->
-                Formatter(rules).format(statements)
+                Formatter(rules).format(statements, echoWriter())
             }
         progress.finish()
 
         when (result) {
-            is FormatResult.Success -> echo(result.code, trailingNewline = false)
+            is FormatResult.Success -> Unit
             is FormatResult.Failure -> fail(result.type, result.message, result.start, result.end)
         }
     }
+
+    // asi no junta todo el texto antes de imprimirlo
+    private fun echoWriter(): Writer =
+        object : Writer() {
+            override fun write(
+                cbuf: CharArray,
+                off: Int,
+                len: Int,
+            ) = echo(String(cbuf, off, len), trailingNewline = false)
+
+            override fun flush() = Unit
+
+            override fun close() = Unit
+        }
 }
 
 // Reports progress to stderr as statements are parsed, so it never mixes with a command's own stdout output.
