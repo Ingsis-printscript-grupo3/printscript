@@ -23,7 +23,6 @@ tasks.test {
     useJUnitPlatform { excludeTags("load") }
 }
 
-// Prueba que el pipeline no materializa: 32.768 statements con 16 MB de heap
 tasks.register<Test>("loadTest") {
     group = "verification"
     description = "Runs the streaming load test with a small heap"
