@@ -57,9 +57,7 @@ class Formatter(
             next = if (statements.hasNext()) statements.next() else null
             if (!first) output.write("\n")
             output.write(formatStatement(current))
-            if (current is PrintCall && next != null) {
-                output.write("\n".repeat(rules.lineBreaksAfterPrintln))
-            }
+            if (next != null) output.write(lineBreaksAfter(current))
             first = false
         }
         output.flush()
@@ -70,4 +68,7 @@ class Formatter(
     fun formatExpression(expr: Expression): String = expressionRegistry.resolve(expr, this)
 
     fun assignmentOperator(): String = if (rules.spaceAroundAssignment) " = " else "="
+
+    fun lineBreaksAfter(statement: Statement): String =
+        if (statement is PrintCall) "\n".repeat(rules.lineBreaksAfterPrintln) else ""
 }
