@@ -89,7 +89,7 @@ class AnalyzeCommand : CliktCommand(
             engine.lint(file.reader(), languageVersion, onProgress = progress::report) { statements ->
                 Linter(rules).analyze(statements) { warning ->
                     warningCount++
-                    echo("[${warning.position.line}:${warning.position.column}] Warning: ${warning.message}")
+                    echo("Warning at [${warning.position.line}:${warning.position.column}]: ${warning.message}")
                 }
             }
         progress.finish()

@@ -14,7 +14,7 @@ private const val STATEMENTS = 32_768
 // corre aparte del build normal, con poca memoria
 @Tag("load")
 class LargeFileStreamingTest {
-    // el codigo va a un archivo, si lo armara en un String seria trampa
+    // el codigo se escribe en un archivo para no tenerlo entero en memoria
     private fun largeSource(): File =
         File.createTempFile("printscript-large", ".prs").apply {
             deleteOnExit()
