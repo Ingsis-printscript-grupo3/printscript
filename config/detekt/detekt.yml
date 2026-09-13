@@ -1,9 +1,8 @@
 complexity:
+  # mas corto que el default, asi las funciones no crecen
   LongMethod:
     active: true
     threshold: 40
-  TooManyFunctions:
-    active: true
 
 style:
   # el parser corta con return apenas falla algo

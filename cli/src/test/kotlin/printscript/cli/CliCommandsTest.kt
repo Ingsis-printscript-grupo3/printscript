@@ -123,14 +123,24 @@ class CliCommandsTest {
 
     @Test
     fun `format prints the formatted code without touching the original file`() {
-        val originalCode = "let   saludo :string=\"hola\";\nprintln(saludo);\n"
+        val originalCode = "let   total :number=1+2;println(total);\n"
         val file = prsFile(originalCode)
 
         val result = FormatCommand().test(listOf(file.path))
 
         assertEquals(0, result.statusCode)
-        assertEquals("let   saludo :string=\"hola\";\nprintln(saludo);", result.stdout)
+        assertEquals("let total : number = 1 + 2;\nprintln ( total );", result.stdout)
         assertEquals(originalCode, file.readText())
+    }
+
+    @Test
+    fun `format without --config puts the if brace on the same line and indents the block`() {
+        val file = prsFile("let ok: boolean = true;\nif(ok)\n{\nprintln(\"si\");\n}\n")
+
+        val result = FormatCommand().test(listOf(file.path, "--version", "1.1"))
+
+        assertEquals(0, result.statusCode)
+        assertEquals("let ok : boolean = true;\nif ( ok ) {\n    println ( \"si\" );\n}", result.stdout)
     }
 
     @Test
