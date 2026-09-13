@@ -50,12 +50,12 @@ object VariableDeclarationHandler : StatementHandler {
 
         return ASTResult.Success(
             VariableDeclaration(
-                nameToken.value,
-                typeToken.value,
-                initializer,
-                keywordToken.start,
-                isConst,
-                nameToken.start,
+                name = nameToken.value,
+                type = typeToken.value,
+                value = initializer,
+                position = keywordToken.start,
+                isConst = isConst,
+                namePosition = nameToken.start,
             ),
         )
     }

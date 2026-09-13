@@ -19,7 +19,7 @@ class PrefixParseletExtensibilityTest {
     ) = Token(type, pos(), pos(), value)
 
     @Test
-    fun `custom prefix parselet registrado reemplaza el comportamiento por defecto sin tocar ExpressionParser`() {
+    fun `a registered custom prefix parselet replaces the default behaviour without touching ExpressionParser`() {
         val fakeParselet =
             PrefixParselet { _, _, _ ->
                 ASTResult.Success(NumberLiteral(42.0))

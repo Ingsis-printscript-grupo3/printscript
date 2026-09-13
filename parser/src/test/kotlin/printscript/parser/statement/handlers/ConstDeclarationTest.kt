@@ -41,7 +41,7 @@ class ConstDeclarationTest {
         }
 
     @Test
-    fun `const con inicializador marca isConst en true`() {
+    fun `a const with an initializer sets isConst to true`() {
         // const x: number = 5;
         val statements =
             parseStatements(
@@ -60,7 +60,7 @@ class ConstDeclarationTest {
     }
 
     @Test
-    fun `const sin inicializador falla`() {
+    fun `a const without an initializer fails`() {
         // const x: number;
         val results =
             parse(
@@ -76,7 +76,7 @@ class ConstDeclarationTest {
     }
 
     @Test
-    fun `let sigue con inicializador opcional`() {
+    fun `let keeps its optional initializer`() {
         // let x: number;
         val statements =
             parseStatements(
@@ -92,7 +92,7 @@ class ConstDeclarationTest {
     }
 
     @Test
-    fun `boolean es un tipo valido para let y const`() {
+    fun `boolean is a valid type for both let and const`() {
         // let a: boolean = true; const b: boolean = false;
         val statements =
             parseStatements(
@@ -122,7 +122,7 @@ class ConstDeclarationTest {
     }
 
     @Test
-    fun `const bajo version 1_0 falla nombrando la feature y la version`() {
+    fun `const under version 1_0 fails naming the feature and the version`() {
         val results =
             parse(
                 LanguageVersion.V1_0,
@@ -140,7 +140,7 @@ class ConstDeclarationTest {
     }
 
     @Test
-    fun `boolean como tipo bajo version 1_0 falla nombrando la feature y la version`() {
+    fun `the boolean type under version 1_0 fails naming the feature and the version`() {
         val results =
             parse(
                 LanguageVersion.V1_0,

@@ -133,10 +133,17 @@ class LinterTest {
             listOf(
                 VariableDeclaration("my_var", "number", null, Position(1, 1)),
                 PrintCall(BinaryExpression(num(1.0), TokenType.PLUS, num(2.0), pos()), Position(2, 1)),
-                VariableDeclaration("dato", "string", ReadInput(str("a"), Position(3, 20)), Position(3, 1)),
+                // el argumento del readInput tiene que ser invalido, si no la tercera regla
+                // no dispara y el test pasaria aunque estuviera apagada
+                VariableDeclaration(
+                    "dato",
+                    "string",
+                    ReadInput(BinaryExpression(str("a"), TokenType.PLUS, str("b"), pos()), Position(3, 20)),
+                    Position(3, 1),
+                ),
             )
 
-        assertEquals(2, analyze(statements).size)
+        assertEquals(3, analyze(statements).size)
     }
 
     // una config que no nombra ninguna regla no chequea nada
