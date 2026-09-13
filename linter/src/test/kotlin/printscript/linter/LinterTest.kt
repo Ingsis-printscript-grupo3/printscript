@@ -109,6 +109,49 @@ class LinterTest {
         assertEquals(Position(3, 7), warnings[0].position)
     }
 
+    // el warning del identificador va al nombre, no al let que lo declara
+    @Test
+    fun `the identifier warning points at the name and not at the let`() {
+        val stmt = VariableDeclaration("my_var", "number", null, Position(3, 1), namePosition = Position(3, 5))
+
+        val warnings = analyze(listOf(stmt))
+
+        assertEquals(Position(3, 5), warnings[0].position)
+    }
+
+    @Test
+    fun `namePosition falls back to the statement position when nobody sets it`() {
+        val stmt = VariableDeclaration("my_var", "number", null, Position(3, 1))
+
+        assertEquals(Position(3, 1), analyze(listOf(stmt))[0].position)
+    }
+
+    // sin config el linter chequea todo, que es lo que usa el CLI cuando no le pasan --config
+    @Test
+    fun `LinterRules with no config turns every rule on`() {
+        val statements =
+            listOf(
+                VariableDeclaration("my_var", "number", null, Position(1, 1)),
+                PrintCall(BinaryExpression(num(1.0), TokenType.PLUS, num(2.0), pos()), Position(2, 1)),
+                VariableDeclaration("dato", "string", ReadInput(str("a"), Position(3, 20)), Position(3, 1)),
+            )
+
+        assertEquals(2, analyze(statements).size)
+    }
+
+    // una config que no nombra ninguna regla no chequea nada
+    @Test
+    fun `a config that names no rule emits no warnings`() {
+        val statements =
+            listOf(
+                VariableDeclaration("my_var", "number", null, Position(1, 1)),
+                PrintCall(BinaryExpression(num(1.0), TokenType.PLUS, num(2.0), pos()), Position(2, 1)),
+            )
+        val config = LinterRules(null, null, null)
+
+        assertEquals(0, analyze(statements, config).size)
+    }
+
     @Test
     fun `keeps going after the first warning and returns every one of them`() {
         val statements =
