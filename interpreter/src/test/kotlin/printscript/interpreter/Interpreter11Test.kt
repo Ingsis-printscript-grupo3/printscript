@@ -158,12 +158,12 @@ class Interpreter11Test {
     }
 
     @Test
-    fun `readInput invalid number conversion fails with ReadInputConversionError`() {
+    fun `readInput invalid number conversion fails with ValueConversionError`() {
         val input = QueueInput("not_a_number")
         val interpreter = InterpreterFactory.create11(input = input)
 
         val error =
-            assertFailsWith<ReadInputConversionError> {
+            assertFailsWith<ValueConversionError> {
                 interpreter.interpret(
                     listOf(
                         VariableDeclaration("n", "number", ReadInput(text("Enter: "))),
@@ -171,7 +171,7 @@ class Interpreter11Test {
                 )
             }
 
-        assertEquals("not_a_number", error.value)
+        assertEquals(StringValue("not_a_number"), error.value)
         assertEquals("number", error.targetType)
     }
 
@@ -210,12 +210,12 @@ class Interpreter11Test {
     }
 
     @Test
-    fun `readEnv invalid boolean conversion throws ReadEnvConversionError`() {
+    fun `readEnv invalid boolean conversion throws ValueConversionError`() {
         val env = MapEnvProvider("DEBUG" to "maybe")
         val interpreter = InterpreterFactory.create11(env = env)
 
         val error =
-            assertFailsWith<ReadEnvConversionError> {
+            assertFailsWith<ValueConversionError> {
                 interpreter.interpret(
                     listOf(
                         VariableDeclaration("debug", "boolean", ReadEnv(text("DEBUG"))),
@@ -223,8 +223,7 @@ class Interpreter11Test {
                 )
             }
 
-        assertEquals("debug", "debug") // sanity check
-        assertEquals("maybe", error.value)
+        assertEquals(StringValue("maybe"), error.value)
         assertEquals("boolean", error.targetType)
     }
 
@@ -323,5 +322,74 @@ class Interpreter11Test {
         interpreter.interpret(program.iterator())
 
         assertEquals(listOf("inner", "outer"), output.lines())
+    }
+
+    @Test
+    fun `assignment with type conversion from readInput works`() {
+        val output = BucketOutput()
+        val input = QueueInput("50")
+        val interpreter = InterpreterFactory.create11(output = output, input = input)
+
+        interpreter.interpret(
+            listOf(
+                VariableDeclaration("x", "number", num(10.0)),
+                Assignment("x", ReadInput(text("Enter: "))),
+                PrintCall(id("x")),
+            ).iterator(),
+        )
+
+        assertEquals(listOf("50"), output.lines())
+    }
+
+    @Test
+    fun `assignment with invalid conversion throws ValueConversionError`() {
+        val input = QueueInput("not_a_number")
+        val interpreter = InterpreterFactory.create11(input = input)
+
+        val error =
+            assertFailsWith<ValueConversionError> {
+                interpreter.interpret(
+                    listOf(
+                        VariableDeclaration("x", "number", num(10.0)),
+                        Assignment("x", ReadInput(text("Enter: "))),
+                    ).iterator(),
+                )
+            }
+
+        assertEquals(StringValue("not_a_number"), error.value)
+        assertEquals("number", error.targetType)
+    }
+
+    @Test
+    fun `declaration without initializer allows subsequent assignment`() {
+        val output = BucketOutput()
+        val interpreter = InterpreterFactory.create11(output = output)
+
+        interpreter.interpret(
+            listOf(
+                VariableDeclaration("x", "number", null),
+                Assignment("x", num(42.0)),
+                PrintCall(id("x")),
+            ).iterator(),
+        )
+
+        assertEquals(listOf("42"), output.lines())
+    }
+
+    @Test
+    fun `accessing uninitialized variable throws UninitializedVariableError`() {
+        val interpreter = InterpreterFactory.create11()
+
+        val error =
+            assertFailsWith<UninitializedVariableError> {
+                interpreter.interpret(
+                    listOf(
+                        VariableDeclaration("x", "number", null),
+                        PrintCall(id("x")),
+                    ).iterator(),
+                )
+            }
+
+        assertEquals("x", error.name)
     }
 }

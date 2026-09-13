@@ -18,11 +18,11 @@ import printscript.interpreter.plugin.expression.NumberLiteralEvaluator
 import printscript.interpreter.plugin.expression.ReadEnvEvaluator
 import printscript.interpreter.plugin.expression.ReadInputEvaluator
 import printscript.interpreter.plugin.expression.StringLiteralEvaluator
-import printscript.interpreter.plugin.statement.Assignment11Interpreter
+import printscript.interpreter.plugin.statement.AssignmentInterpreter
 import printscript.interpreter.plugin.statement.BlockInterpreter
 import printscript.interpreter.plugin.statement.IfStatementInterpreter
 import printscript.interpreter.plugin.statement.PrintCallInterpreter
-import printscript.interpreter.plugin.statement.VariableDeclaration11Interpreter
+import printscript.interpreter.plugin.statement.VariableDeclarationInterpreter
 
 object InterpreterFactory {
     fun create(
@@ -55,13 +55,26 @@ object InterpreterFactory {
             expressionEvaluators = default11ExpressionEvaluators(input, env),
         )
 
-    fun default11StatementInterpreters(output: Output): List<Handler<Statement, InterpreterContext, Unit>> =
+    fun default10StatementInterpreters(output: Output): List<Handler<Statement, InterpreterContext, Unit>> =
         listOf(
-            VariableDeclaration11Interpreter(),
-            Assignment11Interpreter(),
-            IfStatementInterpreter(),
-            BlockInterpreter(),
+            VariableDeclarationInterpreter(),
+            AssignmentInterpreter(),
             PrintCallInterpreter(output),
+        )
+
+    fun default11StatementInterpreters(output: Output): List<Handler<Statement, InterpreterContext, Unit>> =
+        default10StatementInterpreters(output) +
+            listOf(
+                IfStatementInterpreter(),
+                BlockInterpreter(),
+            )
+
+    fun default10ExpressionEvaluators(): List<Handler<Expression, InterpreterContext, Value>> =
+        listOf(
+            NumberLiteralEvaluator(),
+            StringLiteralEvaluator(),
+            IdentifierEvaluator(),
+            BinaryExpressionEvaluator(),
         )
 
     fun default11ExpressionEvaluators(

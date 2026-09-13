@@ -7,13 +7,6 @@ import printscript.ast.registry.Registry
 import printscript.interpreter.output.ConsoleOutput
 import printscript.interpreter.output.Output
 import printscript.interpreter.plugin.InterpreterContext
-import printscript.interpreter.plugin.expression.BinaryExpressionEvaluator
-import printscript.interpreter.plugin.expression.IdentifierEvaluator
-import printscript.interpreter.plugin.expression.NumberLiteralEvaluator
-import printscript.interpreter.plugin.expression.StringLiteralEvaluator
-import printscript.interpreter.plugin.statement.AssignmentInterpreter
-import printscript.interpreter.plugin.statement.PrintCallInterpreter
-import printscript.interpreter.plugin.statement.VariableDeclarationInterpreter
 
 class Interpreter(
     private val statementInterpreters: List<Handler<Statement, InterpreterContext, Unit>>,
@@ -24,22 +17,11 @@ class Interpreter(
     private val statementRegistry = Registry(statementInterpreters)
     private val expressionRegistry = Registry(expressionEvaluators)
 
-    // constructor de conveniencia con los plugins de PrintScript 1.0
-    // output es el destino de los println: ConsoleOutput, BucketOutput, o los dos con MultiOutput
+    // Convenience constructor with PrintScript 1.0 plugins
+    // output is the destination for println: ConsoleOutput, BucketOutput, or both with MultiOutput
     constructor(output: Output = ConsoleOutput()) : this(
-        statementInterpreters =
-            listOf(
-                VariableDeclarationInterpreter(),
-                AssignmentInterpreter(),
-                PrintCallInterpreter(output),
-            ),
-        expressionEvaluators =
-            listOf(
-                NumberLiteralEvaluator(),
-                StringLiteralEvaluator(),
-                IdentifierEvaluator(),
-                BinaryExpressionEvaluator(),
-            ),
+        statementInterpreters = InterpreterFactory.default10StatementInterpreters(output),
+        expressionEvaluators = InterpreterFactory.default10ExpressionEvaluators(),
     )
 
     override fun interpret(statements: Iterator<Statement>) {
@@ -48,7 +30,7 @@ class Interpreter(
         }
     }
 
-    // le pregunto al registry si hay un handler para el statement, igual q el lexer con los readers
+    // Query registry for a statement handler, similar to lexer with readers
     private fun execute(statement: Statement) {
         statementRegistry.resolveOrNull(statement, InterpreterContext(environment, this))
             ?: throw UnknownStatementError(statement)

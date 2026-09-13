@@ -4,6 +4,7 @@ import printscript.ast.Assignment
 import printscript.ast.Statement
 import printscript.ast.registry.Handler
 import printscript.interpreter.UnknownStatementError
+import printscript.interpreter.ValueConverter
 import printscript.interpreter.plugin.InterpreterContext
 
 class AssignmentInterpreter : Handler<Statement, InterpreterContext, Unit> {
@@ -15,6 +16,14 @@ class AssignmentInterpreter : Handler<Statement, InterpreterContext, Unit> {
     ) {
         if (node !is Assignment) throw UnknownStatementError(node)
 
-        ctx.env.assign(node.name, ctx.interpreter.evaluate(node.value))
+        val rawValue = ctx.interpreter.evaluate(node.value)
+        val targetType = ctx.env.typeOf(node.name)
+        val value =
+            if (targetType != null) {
+                ValueConverter.convert(rawValue, targetType)
+            } else {
+                rawValue
+            }
+        ctx.env.assign(node.name, value)
     }
 }
