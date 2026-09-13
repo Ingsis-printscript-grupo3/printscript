@@ -20,12 +20,22 @@ class LinterRuleRegistry(
     private companion object {
         val DEFAULT_FACTORIES: List<LinterRuleFactory> =
             listOf(
-                LinterRuleFactory { config -> IdentifierFormatRule(config.identifierFormat) },
                 LinterRuleFactory { config ->
-                    if (config.printCallArgumentsMustBeLiteralOrIdentifier) PrintCallArgumentRule() else null
+                    if (config.hasIdentifierFormat) IdentifierFormatRule(config.identifierFormat) else null
                 },
                 LinterRuleFactory { config ->
-                    if (config.readInputArgumentsMustBeLiteralOrIdentifier) ReadInputArgumentRule() else null
+                    if (config.hasPrintCallArguments && config.printCallArgumentsMustBeLiteralOrIdentifier) {
+                        PrintCallArgumentRule()
+                    } else {
+                        null
+                    }
+                },
+                LinterRuleFactory { config ->
+                    if (config.hasReadInputArguments && config.readInputArgumentsMustBeLiteralOrIdentifier) {
+                        ReadInputArgumentRule()
+                    } else {
+                        null
+                    }
                 },
             )
     }

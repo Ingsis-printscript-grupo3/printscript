@@ -10,6 +10,10 @@ data class LinterRules(
     val printCallArgumentsMustBeLiteralOrIdentifier: Boolean = true,
     val readInputArgumentsMustBeLiteralOrIdentifier: Boolean = true,
 ) {
+    var hasIdentifierFormat: Boolean = true
+    var hasPrintCallArguments: Boolean = true
+    var hasReadInputArguments: Boolean = true
+
     init {
         require(identifierFormat in VALID_IDENTIFIER_FORMATS) {
             "identifierFormat must be one of $VALID_IDENTIFIER_FORMATS, was '$identifierFormat'"
