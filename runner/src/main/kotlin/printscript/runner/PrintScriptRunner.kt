@@ -82,7 +82,7 @@ object PrintScriptRunner {
                 is FormatResult.Failure -> onError(result.message)
             }
             source.delete()
-        } catch (e: OutOfMemoryError) {
+        } catch (_: OutOfMemoryError) {
             onError("Java heap space")
         } catch (t: Throwable) {
             onError(t.message ?: t.toString())
@@ -119,7 +119,7 @@ object PrintScriptRunner {
                 is LintResult.Success -> Unit
                 is LintResult.Failure -> onError(result.message)
             }
-        } catch (e: OutOfMemoryError) {
+        } catch (_: OutOfMemoryError) {
             onError("Java heap space")
         } catch (t: Throwable) {
             onError(t.message ?: t.toString())
@@ -134,7 +134,7 @@ object PrintScriptRunner {
     ): LanguageVersion? =
         try {
             LanguageVersion.parse(versionStr)
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             onError("Unknown version: $versionStr")
             null
         }
