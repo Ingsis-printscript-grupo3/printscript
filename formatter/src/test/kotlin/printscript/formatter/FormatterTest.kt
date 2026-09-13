@@ -43,8 +43,8 @@ class FormatterTest {
     }
 
     @Test
-    fun `indents the block but leaves the closing brace where it was`() {
-        val code = "if (x) {\nif (y) {\nprintln(1);\n  }\n}"
+    fun `indents the closing brace at the level of its if`() {
+        val code = "if (x) {\nif (y) {\nprintln(1);\n}\n}"
         val rules = FormatterRules(indentInsideIf = 2)
 
         assertEquals("if (x) {\n  if (y) {\n    println(1);\n  }\n}", format(code, rules))
