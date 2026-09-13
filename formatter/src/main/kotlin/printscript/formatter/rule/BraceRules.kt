@@ -1,6 +1,5 @@
 package printscript.formatter.rule
 
-import printscript.common.TokenType
 import printscript.formatter.Gap
 
 internal object IfBraceSameLine : FormatterRule {
@@ -18,7 +17,6 @@ internal object IfBraceBelowLine : FormatterRule {
 
 internal class IndentInsideIf(private val size: Int) : FormatterRule {
     override fun apply(gap: Gap) {
-        // la llave que cierra queda donde estaba, como en el TCK
-        if (gap.current.type != TokenType.RIGHTBRACE) gap.spaces = gap.state.depth * size
+        gap.spaces = gap.state.depth * size
     }
 }
