@@ -34,6 +34,8 @@ sealed interface ExecutionResult {
     ) : ExecutionResult
 }
 
+private val OOM_FAILURE = ExecutionResult.Failure("OutOfMemory", "Java heap space")
+
 sealed interface FormatResult {
     object Success : FormatResult
 
@@ -183,6 +185,8 @@ class Engine(
 
             consume(validStatementIterator)
             ExecutionResult.Success
+        } catch (_: OutOfMemoryError) {
+            OOM_FAILURE
         } catch (e: Throwable) {
             val failure = describe(e)
             ExecutionResult.Failure(failure.type, failure.message, failure.start, failure.end)
@@ -199,7 +203,6 @@ class Engine(
     // un solo lugar que traduce la excepcion de cada capa al resultado del cli
     private fun describe(error: Throwable): ErrorInfo =
         when (error) {
-            is OutOfMemoryError -> ErrorInfo("OutOfMemory", "Java heap space")
             is LexicalError -> ErrorInfo("Lexical", error.message, error.start, error.end)
             is SyntaxError -> ErrorInfo("Syntax", error.message, error.start, error.end)
             is SemanticError -> ErrorInfo("Semantic", error.message, error.start, error.end)
