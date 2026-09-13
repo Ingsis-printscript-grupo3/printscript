@@ -1,12 +1,14 @@
 package printscript.parser
 
 import printscript.ast.Statement
+import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
 import printscript.parser.result.ParseResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class StatementPositionTest {
     private fun token(
@@ -38,6 +40,44 @@ class StatementPositionTest {
             )
 
         assertEquals(Position(3, 1), statements[0].position)
+    }
+
+    // position apunta al let y namePosition al nombre: son distintas a proposito,
+    // y el linter usa la segunda para senalar el identificador
+    @Test
+    fun `a declaration carries the position of its name apart from the one of the let`() {
+        val statements =
+            parse(
+                token(TokenType.LET, "let", line = 3, column = 1),
+                token(TokenType.IDENTIFIER, "miVariable", line = 3, column = 5),
+                token(TokenType.COLON, ":", line = 3, column = 15),
+                token(TokenType.NUMBERTYPE, "number", line = 3, column = 17),
+                token(TokenType.SEMICOLON, ";", line = 3, column = 23),
+            )
+
+        val declaration = statements[0]
+        assertIs<VariableDeclaration>(declaration)
+        assertEquals(Position(3, 1), declaration.position)
+        assertEquals(Position(3, 5), declaration.namePosition)
+    }
+
+    @Test
+    fun `a const declaration also carries the position of its name`() {
+        val statements =
+            parse(
+                token(TokenType.CONST, "const", line = 1, column = 1),
+                token(TokenType.IDENTIFIER, "miConstante", line = 1, column = 7),
+                token(TokenType.COLON, ":", line = 1, column = 18),
+                token(TokenType.NUMBERTYPE, "number", line = 1, column = 20),
+                token(TokenType.ASSIGN, "=", line = 1, column = 27),
+                token(TokenType.NUMBERLITERAL, "3", line = 1, column = 29),
+                token(TokenType.SEMICOLON, ";", line = 1, column = 30),
+            )
+
+        val declaration = statements[0]
+        assertIs<VariableDeclaration>(declaration)
+        assertEquals(Position(1, 1), declaration.position)
+        assertEquals(Position(1, 7), declaration.namePosition)
     }
 
     @Test

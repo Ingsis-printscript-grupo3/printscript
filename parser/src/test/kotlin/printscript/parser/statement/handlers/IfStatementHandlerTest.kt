@@ -42,7 +42,7 @@ class IfStatementHandlerTest {
         }
 
     @Test
-    fun `if sin else, con bloque obligatorio`() {
+    fun `an if without else still requires its block`() {
         // if (x) { println(x); }
         val statements =
             parseStatements(
@@ -67,7 +67,7 @@ class IfStatementHandlerTest {
     }
 
     @Test
-    fun `if con else`() {
+    fun `an if with an else branch`() {
         // if (x) { println(x); } else { println(x); }
         val statements =
             parseStatements(
@@ -98,7 +98,7 @@ class IfStatementHandlerTest {
     }
 
     @Test
-    fun `un bloque puede contener varios statements`() {
+    fun `a block can hold several statements`() {
         // if (x) { let y: number = 1; println(y); }
         val statements =
             parseStatements(
@@ -129,7 +129,7 @@ class IfStatementHandlerTest {
     }
 
     @Test
-    fun `if sin llaves alrededor del bloque falla`() {
+    fun `an if without braces around its block fails`() {
         // if (x) println(x);
         val results =
             parse(
@@ -149,7 +149,7 @@ class IfStatementHandlerTest {
     }
 
     @Test
-    fun `falta la llave de cierre del bloque`() {
+    fun `the closing brace of the block is missing`() {
         val results =
             parse(
                 LanguageVersion.V1_1,
@@ -170,7 +170,7 @@ class IfStatementHandlerTest {
     }
 
     @Test
-    fun `else if es rechazado explicitamente`() {
+    fun `else if is rejected explicitly`() {
         val results =
             parse(
                 LanguageVersion.V1_1,
@@ -193,7 +193,7 @@ class IfStatementHandlerTest {
     }
 
     @Test
-    fun `if bajo version 1_0 falla nombrando la feature y la version`() {
+    fun `an if under version 1_0 fails naming the feature and the version`() {
         val results =
             parse(
                 LanguageVersion.V1_0,
