@@ -24,7 +24,7 @@ class SemanticAnalyzerTest {
         val statements =
             listOf(
                 VariableDeclaration("x", "number", NumberLiteral(1.0)),
-                PrintCall(printscript.ast.Identifier("x")),
+                PrintCall(Identifier("x")),
             )
 
         val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
@@ -59,7 +59,7 @@ class SemanticAnalyzerTest {
         val statements =
             listOf(
                 VariableDeclaration("x", "number", NumberLiteral(10.0), isConst = true),
-                PrintCall(printscript.ast.Identifier("x")),
+                PrintCall(Identifier("x")),
             )
 
         val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()

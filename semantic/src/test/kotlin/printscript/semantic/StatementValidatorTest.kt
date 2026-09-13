@@ -138,7 +138,7 @@ class StatementValidatorTest {
 
     @Test
     fun `printing an expression that fails to resolve propagates the failure`() {
-        val result = validator().validate(PrintCall(printscript.ast.Identifier("missing")))
+        val result = validator().validate(PrintCall(Identifier("missing")))
 
         assertIs<SemanticResult.Failure>(result)
     }
