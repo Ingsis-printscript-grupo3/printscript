@@ -14,39 +14,31 @@ class IfStatementHandler : Handler<Statement, StatementValidator, SemanticResult
         ctx: StatementValidator,
     ): SemanticResult<Unit> {
         if (node !is IfStatement) {
-            return SemanticResult.Failure("Semantic Error: Unexpected node in IfStatementHandler.", node.position)
+            return SemanticResult.Failure("Unexpected node in IfStatementHandler.", node.position)
         }
 
-        if (!ctx.rules.allowsConditionals) {
-            return SemanticResult.Failure(
-                "Semantic Error: 'if' statements are not supported in PrintScript ${ctx.rules.version.label}.",
-                node.position,
-            )
+        when (val conditionResult = ctx.expressionResolver.resolveType(node.condition)) {
+            is SemanticResult.Failure -> return conditionResult
+            is SemanticResult.Success -> {
+                if (conditionResult.value != "boolean") {
+                    return SemanticResult.Failure(
+                        "'if' condition must be a boolean expression, found '${conditionResult.value}'.",
+                        node.condition.position,
+                    )
+                }
+            }
         }
 
-        val conditionResult = ctx.expressionResolver.resolveType(node.condition)
-        if (conditionResult is SemanticResult.Failure) {
-            return conditionResult
-        }
-
-        val conditionType = (conditionResult as SemanticResult.Success).value
-        if (conditionType != "boolean") {
-            return SemanticResult.Failure(
-                "Semantic Error: 'if' condition must be a boolean expression, found '$conditionType'.",
-                node.condition.position,
-            )
-        }
-
-        val thenResult = ctx.validate(node.thenBranch)
-        if (thenResult is SemanticResult.Failure) {
-            return thenResult
+        when (val thenResult = ctx.validate(node.thenBranch)) {
+            is SemanticResult.Failure -> return thenResult
+            is SemanticResult.Success -> Unit
         }
 
         val elseBranch = node.elseBranch
         if (elseBranch != null) {
-            val elseResult = ctx.validate(elseBranch)
-            if (elseResult is SemanticResult.Failure) {
-                return elseResult
+            when (val elseResult = ctx.validate(elseBranch)) {
+                is SemanticResult.Failure -> return elseResult
+                is SemanticResult.Success -> Unit
             }
         }
 

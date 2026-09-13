@@ -55,6 +55,6 @@ class ExpressionResolver(
     ): SemanticResult<String> {
         val resolver = withExpectedType(expectedType)
         return resolver.registry.resolveOrNull(expression, resolver)
-            ?: SemanticResult.Failure("Semantic Error: Unknown expression type.", expression.position)
+            ?: SemanticResult.Failure("Unknown expression type.", expression.position)
     }
 }

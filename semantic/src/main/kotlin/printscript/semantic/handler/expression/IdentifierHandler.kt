@@ -14,13 +14,11 @@ class IdentifierHandler : Handler<Expression, ExpressionResolver, SemanticResult
         ctx: ExpressionResolver,
     ): SemanticResult<String> {
         if (node !is Identifier) {
-            return SemanticResult.Failure("Semantic Error: Unexpected node in IdentifierHandler.", node.position)
+            return SemanticResult.Failure("Unexpected node in IdentifierHandler.", node.position)
         }
-        val result = ctx.symbolTable.lookupType(node.name)
-        return if (result is SemanticResult.Failure) {
-            SemanticResult.Failure(result.message, node.position)
-        } else {
-            result
+        return when (val result = ctx.symbolTable.lookupType(node.name)) {
+            is SemanticResult.Failure -> SemanticResult.Failure(result.message, node.position)
+            is SemanticResult.Success -> result
         }
     }
 }

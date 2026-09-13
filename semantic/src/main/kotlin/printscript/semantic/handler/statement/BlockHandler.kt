@@ -14,15 +14,15 @@ class BlockHandler : Handler<Statement, StatementValidator, SemanticResult<Unit>
         ctx: StatementValidator,
     ): SemanticResult<Unit> {
         if (node !is Block) {
-            return SemanticResult.Failure("Semantic Error: Unexpected node in BlockHandler.", node.position)
+            return SemanticResult.Failure("Unexpected node in BlockHandler.", node.position)
         }
 
         ctx.symbolTable.enterScope()
         try {
             for (statement in node.statements) {
-                val result = ctx.validate(statement)
-                if (result is SemanticResult.Failure) {
-                    return result
+                when (val result = ctx.validate(statement)) {
+                    is SemanticResult.Failure -> return result
+                    is SemanticResult.Success -> Unit
                 }
             }
             return SemanticResult.Success(Unit)

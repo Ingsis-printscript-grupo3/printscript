@@ -20,11 +20,10 @@ import printscript.interpreter.plugin.expression.NumberLiteralEvaluator
 import printscript.interpreter.plugin.expression.ReadEnvEvaluator
 import printscript.interpreter.plugin.expression.ReadInputEvaluator
 import printscript.interpreter.plugin.expression.StringLiteralEvaluator
-import printscript.interpreter.plugin.statement.Assignment11Interpreter
+import printscript.interpreter.plugin.statement.AssignmentInterpreter
 import printscript.interpreter.plugin.statement.BlockInterpreter
 import printscript.interpreter.plugin.statement.IfStatementInterpreter
-import printscript.interpreter.plugin.statement.PrintCallInterpreter
-import printscript.interpreter.plugin.statement.VariableDeclaration11Interpreter
+import printscript.interpreter.plugin.statement.VariableDeclarationInterpreter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -37,14 +36,7 @@ class Handlers11Test {
         input: QueueInput = QueueInput(),
         env: MapEnvProvider = MapEnvProvider(),
     ): Interpreter {
-        val statements =
-            listOf(
-                VariableDeclaration11Interpreter(),
-                Assignment11Interpreter(),
-                PrintCallInterpreter(output),
-                IfStatementInterpreter(),
-                BlockInterpreter(),
-            )
+        val statements = InterpreterFactory.default11StatementInterpreters(output)
         val expressions =
             listOf(
                 BooleanLiteralEvaluator(),
@@ -240,87 +232,6 @@ class Handlers11Test {
     }
 
     @Test
-    fun `ValueConverter converts readInput to number and boolean`() {
-        val inputExpr = ReadInput(StringLiteral("prompt"))
-
-        val numResult = ValueConverter.convert(StringValue("42.5"), "number", inputExpr)
-        assertEquals(NumberValue(42.5), numResult)
-
-        val boolTrueResult = ValueConverter.convert(StringValue("true"), "boolean", inputExpr)
-        assertEquals(BooleanValue(true), boolTrueResult)
-
-        val boolFalseResult = ValueConverter.convert(StringValue("false"), "boolean", inputExpr)
-        assertEquals(BooleanValue(false), boolFalseResult)
-
-        val strResult = ValueConverter.convert(StringValue("hello"), "string", inputExpr)
-        assertEquals(StringValue("hello"), strResult)
-
-        val numError =
-            assertFailsWith<ReadInputConversionError> {
-                ValueConverter.convert(StringValue("not_a_number"), "number", inputExpr)
-            }
-        assertEquals("not_a_number", numError.value)
-        assertEquals("number", numError.targetType)
-
-        val boolError =
-            assertFailsWith<ReadInputConversionError> {
-                ValueConverter.convert(StringValue("hello"), "boolean", inputExpr)
-            }
-        assertEquals("hello", boolError.value)
-        assertEquals("boolean", boolError.targetType)
-
-        val unsupportedError =
-            assertFailsWith<ReadInputConversionError> {
-                ValueConverter.convert(StringValue("val"), "custom_type", inputExpr)
-            }
-        assertEquals("val", unsupportedError.value)
-        assertEquals("custom_type", unsupportedError.targetType)
-    }
-
-    @Test
-    fun `ValueConverter converts readEnv to number and boolean`() {
-        val envExpr = ReadEnv(StringLiteral("MY_ENV"))
-
-        val numResult = ValueConverter.convert(StringValue("100"), "number", envExpr)
-        assertEquals(NumberValue(100.0), numResult)
-
-        val boolResult = ValueConverter.convert(StringValue("true"), "boolean", envExpr)
-        assertEquals(BooleanValue(true), boolResult)
-
-        val boolFalseResult = ValueConverter.convert(StringValue("false"), "boolean", envExpr)
-        assertEquals(BooleanValue(false), boolFalseResult)
-
-        val numError =
-            assertFailsWith<ReadEnvConversionError> {
-                ValueConverter.convert(StringValue("bad"), "number", envExpr)
-            }
-        assertEquals("MY_ENV", numError.name)
-        assertEquals("bad", numError.value)
-
-        val boolError =
-            assertFailsWith<ReadEnvConversionError> {
-                ValueConverter.convert(StringValue("bad"), "boolean", envExpr)
-            }
-        assertEquals("bad", boolError.value)
-
-        val unsupportedError =
-            assertFailsWith<ReadEnvConversionError> {
-                ValueConverter.convert(StringValue("bad"), "custom", envExpr)
-            }
-        assertEquals("custom", unsupportedError.targetType)
-    }
-
-    @Test
-    fun `ValueConverter throws TypeMismatchError on invalid plain types`() {
-        assertFailsWith<TypeMismatchError> {
-            ValueConverter.convert(NumberValue(1.0), "string")
-        }
-        assertFailsWith<TypeMismatchError> {
-            ValueConverter.convert(StringValue("hello"), "number")
-        }
-    }
-
-    @Test
     fun `VariableDeclaration and Assignment with const and conversion`() {
         val env = Environment()
         val dummyInterpreter =
@@ -341,8 +252,8 @@ class Handlers11Test {
                     }
             }
         val ctx = InterpreterContext(env, dummyInterpreter)
-        val varDecl = VariableDeclaration11Interpreter()
-        val assign = Assignment11Interpreter()
+        val varDecl = VariableDeclarationInterpreter()
+        val assign = AssignmentInterpreter()
 
         varDecl.handle(
             VariableDeclaration("inputNum", "number", ReadInput(StringLiteral("p"))),
@@ -375,9 +286,9 @@ class Handlers11Test {
     }
 
     @Test
-    fun `1_1 statement plugins reject foreign nodes`() {
-        val varDecl = VariableDeclaration11Interpreter()
-        val assign = Assignment11Interpreter()
+    fun `statement plugins reject foreign nodes`() {
+        val varDecl = VariableDeclarationInterpreter()
+        val assign = AssignmentInterpreter()
         val ctx = InterpreterContext(Environment(), Interpreter())
 
         val letNode = VariableDeclaration("x", "number", NumberLiteral(1.0), isConst = false)

@@ -7,7 +7,7 @@ class Environment {
         val isConst: Boolean,
     )
 
-    private val scopes: ArrayDeque<MutableMap<String, Binding>> =
+    private val scopes =
         ArrayDeque<MutableMap<String, Binding>>().apply {
             addLast(mutableMapOf())
         }
@@ -21,14 +21,7 @@ class Environment {
         scopes.removeLast()
     }
 
-    /**
-     * Declares a variable in the current lexical scope.
-     *
-     * Shadowing Policy:
-     * - Redeclaring a variable within the same scope is disallowed (throws [VariableAlreadyDeclaredError]).
-     * - Shadowing an outer-scope variable from an inner scope is allowed; lookups will resolve to the
-     *   innermost binding while that scope is active, without altering the outer binding.
-     */
+    /** Declares a variable in the current lexical scope. */
     fun declare(
         name: String,
         value: Value?,
@@ -59,10 +52,6 @@ class Environment {
     }
 
     fun typeOf(name: String): String? = find(name)?.type
-
-    fun isConst(name: String): Boolean = find(name)?.isConst ?: false
-
-    fun isDeclared(name: String): Boolean = find(name) != null
 
     private fun find(name: String): Binding? {
         for (i in scopes.indices.reversed()) {
