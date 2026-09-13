@@ -13,13 +13,26 @@ object DefaultExpressionParselets {
         )
 
     fun prefix(version: LanguageVersion = LanguageVersion.V1_1): Map<TokenType, PrefixParselet> =
+        when (version) {
+            LanguageVersion.V1_0 -> prefix10
+            LanguageVersion.V1_1 -> prefix10 + prefix11
+        }
+
+    // lo que ya parseaba 1.0
+    private val prefix10: Map<TokenType, PrefixParselet> =
         mapOf(
             TokenType.NUMBERLITERAL to NumberLiteralParselet,
             TokenType.STRINGLITERAL to StringLiteralParselet,
             TokenType.IDENTIFIER to IdentifierParselet,
             TokenType.LEFTPAREN to ParenthesizedExpressionParselet,
-            TokenType.BOOLEANLITERAL to BooleanLiteralParselet(version),
-            TokenType.READINPUT to ReadInputParselet(version),
-            TokenType.READENV to ReadEnvParselet(version),
+        )
+
+    // 1.1 se monta sobre 1.0. En 1.0 estas claves no estan, asi que el ExpressionParser
+    // no encuentra parselet y VersionFeatures da el error
+    private val prefix11: Map<TokenType, PrefixParselet> =
+        mapOf(
+            TokenType.BOOLEANLITERAL to BooleanLiteralParselet,
+            TokenType.READINPUT to ReadInputParselet,
+            TokenType.READENV to ReadEnvParselet,
         )
 }
