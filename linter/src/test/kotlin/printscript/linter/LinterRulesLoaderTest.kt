@@ -151,4 +151,32 @@ class LinterRulesLoaderTest {
 
         assertEquals(SNAKE_CASE, LinterRulesLoader.fromStream(stream).identifierFormat)
     }
+
+    @Test
+    fun `handles escaped quotes and yaml comments`() {
+        val yaml = "identifier_format: 'snake case' # comment"
+        val rulesYaml = LinterRulesLoader.fromYaml(yaml)
+        assertEquals(SNAKE_CASE, rulesYaml.identifierFormat)
+
+        val json = """{"identifier_format": "snake case", "unknown": "hello \"world\""}"""
+        val rulesJson = LinterRulesLoader.fromJson(json)
+        assertEquals(SNAKE_CASE, rulesJson.identifierFormat)
+    }
+
+    @Test
+    fun `falls back to default when a value is null in json or empty in yaml`() {
+        val json = """{"mandatory-variable-or-literal-in-println": null}"""
+        val rulesJson = LinterRulesLoader.fromJson(json)
+        assertEquals(true, rulesJson.printCallArgumentsMustBeLiteralOrIdentifier)
+
+        val yaml = "mandatory-variable-or-literal-in-println: # empty"
+        val rulesYaml = LinterRulesLoader.fromYaml(yaml)
+        assertEquals(true, rulesYaml.printCallArgumentsMustBeLiteralOrIdentifier)
+    }
+
+    @Test
+    fun `handles UTF-8 BOM at beginning of stream`() {
+        val stream = "\uFEFF{\"identifier_format\": \"snake case\"}".byteInputStream()
+        assertEquals(SNAKE_CASE, LinterRulesLoader.fromStream(stream).identifierFormat)
+    }
 }
