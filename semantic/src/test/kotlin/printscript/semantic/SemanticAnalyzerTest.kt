@@ -87,10 +87,10 @@ class SemanticAnalyzerTest {
     }
 
     @Test
-    fun `semantic analyzer rejects const declaration in 1_0`() {
+    fun `semantic analyzer rejects unsupported type declaration in 1_0`() {
         val statements =
             listOf(
-                VariableDeclaration("x", "number", NumberLiteral(10.0), Position(1, 1), isConst = true),
+                VariableDeclaration("x", "boolean", null, Position(1, 1)),
             )
 
         val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
@@ -99,7 +99,7 @@ class SemanticAnalyzerTest {
         val failure = results.single()
         assertIs<SemanticResult.Failure>(failure)
         assertEquals(Position(1, 1), failure.position)
-        assertTrue(failure.message.contains("not supported in PrintScript 1.0"))
+        assertTrue(failure.message.contains("Type 'boolean' is not supported in PrintScript 1.0"))
     }
 
     @Test
@@ -118,27 +118,6 @@ class SemanticAnalyzerTest {
 
         assertEquals(2, results.size)
         results.forEach { assertIs<SemanticResult.Success<*>>(it) }
-    }
-
-    @Test
-    fun `semantic analyzer rejects if statement in 1_0`() {
-        val statements =
-            listOf(
-                IfStatement(
-                    BooleanLiteral(true),
-                    Block(emptyList()),
-                    null,
-                    Position(3, 1),
-                ),
-            )
-
-        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
-
-        assertEquals(1, results.size)
-        val failure = results.single()
-        assertIs<SemanticResult.Failure>(failure)
-        assertEquals(Position(3, 1), failure.position)
-        assertTrue(failure.message.contains("'if' statements are not supported in PrintScript 1.0"))
     }
 
     @Test
@@ -217,38 +196,6 @@ class SemanticAnalyzerTest {
 
         assertEquals(4, results.size)
         results.forEach { assertIs<SemanticResult.Success<*>>(it) }
-    }
-
-    @Test
-    fun `semantic analyzer rejects readInput in 1_0 and reports statement position`() {
-        val statements =
-            listOf(
-                VariableDeclaration("x", "string", ReadInput(StringLiteral("prompt")), Position(4, 2)),
-            )
-
-        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
-
-        assertEquals(1, results.size)
-        val failure = results.single()
-        assertIs<SemanticResult.Failure>(failure)
-        assertEquals(Position(4, 2), failure.position)
-        assertTrue(failure.message.contains("'readInput' is not supported in PrintScript 1.0"))
-    }
-
-    @Test
-    fun `semantic analyzer rejects readEnv in 1_0 and reports statement position`() {
-        val statements =
-            listOf(
-                VariableDeclaration("x", "string", ReadEnv(StringLiteral("PATH")), Position(3, 1)),
-            )
-
-        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
-
-        assertEquals(1, results.size)
-        val failure = results.single()
-        assertIs<SemanticResult.Failure>(failure)
-        assertEquals(Position(3, 1), failure.position)
-        assertTrue(failure.message.contains("'readEnv' is not supported in PrintScript 1.0"))
     }
 
     @Test

@@ -104,18 +104,12 @@ class ExpressionResolverTest {
     }
 
     @Test
-    fun `resolves boolean literals in 1_1`() {
-        val trueResult = resolver(version = LanguageVersion.V1_1).resolveType(BooleanLiteral(true))
+    fun `resolves boolean literals`() {
+        val trueResult = resolver().resolveType(BooleanLiteral(true))
         assertEquals(SemanticResult.Success("boolean"), trueResult)
 
-        val falseResult = resolver(version = LanguageVersion.V1_1).resolveType(BooleanLiteral(false))
+        val falseResult = resolver().resolveType(BooleanLiteral(false))
         assertEquals(SemanticResult.Success("boolean"), falseResult)
-    }
-
-    @Test
-    fun `fails resolving boolean literals in 1_0`() {
-        val result = resolver(version = LanguageVersion.V1_0).resolveType(BooleanLiteral(true))
-        assertIs<SemanticResult.Failure>(result)
     }
 
     @Test
@@ -179,52 +173,38 @@ class ExpressionResolverTest {
     }
 
     @Test
-    fun `fails resolving readInput in version 1_0`() {
-        val result = resolver(version = LanguageVersion.V1_0).resolveType(ReadInput(StringLiteral("Name:")))
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: 'readInput' is not supported in PrintScript 1.0.", result.message)
-    }
-
-    @Test
-    fun `fails resolving readEnv in version 1_0`() {
-        val result = resolver(version = LanguageVersion.V1_0).resolveType(ReadEnv(StringLiteral("ENV_VAR")))
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: 'readEnv' is not supported in PrintScript 1.0.", result.message)
-    }
-
-    @Test
     fun `fails resolving readInput when argument is not string`() {
         val result = resolver().resolveType(ReadInput(NumberLiteral(42.0)))
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: 'readInput' argument must be a string, found 'number'.", result.message)
+        assertEquals("'readInput' argument must be a string, found 'number'.", result.message)
     }
 
     @Test
     fun `fails resolving readInput when argument is boolean literal`() {
         val result = resolver().resolveType(ReadInput(BooleanLiteral(true)))
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: 'readInput' argument must be a string, found 'boolean'.", result.message)
+        assertEquals("'readInput' argument must be a string, found 'boolean'.", result.message)
     }
 
     @Test
     fun `fails resolving readInput when argument is undeclared identifier`() {
         val result = resolver().resolveType(ReadInput(Identifier("unknownPrompt")))
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: Variable 'unknownPrompt' not declared.", result.message)
+        assertEquals("Variable 'unknownPrompt' not declared.", result.message)
     }
 
     @Test
     fun `fails resolving readEnv when argument is not string`() {
         val result = resolver().resolveType(ReadEnv(NumberLiteral(10.0)))
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: 'readEnv' argument must be a string, found 'number'.", result.message)
+        assertEquals("'readEnv' argument must be a string, found 'number'.", result.message)
     }
 
     @Test
     fun `fails resolving readEnv when argument is undeclared identifier`() {
         val result = resolver().resolveType(ReadEnv(Identifier("unknownEnv")))
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: Variable 'unknownEnv' not declared.", result.message)
+        assertEquals("Variable 'unknownEnv' not declared.", result.message)
     }
 
     @Test
@@ -254,6 +234,6 @@ class ExpressionResolverTest {
     fun `fails resolving readInput when expectedType is not supported`() {
         val result = resolver().resolveType(ReadInput(StringLiteral("Prompt:")), "unknownType")
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: Type 'unknownType' is not supported in PrintScript 1.1.", result.message)
+        assertEquals("Type 'unknownType' is not supported in PrintScript 1.1.", result.message)
     }
 }

@@ -14,7 +14,7 @@ class NumberLiteralHandler : Handler<Expression, ExpressionResolver, SemanticRes
         ctx: ExpressionResolver,
     ): SemanticResult<String> {
         if (node !is NumberLiteral) {
-            return SemanticResult.Failure("Semantic Error: Unexpected node in NumberLiteralHandler.", node.position)
+            return SemanticResult.Failure("Unexpected node in NumberLiteralHandler.", node.position)
         }
         return SemanticResult.Success("number")
     }

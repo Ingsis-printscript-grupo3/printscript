@@ -41,5 +41,5 @@ class StatementValidator(
 
     fun validate(statement: Statement): SemanticResult<Unit> =
         registry.resolveOrNull(statement, this)
-            ?: SemanticResult.Failure("Semantic Error: Unknown statement type.", statement.position)
+            ?: SemanticResult.Failure("Unknown statement type.", statement.position)
 }
