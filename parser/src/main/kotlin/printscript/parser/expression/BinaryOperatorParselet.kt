@@ -13,9 +13,11 @@ class BinaryOperatorParselet(override val precedence: Int) : InfixParselet {
         stream: TokenStream,
         expressionParser: ExpressionParser,
     ): ASTResult<Expression> {
-        val rightResult = expressionParser.parseExpression(precedence + 1)
-        if (rightResult is ASTResult.Failure) return rightResult
-        val right = (rightResult as ASTResult.Success).value
+        val right =
+            when (val result = expressionParser.parseExpression(precedence + 1)) {
+                is ASTResult.Failure -> return result
+                is ASTResult.Success -> result.value
+            }
         return ASTResult.Success(BinaryExpression(left, operatorToken.type, right, left.position))
     }
 }

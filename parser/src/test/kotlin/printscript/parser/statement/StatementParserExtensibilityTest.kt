@@ -21,7 +21,7 @@ class StatementParserExtensibilityTest {
     ) = Token(type, pos(), pos(), value)
 
     @Test
-    fun `custom handler registrado reemplaza el comportamiento por defecto sin tocar StatementParser`() {
+    fun `a registered custom handler replaces the default behaviour without touching StatementParser`() {
         val fakeHandler =
             StatementHandler { _, _, _ ->
                 ASTResult.Success(Assignment("injected", NumberLiteral(1.0)))

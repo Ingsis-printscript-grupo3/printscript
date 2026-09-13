@@ -6,6 +6,7 @@ import java.io.PrintStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class LinterRulesLoaderTest {
@@ -18,12 +19,15 @@ class LinterRulesLoaderTest {
             deleteOnExit()
         }
 
+    // una config vacia no nombra ninguna regla, asi que no se crea ninguna.
+    // el CLI sin --config usa LinterRules(), que si las prende todas
     @Test
-    fun `loads default rules when json is empty`() {
-        val json = "{}"
-        val rules = LinterRulesLoader.fromJson(json)
-        assertEquals("camel case", rules.identifierFormat)
-        assertEquals(true, rules.printCallArgumentsMustBeLiteralOrIdentifier)
+    fun `an empty json config names no rule`() {
+        val rules = LinterRulesLoader.fromJson("{}")
+
+        assertNull(rules.identifierFormat)
+        assertNull(rules.printCallArgumentsMustBeLiteralOrIdentifier)
+        assertNull(rules.readInputArgumentsMustBeLiteralOrIdentifier)
     }
 
     @Test
@@ -58,7 +62,7 @@ class LinterRulesLoaderTest {
 
         val rules = LinterRulesLoader.fromFile(file.path)
 
-        assertEquals(LinterRules(identifierFormat = SNAKE_CASE), rules)
+        assertEquals(LinterRules(SNAKE_CASE, null, null), rules)
     }
 
     @Test
@@ -67,7 +71,7 @@ class LinterRulesLoaderTest {
 
         val rules = LinterRulesLoader.fromFile(file.path)
 
-        assertEquals(LinterRules(printCallArgumentsMustBeLiteralOrIdentifier = false), rules)
+        assertEquals(LinterRules(null, false, null), rules)
     }
 
     @Test
@@ -76,7 +80,7 @@ class LinterRulesLoaderTest {
 
         val rules = LinterRulesLoader.fromFile(file.path)
 
-        assertEquals(LinterRules(identifierFormat = SNAKE_CASE), rules)
+        assertEquals(LinterRules(SNAKE_CASE, null, null), rules)
     }
 
     @Test
@@ -85,7 +89,7 @@ class LinterRulesLoaderTest {
 
         val rules = LinterRulesLoader.fromFile(file.path)
 
-        assertEquals(LinterRules(identifierFormat = SNAKE_CASE), rules)
+        assertEquals(LinterRules(SNAKE_CASE, null, null), rules)
     }
 
     @Test
@@ -134,7 +138,7 @@ class LinterRulesLoaderTest {
                 System.setErr(original)
             }
 
-        assertEquals(LinterRules(), rules)
+        assertEquals(LinterRules(null, null, null), rules)
         assertTrue(buffer.toString().contains("no-existe"))
     }
 
