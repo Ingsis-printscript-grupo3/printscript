@@ -26,8 +26,8 @@ import printscript.semantic.symbol.SymbolTable
 import kotlin.test.Test
 import kotlin.test.assertIs
 
-// cada handler tiene un guard que devuelve Failure si le llega un nodo que no es suyo
-// por el flujo normal nunca pasa, pq el Registry pregunta applies() antes
+// Each handler has a guard that returns Failure if it receives an unexpected node
+// In normal execution this does not happen because the Registry checks applies() first
 
 class HandlerGuardsTest {
     private fun resolverContext() = ExpressionResolver(SymbolTable(), LanguageVersion.V1_1)

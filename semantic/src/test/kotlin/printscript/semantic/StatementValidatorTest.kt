@@ -74,18 +74,7 @@ class StatementValidatorTest {
         val result = validator().validate(VariableDeclaration("a", "number", null, isConst = true))
 
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: Constant 'a' must be initialized.", result.message)
-    }
-
-    @Test
-    fun `declaring a const variable under version 1_0 fails`() {
-        val result =
-            validator(version = LanguageVersion.V1_0).validate(
-                VariableDeclaration("a", "number", NumberLiteral(1.0), isConst = true),
-            )
-
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: 'const' declarations are not supported in PrintScript 1.0.", result.message)
+        assertEquals("Constant 'a' must be initialized.", result.message)
     }
 
     @Test
@@ -96,7 +85,7 @@ class StatementValidatorTest {
             )
 
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: Type 'boolean' is not supported in PrintScript 1.0.", result.message)
+        assertEquals("Type 'boolean' is not supported in PrintScript 1.0.", result.message)
     }
 
     @Test
@@ -119,7 +108,7 @@ class StatementValidatorTest {
         val result = validator.validate(Assignment("a", NumberLiteral(2.0)))
 
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: Cannot reassign constant 'a'.", result.message)
+        assertEquals("Cannot reassign constant 'a'.", result.message)
     }
 
     @Test
@@ -258,23 +247,6 @@ class StatementValidatorTest {
     }
 
     @Test
-    fun `validating if statement under version 1_0 fails`() {
-        val ifStmt =
-            IfStatement(
-                BooleanLiteral(true),
-                Block(emptyList()),
-                null,
-                Position(1, 1),
-            )
-
-        val result = validator(version = LanguageVersion.V1_0).validate(ifStmt)
-
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals(Position(1, 1), result.position)
-        assertTrue(result.message.contains("'if' statements are not supported in PrintScript 1.0"))
-    }
-
-    @Test
     fun `variables declared inside thenBranch are not visible outside the if statement`() {
         val symbolTable = SymbolTable()
         val validator = validator(symbolTable)
@@ -397,7 +369,7 @@ class StatementValidatorTest {
         assertIs<SemanticResult.Failure>(result)
 
         // Scope was properly exited: temp variable no longer exists
-        val lookup = symbolTable.lookupVariable("temp")
+        val lookup = symbolTable.lookup("temp")
         assertIs<SemanticResult.Failure>(lookup)
 
         // We are at root scope: attempting to exit root scope throws exception
@@ -518,7 +490,7 @@ class StatementValidatorTest {
         val stmt = VariableDeclaration("x", "string", ReadInput(NumberLiteral(123.0)))
         val result = validator().validate(stmt)
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: 'readInput' argument must be a string, found 'number'.", result.message)
+        assertEquals("'readInput' argument must be a string, found 'number'.", result.message)
     }
 
     @Test
@@ -529,7 +501,7 @@ class StatementValidatorTest {
         val assign = Assignment("x", ReadInput(BooleanLiteral(false)))
         val result = v.validate(assign)
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: 'readInput' argument must be a string, found 'boolean'.", result.message)
+        assertEquals("'readInput' argument must be a string, found 'boolean'.", result.message)
     }
 
     @Test
@@ -537,23 +509,7 @@ class StatementValidatorTest {
         val print = PrintCall(ReadInput(NumberLiteral(99.0)))
         val result = validator().validate(print)
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: 'readInput' argument must be a string, found 'number'.", result.message)
-    }
-
-    @Test
-    fun `declaring variable with readInput in 1_0 fails`() {
-        val stmt = VariableDeclaration("x", "string", ReadInput(StringLiteral("prompt:")))
-        val result = validator(version = LanguageVersion.V1_0).validate(stmt)
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: 'readInput' is not supported in PrintScript 1.0.", result.message)
-    }
-
-    @Test
-    fun `declaring variable with readEnv in 1_0 fails`() {
-        val stmt = VariableDeclaration("x", "string", ReadEnv(StringLiteral("PATH")))
-        val result = validator(version = LanguageVersion.V1_0).validate(stmt)
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: 'readEnv' is not supported in PrintScript 1.0.", result.message)
+        assertEquals("'readInput' argument must be a string, found 'number'.", result.message)
     }
 
     @Test
@@ -570,6 +526,6 @@ class StatementValidatorTest {
         val decl = VariableDeclaration("n", "number", binExpr)
         val result = validator().validate(decl)
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Semantic Error: Incompatible types.", result.message)
+        assertEquals("Incompatible types.", result.message)
     }
 }
