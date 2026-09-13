@@ -93,7 +93,8 @@ class LinterTckCasesTest {
         val warnings = lint(source, camelCaseConfig, LanguageVersion.V1_0)
 
         assertEquals(2, warnings.size)
-        assertEquals(listOf(Position(1, 1), Position(2, 1)), warnings.map { it.position })
+        // el warning apunta al nombre: columna 5 en el let, columna 1 en la asignacion
+        assertEquals(listOf(Position(1, 5), Position(2, 1)), warnings.map { it.position })
     }
 
     @Test
@@ -133,7 +134,7 @@ class LinterTckCasesTest {
 
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'mi_constante' does not match format camel case", warnings[0].message)
-        assertEquals(Position(1, 1), warnings[0].position)
+        assertEquals(Position(1, 7), warnings[0].position)
     }
 
     @Test
@@ -339,10 +340,10 @@ class LinterTckCasesTest {
         assertTrue(warnings.none { it.position == Position(0, 0) })
         assertEquals(
             listOf(
-                Position(1, 1),
+                Position(1, 5),
                 Position(2, 1),
                 Position(3, 1),
-                Position(4, 1),
+                Position(4, 7),
                 Position(4, 27),
             ),
             warnings.map { it.position },
