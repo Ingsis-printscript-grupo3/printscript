@@ -4,7 +4,6 @@ import printscript.ast.Expression
 import printscript.ast.Statement
 import printscript.ast.VariableDeclaration
 import printscript.common.LanguageVersion
-import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
 import printscript.parser.expression.ExpressionParser
@@ -12,59 +11,70 @@ import printscript.parser.result.ASTResult
 import printscript.parser.statement.StatementHandler
 import printscript.parser.statement.StatementParser
 import printscript.parser.stream.TokenStream
-import printscript.parser.version.VersionGate
+import printscript.parser.version.VersionFeatures
 
-class VariableDeclarationHandler(private val version: LanguageVersion) : StatementHandler {
+object VariableDeclarationHandler : StatementHandler {
     override fun parse(
         stream: TokenStream,
         expressionParser: ExpressionParser,
         statementParser: StatementParser,
     ): ASTResult<Statement> {
-        val keywordToken =
-            stream.previous()
-                ?: return ASTResult.Failure("Expected 'let' or 'const'.", Position(0, 0), Position(0, 0))
+        // el StatementParser consume el let o el const antes de despachar el handler.
+        // en 1.0 el const no esta registrado, asi que aca ya no se mira la version
+        val keywordToken = checkNotNull(stream.previous()) { "the declaration handler runs after let or const" }
         val isConst = keywordToken.type == TokenType.CONST
-        if (isConst) {
-            VersionGate.check("const declarations", LanguageVersion.V1_1, version, keywordToken.start, keywordToken.end)
-                ?.let { return it }
-        }
 
-        val nameTokenResult = stream.consume(TokenType.IDENTIFIER, "Expected variable name.")
-        if (nameTokenResult is ASTResult.Failure) return nameTokenResult
-        val nameToken = (nameTokenResult as ASTResult.Success).value
+        val nameToken =
+            when (val result = stream.consume(TokenType.IDENTIFIER, "Expected variable name.")) {
+                is ASTResult.Failure -> return result
+                is ASTResult.Success -> result.value
+            }
 
         val colonResult = stream.consume(TokenType.COLON, "Expected ':'.")
         if (colonResult is ASTResult.Failure) return colonResult
 
-        val typeResult = parseType(stream)
-        if (typeResult is ASTResult.Failure) return typeResult
-        val typeToken = (typeResult as ASTResult.Success).value
+        val typeToken =
+            when (val result = parseType(stream, statementParser.version)) {
+                is ASTResult.Failure -> return result
+                is ASTResult.Success -> result.value
+            }
 
-        val initializerResult = parseInitializer(stream, expressionParser, isConst, keywordToken)
-        if (initializerResult is ASTResult.Failure) return initializerResult
-        val initializer = (initializerResult as ASTResult.Success).value
+        val initializer =
+            when (val result = parseInitializer(stream, expressionParser, isConst, keywordToken)) {
+                is ASTResult.Failure -> return result
+                is ASTResult.Success -> result.value
+            }
 
         val semiResult = stream.consume(TokenType.SEMICOLON, "Expected ';'.")
         if (semiResult is ASTResult.Failure) return semiResult
 
         return ASTResult.Success(
-            VariableDeclaration(nameToken.value, typeToken.value, initializer, keywordToken.start, isConst),
+            VariableDeclaration(
+                name = nameToken.value,
+                type = typeToken.value,
+                value = initializer,
+                position = keywordToken.start,
+                isConst = isConst,
+                namePosition = nameToken.start,
+            ),
         )
     }
 
-    private fun parseType(stream: TokenStream): ASTResult<Token> {
+    // el tipo no abre la sentencia, asi que no se resuelve por el mapa de handlers:
+    // se acepta cualquier tipo y VersionFeatures dice si esta disponible en esta version
+    private fun parseType(
+        stream: TokenStream,
+        version: LanguageVersion,
+    ): ASTResult<Token> {
         if (!stream.match(TokenType.NUMBERTYPE, TokenType.STRINGTYPE, TokenType.BOOLEANTYPE)) {
             val errorToken = stream.peek()
-            val pos = errorToken?.start ?: stream.previous()?.end ?: Position(0, 0)
+            // siempre hay un token previo: el ':' que se acaba de consumir
+            val pos = errorToken?.start ?: checkNotNull(stream.previous()) { "the type follows a ':'" }.end
             return ASTResult.Failure("Expected 'number', 'string' or 'boolean'.", pos, errorToken?.end ?: pos)
         }
-        val typeToken =
-            stream.previous()
-                ?: return ASTResult.Failure("Expected a type.", Position(0, 0), Position(0, 0))
-        if (typeToken.type == TokenType.BOOLEANTYPE) {
-            VersionGate.check("boolean type", LanguageVersion.V1_1, version, typeToken.start, typeToken.end)
-                ?.let { return it }
-        }
+        // match() devolvio true, asi que acaba de consumir el token del tipo
+        val typeToken = checkNotNull(stream.previous()) { "match consumed the type token" }
+        VersionFeatures.unavailable(typeToken, version)?.let { return it }
         return ASTResult.Success(typeToken)
     }
 

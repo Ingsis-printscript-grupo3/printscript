@@ -20,7 +20,7 @@ class StringLiteralReader : TokenReader {
 
         while (true) {
             if (stream.isAtEnd() || stream.peek() == '\n') {
-                throw LexicalError("String sin cerrar", start, stream.position())
+                throw LexicalError("Unterminated string literal", start, stream.position())
             }
             val char = stream.advance()
             if (char == quote) break

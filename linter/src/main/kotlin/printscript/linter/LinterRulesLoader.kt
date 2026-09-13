@@ -62,34 +62,38 @@ object LinterRulesLoader {
         return result
     }
 
+    // si la clave no esta, la regla no se crea. Si esta pero vacia, vale el default
     private fun bool(
         map: Map<String, String>,
         key: String,
         default: Boolean,
-    ): Boolean =
-        when (map[key]?.lowercase()) {
+    ): Boolean? {
+        if (!map.containsKey(key)) return null
+        return when (map[key]?.lowercase()) {
             null, "", "null" -> default
             "true" -> true
             "false" -> false
             else -> throw IllegalArgumentException("Expected boolean for '$key'")
         }
+    }
+
+    private fun identifierFormat(map: Map<String, String>): String? {
+        if (!map.containsKey("identifier_format")) return null
+        val raw = map["identifier_format"]
+        return if (raw.isNullOrEmpty() || raw == "null") CAMEL_CASE else raw
+    }
 
     private fun buildRules(map: Map<String, String>): LinterRules {
         map.keys.filter { it !in knownKeys }.forEach {
-            System.err.println("linter: ignoro la clave desconocida '$it'")
+            System.err.println("linter: ignoring unknown key '$it'")
         }
-        val rules =
-            LinterRules(
-                identifierFormat = map["identifier_format"] ?: CAMEL_CASE,
-                printCallArgumentsMustBeLiteralOrIdentifier =
-                    bool(map, "mandatory-variable-or-literal-in-println", true),
-                readInputArgumentsMustBeLiteralOrIdentifier =
-                    bool(map, "mandatory-variable-or-literal-in-readInput", true),
-            )
-        rules.hasIdentifierFormat = map.containsKey("identifier_format")
-        rules.hasPrintCallArguments = map.containsKey("mandatory-variable-or-literal-in-println")
-        rules.hasReadInputArguments = map.containsKey("mandatory-variable-or-literal-in-readInput")
-        return rules
+        return LinterRules(
+            identifierFormat = identifierFormat(map),
+            printCallArgumentsMustBeLiteralOrIdentifier =
+                bool(map, "mandatory-variable-or-literal-in-println", true),
+            readInputArgumentsMustBeLiteralOrIdentifier =
+                bool(map, "mandatory-variable-or-literal-in-readInput", true),
+        )
     }
 }
 

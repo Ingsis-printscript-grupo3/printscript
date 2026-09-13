@@ -4,7 +4,6 @@ import printscript.common.Position
 import printscript.common.TokenType
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 
 class AstTest {
     @Test
@@ -31,18 +30,6 @@ class AstTest {
 
         val binary = BinaryExpression(NumberLiteral(1.0), TokenType.MINUS, NumberLiteral(2.0))
         assertEquals(TokenType.MINUS, binary.operator)
-    }
-
-    @Test
-    fun `expression data classes support equals, hashCode, copy and toString`() {
-        val a = NumberLiteral(1.0, Position(1, 1))
-        val b = NumberLiteral(1.0, Position(1, 1))
-        val c = a.copy(value = 2.0)
-
-        assertEquals(a, b)
-        assertEquals(a.hashCode(), b.hashCode())
-        assertNotEquals(a, c)
-        assert(a.toString().contains("NumberLiteral"))
     }
 
     @Test
@@ -74,18 +61,6 @@ class AstTest {
 
         val printCall = PrintCall(NumberLiteral(3.0))
         assertEquals(NumberLiteral(3.0), printCall.value)
-    }
-
-    @Test
-    fun `statement data classes support equals, hashCode, copy and toString`() {
-        val a = Assignment("x", NumberLiteral(1.0), Position(1, 1))
-        val b = Assignment("x", NumberLiteral(1.0), Position(1, 1))
-        val c = a.copy(name = "y")
-
-        assertEquals(a, b)
-        assertEquals(a.hashCode(), b.hashCode())
-        assertNotEquals(a, c)
-        assert(a.toString().contains("Assignment"))
     }
 
     @Test

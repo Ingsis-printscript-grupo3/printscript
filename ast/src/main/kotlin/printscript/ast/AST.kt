@@ -34,12 +34,15 @@ sealed interface Statement : PositionedNode {
     override val position: Position
 }
 
+// position apunta al let o const; namePosition al nombre, que es lo que el linter reporta.
+// por defecto son la misma, asi quien arma el nodo a mano no tiene que pasar las dos
 data class VariableDeclaration(
     val name: String,
     val type: String,
     val value: Expression?,
     override val position: Position = Position(0, 0),
     val isConst: Boolean = false,
+    val namePosition: Position = position,
 ) : Statement
 
 data class Assignment(

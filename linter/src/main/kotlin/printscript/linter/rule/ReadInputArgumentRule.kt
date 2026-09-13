@@ -2,23 +2,19 @@ package printscript.linter.rule
 
 import printscript.ast.Assignment
 import printscript.ast.BinaryExpression
-import printscript.ast.BooleanLiteral
 import printscript.ast.Expression
-import printscript.ast.Identifier
 import printscript.ast.IfStatement
-import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
 import printscript.ast.ReadEnv
 import printscript.ast.ReadInput
 import printscript.ast.Statement
-import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.linter.Warning
 
 class ReadInputArgumentRule : LinterRule {
     override fun check(statement: Statement): List<Warning> =
         readInputsIn(rootExpressionOf(statement))
-            .filterNot { isLiteralOrIdentifier(it.argument) }
+            .filterNot { it.argument.isLiteralOrIdentifier() }
             .map { Warning(message = MESSAGE, position = it.position) }
 
     // readInput es una Expression, asi que hay que ir a buscarla al valor del statement
@@ -39,12 +35,6 @@ class ReadInputArgumentRule : LinterRule {
             is BinaryExpression -> readInputsIn(expression.left) + readInputsIn(expression.right)
             else -> emptyList()
         }
-
-    private fun isLiteralOrIdentifier(expression: Expression): Boolean =
-        expression is Identifier ||
-            expression is NumberLiteral ||
-            expression is StringLiteral ||
-            expression is BooleanLiteral
 
     private companion object {
         const val MESSAGE = "readInput can only be called with an identifier or a literal, not an expression"

@@ -6,10 +6,11 @@ import printscript.ast.Statement
 import printscript.linter.rule.LinterRule
 import printscript.linter.rule.LinterRuleRegistry
 
+// una sola regla: si son varias vienen agrupadas en un CompositeRule
 class Linter(
-    private val rules: List<LinterRule>,
+    private val rule: LinterRule,
 ) : LinterInterface {
-    constructor(config: LinterRules = LinterRules()) : this(LinterRuleRegistry().rulesFor(config))
+    constructor(config: LinterRules = LinterRules()) : this(LinterRuleRegistry().ruleFor(config))
 
     override fun analyze(
         statements: Iterator<Statement>,
@@ -17,9 +18,7 @@ class Linter(
     ) {
         while (statements.hasNext()) {
             flatten(statements.next()).forEach { statement ->
-                rules.forEach { rule ->
-                    rule.check(statement).forEach(onWarning)
-                }
+                rule.check(statement).forEach(onWarning)
             }
         }
     }

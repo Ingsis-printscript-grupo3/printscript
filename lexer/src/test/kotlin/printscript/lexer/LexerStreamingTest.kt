@@ -35,7 +35,7 @@ class LexerStreamingTest {
     }
 
     @Test
-    fun `CharStream bufferiza internamente aunque le pasen un Reader sin buffer`() {
+    fun `CharStream buffers internally even when handed an unbuffered Reader`() {
         val source = STATEMENT.repeat(REPETITIONS_SMALL)
         val counting = CountingReader(StringReader(source))
 
@@ -50,7 +50,7 @@ class LexerStreamingTest {
     }
 
     @Test
-    fun `pedir un solo token lee una fraccion del fuente`() {
+    fun `asking for a single token reads only a fraction of the source`() {
         val source = STATEMENT.repeat(REPETITIONS_LARGE)
         val counting = CountingReader(StringReader(source))
 
@@ -64,7 +64,7 @@ class LexerStreamingTest {
     }
 
     @Test
-    fun `consumir el iterador completo si lee todo el fuente`() {
+    fun `consuming the whole iterator does read the whole source`() {
         val source = STATEMENT.repeat(REPETITIONS_LARGE)
         val counting = CountingReader(StringReader(source))
 
@@ -75,7 +75,7 @@ class LexerStreamingTest {
     }
 
     @Test
-    fun `una linea mas larga que cualquier buffer se lexea igual`() {
+    fun `a line longer than any buffer is lexed all the same`() {
         // si el lexer leyera por lineas, esta sola linea seria todo el fuente en memoria
         val content = "x".repeat(LONG_LINE_CHARS)
         val source = "let largo: string = \"$content\";"

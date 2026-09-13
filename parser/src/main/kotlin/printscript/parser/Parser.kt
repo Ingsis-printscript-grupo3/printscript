@@ -16,8 +16,9 @@ class Parser(
 ) : ParserInterface {
     private val stream = TokenStream(tokens)
     private val expressionParser =
-        ExpressionParser(stream, DefaultExpressionParselets.prefix(version), DefaultExpressionParselets.infix)
-    private val statementParser = StatementParser(stream, expressionParser, DefaultStatementHandlers.map(version))
+        ExpressionParser(stream, DefaultExpressionParselets.prefix(version), DefaultExpressionParselets.infix, version)
+    private val statementParser =
+        StatementParser(stream, expressionParser, DefaultStatementHandlers.map(version), version)
 
     override fun parse(): Iterator<ParseResult> =
         iterator {

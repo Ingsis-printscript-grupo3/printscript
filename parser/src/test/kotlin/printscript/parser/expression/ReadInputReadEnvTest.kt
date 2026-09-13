@@ -41,7 +41,7 @@ class ReadInputReadEnvTest {
         }
 
     @Test
-    fun `readInput standalone dentro de una asignacion`() {
+    fun `a standalone readInput inside an assignment`() {
         // x = readInput("name:");
         val statements =
             parseStatements(
@@ -60,7 +60,7 @@ class ReadInputReadEnvTest {
     }
 
     @Test
-    fun `readInput anidado dentro de println`() {
+    fun `readInput nested inside a println`() {
         // println(readInput(x));
         val statements =
             parseStatements(
@@ -81,7 +81,7 @@ class ReadInputReadEnvTest {
     }
 
     @Test
-    fun `readEnv anidado dentro de println`() {
+    fun `readEnv nested inside a println`() {
         // println(readEnv(x));
         val statements =
             parseStatements(
@@ -101,7 +101,7 @@ class ReadInputReadEnvTest {
     }
 
     @Test
-    fun `falta parentesis de apertura en readInput`() {
+    fun `the opening parenthesis of readInput is missing`() {
         val results =
             parse(
                 LanguageVersion.V1_1,
@@ -117,7 +117,7 @@ class ReadInputReadEnvTest {
     }
 
     @Test
-    fun `readInput bajo version 1_0 falla nombrando la feature y la version`() {
+    fun `readInput under version 1_0 fails naming the feature and the version`() {
         val results =
             parse(
                 LanguageVersion.V1_0,
@@ -136,7 +136,7 @@ class ReadInputReadEnvTest {
     }
 
     @Test
-    fun `readEnv bajo version 1_0 falla nombrando la feature y la version`() {
+    fun `readEnv under version 1_0 fails naming the feature and the version`() {
         val results =
             parse(
                 LanguageVersion.V1_0,
@@ -155,7 +155,7 @@ class ReadInputReadEnvTest {
     }
 
     @Test
-    fun `boolean literal bajo version 1_0 falla nombrando la feature y la version`() {
+    fun `a boolean literal under version 1_0 fails naming the feature and the version`() {
         val results =
             parse(
                 LanguageVersion.V1_0,
