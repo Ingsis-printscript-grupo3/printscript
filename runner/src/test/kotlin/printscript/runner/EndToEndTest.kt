@@ -1,4 +1,4 @@
-package printscript.cli
+package printscript.runner
 
 import printscript.formatter.Formatter
 import printscript.formatter.FormatterRules
@@ -163,6 +163,52 @@ class EndToEndTest {
         Engine(BucketOutput()).validate(StringReader(code), onProgress = reported::add)
 
         assertEquals(listOf(1, 2, 3), reported)
+    }
+
+    @Test
+    fun `format formats successfully through engine`() {
+        val engine = Engine(BucketOutput())
+        var called = false
+        val result =
+            engine.format({ StringReader("let a:number=5;") }) { tokens ->
+                tokens.forEach { called = true }
+            }
+        assertTrue(result is FormatResult.Success)
+        assertTrue(called)
+    }
+
+    @Test
+    fun `format returns failure on syntax error`() {
+        val engine = Engine(BucketOutput())
+        val result =
+            engine.format({ StringReader("let a:number =") }) { tokens ->
+                tokens.forEach { }
+            }
+        assertTrue(result is FormatResult.Failure)
+        assertEquals("Syntax", result.type)
+    }
+
+    @Test
+    fun `lint analyzes successfully through engine`() {
+        val engine = Engine(BucketOutput())
+        var called = false
+        val result =
+            engine.lint(StringReader("let a: number = 5;")) { statements ->
+                statements.forEach { called = true }
+            }
+        assertTrue(result is LintResult.Success)
+        assertTrue(called)
+    }
+
+    @Test
+    fun `lint returns failure on syntax error`() {
+        val engine = Engine(BucketOutput())
+        val result =
+            engine.lint(StringReader("let a: number =")) { statements ->
+                statements.forEach { }
+            }
+        assertTrue(result is LintResult.Failure)
+        assertEquals("Syntax", result.type)
     }
 
     private fun formatOnce(code: String): String {

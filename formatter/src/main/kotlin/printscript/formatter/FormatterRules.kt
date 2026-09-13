@@ -1,32 +1,19 @@
 package printscript.formatter
 
-import com.fasterxml.jackson.annotation.JsonProperty
-
 const val MAX_LINE_BREAKS_AFTER_PRINTLN = 2
 
 // si una regla no viene en la config, ese espacio queda como estaba en el archivo
 data class FormatterRules(
-    @JsonProperty("enforce-spacing-before-colon-in-declaration")
     val spaceBeforeColon: Boolean = false,
-    @JsonProperty("enforce-spacing-after-colon-in-declaration")
     val spaceAfterColon: Boolean = false,
-    @JsonProperty("enforce-spacing-around-equals")
     val spacingAroundEquals: Boolean = false,
-    @JsonProperty("enforce-no-spacing-around-equals")
     val noSpacingAroundEquals: Boolean = false,
-    @JsonProperty("line-breaks-after-println")
     val lineBreaksAfterPrintln: Int? = null,
-    @JsonProperty("mandatory-single-space-separation")
     val singleSpaceSeparation: Boolean = false,
-    @JsonProperty("mandatory-space-surrounding-operations")
     val spaceSurroundingOperations: Boolean = false,
-    @JsonProperty("mandatory-line-break-after-statement")
     val lineBreakAfterStatement: Boolean = false,
-    @JsonProperty("indent-inside-if")
     val indentInsideIf: Int? = null,
-    @JsonProperty("if-brace-same-line")
     val ifBraceSameLine: Boolean = false,
-    @JsonProperty("if-brace-below-line")
     val ifBraceBelowLine: Boolean = false,
 ) {
     init {

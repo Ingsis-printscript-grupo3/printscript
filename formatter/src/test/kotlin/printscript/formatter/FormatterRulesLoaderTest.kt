@@ -6,6 +6,8 @@ import java.io.PrintStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class FormatterRulesLoaderTest {
@@ -154,5 +156,24 @@ class FormatterRulesLoaderTest {
         assertFailsWith<IllegalArgumentException> {
             FormatterRulesLoader.fromJson("""{ "line-breaks-after-println": 5 }""")
         }
+    }
+
+    @Test
+    fun `a null value in json or an empty one in yaml leaves the rule off`() {
+        val json = """{"line-breaks-after-println": null, "enforce-spacing-around-equals": null}"""
+        val rulesJson = FormatterRulesLoader.fromJson(json)
+        assertNull(rulesJson.lineBreaksAfterPrintln)
+        assertFalse(rulesJson.spacingAroundEquals)
+
+        val yaml = "line-breaks-after-println:\nenforce-spacing-around-equals: # empty"
+        val rulesYaml = FormatterRulesLoader.fromYaml(yaml)
+        assertNull(rulesYaml.lineBreaksAfterPrintln)
+        assertFalse(rulesYaml.spacingAroundEquals)
+    }
+
+    @Test
+    fun `handles UTF-8 BOM at beginning of stream`() {
+        val stream = "\uFEFF{\"line-breaks-after-println\": 2}".byteInputStream()
+        assertEquals(2, FormatterRulesLoader.fromStream(stream).lineBreaksAfterPrintln)
     }
 }
