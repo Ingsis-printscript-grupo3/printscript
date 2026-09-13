@@ -78,13 +78,18 @@ object LinterRulesLoader {
         map.keys.filter { it !in knownKeys }.forEach {
             System.err.println("linter: ignoro la clave desconocida '$it'")
         }
-        return LinterRules(
-            identifierFormat = map["identifier_format"] ?: CAMEL_CASE,
-            printCallArgumentsMustBeLiteralOrIdentifier =
-                bool(map, "mandatory-variable-or-literal-in-println", true),
-            readInputArgumentsMustBeLiteralOrIdentifier =
-                bool(map, "mandatory-variable-or-literal-in-readInput", true),
-        )
+        val rules =
+            LinterRules(
+                identifierFormat = map["identifier_format"] ?: CAMEL_CASE,
+                printCallArgumentsMustBeLiteralOrIdentifier =
+                    bool(map, "mandatory-variable-or-literal-in-println", true),
+                readInputArgumentsMustBeLiteralOrIdentifier =
+                    bool(map, "mandatory-variable-or-literal-in-readInput", true),
+            )
+        rules.hasIdentifierFormat = map.containsKey("identifier_format")
+        rules.hasPrintCallArguments = map.containsKey("mandatory-variable-or-literal-in-println")
+        rules.hasReadInputArguments = map.containsKey("mandatory-variable-or-literal-in-readInput")
+        return rules
     }
 }
 
