@@ -16,11 +16,7 @@ import java.io.Writer
 import java.nio.charset.StandardCharsets
 
 object PrintScriptRunner {
-    /**
-     * Executes PrintScript code from an InputStream with the specified version and IO callbacks.
-     * All errors (lexical, syntax, semantic, runtime, and OutOfMemoryError) are reported to onError.
-     * No exceptions escape outside this method.
-     */
+    /** Executes PrintScript code from an input stream, reporting output and errors through callbacks. */
     fun execute(
         src: InputStream,
         versionStr: String,
@@ -55,9 +51,9 @@ object PrintScriptRunner {
         }
     }
 
-    /**
-     * Formats PrintScript code from an InputStream using rules from configStream.
-     */
+    // Suppress exceptions to isolate external callers and report failures via callbacks.
+
+    /** Formats PrintScript code from an InputStream applying configured formatting rules. */
     @Suppress("SwallowedException", "TooGenericExceptionCaught")
     fun format(
         src: InputStream,
@@ -93,9 +89,9 @@ object PrintScriptRunner {
         }
     }
 
-    /**
-     * Analyzes PrintScript code for lint warnings and syntax errors.
-     */
+    // Suppress exceptions to isolate external callers and report failures via callbacks.
+
+    /** Analyzes PrintScript code for style warnings and syntax errors. */
     @Suppress("SwallowedException", "TooGenericExceptionCaught")
     fun lint(
         src: InputStream,
@@ -130,6 +126,7 @@ object PrintScriptRunner {
         }
     }
 
+    // Suppress exception to handle invalid version strings and report unknown versions via callback.
     @Suppress("SwallowedException")
     private fun parseVersion(
         versionStr: String,
