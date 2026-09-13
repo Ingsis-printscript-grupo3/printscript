@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets
 
 object PrintScriptRunner {
     /** Executes PrintScript code from an input stream, reporting output and errors through callbacks. */
+    @Suppress("SwallowedException", "TooGenericExceptionCaught")
     fun execute(
         src: InputStream,
         versionStr: String,
@@ -26,28 +27,34 @@ object PrintScriptRunner {
     ) {
         val version = parseVersion(versionStr, onError) ?: return
 
-        val output =
-            object : Output {
-                override fun emit(line: String) {
-                    onPrint(line)
-                }
-            }
-
-        val input =
-            object : InputProvider {
-                override fun readInput(prompt: String): String {
-                    if (prompt.isNotEmpty()) {
-                        onPrint(prompt)
+        try {
+            val output =
+                object : Output {
+                    override fun emit(line: String) {
+                        onPrint(line)
                     }
-                    return onInput(prompt)
                 }
-            }
 
-        val engine = Engine(output, input, SystemEnvProvider())
-        val reader = BufferedReader(InputStreamReader(src, StandardCharsets.UTF_8))
-        when (val result = engine.execute(reader, version)) {
-            is ExecutionResult.Success -> Unit
-            is ExecutionResult.Failure -> onError(result.message)
+            val input =
+                object : InputProvider {
+                    override fun readInput(prompt: String): String {
+                        if (prompt.isNotEmpty()) {
+                            onPrint(prompt)
+                        }
+                        return onInput(prompt)
+                    }
+                }
+
+            val engine = Engine(output, input, SystemEnvProvider())
+            val reader = BufferedReader(InputStreamReader(src, StandardCharsets.UTF_8))
+            when (val result = engine.execute(reader, version)) {
+                is ExecutionResult.Success -> Unit
+                is ExecutionResult.Failure -> onError(result.message)
+            }
+        } catch (_: OutOfMemoryError) {
+            onError("Java heap space")
+        } catch (t: Throwable) {
+            onError(t.message ?: t.toString())
         }
     }
 
