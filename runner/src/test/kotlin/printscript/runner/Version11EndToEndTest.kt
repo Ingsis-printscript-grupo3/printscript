@@ -26,7 +26,7 @@ class Version11EndToEndTest {
         """.trimIndent()
 
     @Test
-    fun `un programa 1_1 bajo version 1_1 pasa la validacion sintactica y semantica`() {
+    fun `a 1_1 program under version 1_1 passes syntactic and semantic validation`() {
         val engine = Engine(output = BucketOutput())
         val result = engine.validate(program, LanguageVersion.V1_1)
 
@@ -34,7 +34,7 @@ class Version11EndToEndTest {
     }
 
     @Test
-    fun `el mismo programa bajo version 1_0 falla en el parser nombrando la feature`() {
+    fun `the same program under version 1_0 fails in parser naming the feature`() {
         val result = runEngine(program, LanguageVersion.V1_0)
 
         assertTrue(result is ExecutionResult.Failure)
@@ -44,7 +44,7 @@ class Version11EndToEndTest {
     }
 
     @Test
-    fun `if bajo version 1_0 falla en el parser nombrando la feature`() {
+    fun `if statement under version 1_0 fails in parser naming the feature`() {
         val code =
             """
             if (true) {
