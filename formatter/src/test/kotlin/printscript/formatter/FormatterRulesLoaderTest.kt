@@ -155,4 +155,23 @@ class FormatterRulesLoaderTest {
             FormatterRulesLoader.fromJson("""{ "line-breaks-after-println": 5 }""")
         }
     }
+
+    @Test
+    fun `falls back to default when a value is null in json or empty in yaml`() {
+        val json = """{"line-breaks-after-println": null, "enforce-spacing-around-equals": null}"""
+        val rulesJson = FormatterRulesLoader.fromJson(json)
+        assertEquals(0, rulesJson.lineBreaksAfterPrintln)
+        assertEquals(true, rulesJson.spacingAroundEquals)
+
+        val yaml = "line-breaks-after-println:\nenforce-spacing-around-equals: # empty"
+        val rulesYaml = FormatterRulesLoader.fromYaml(yaml)
+        assertEquals(0, rulesYaml.lineBreaksAfterPrintln)
+        assertEquals(true, rulesYaml.spacingAroundEquals)
+    }
+
+    @Test
+    fun `handles UTF-8 BOM at beginning of stream`() {
+        val stream = "\uFEFF{\"line-breaks-after-println\": 2}".byteInputStream()
+        assertEquals(2, FormatterRulesLoader.fromStream(stream).lineBreaksAfterPrintln)
+    }
 }
