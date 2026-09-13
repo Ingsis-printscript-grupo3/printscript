@@ -9,6 +9,7 @@ import printscript.interpreter.output.Output
 import printscript.linter.Linter
 import printscript.linter.LinterRulesLoader
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.Writer
@@ -69,17 +70,22 @@ object PrintScriptRunner {
 
         try {
             val rules = FormatterRulesLoader.fromStream(config)
-            val reader = BufferedReader(InputStreamReader(src, StandardCharsets.UTF_8))
+            // el stream se puede leer una sola vez y el formatter recorre el codigo dos veces
+            val source = File.createTempFile("printscript-format", ".ps")
+            source.deleteOnExit()
+            source.outputStream().use { src.copyTo(it) }
             val dummyOutput =
                 object : Output {
                     override fun emit(line: String) = Unit
                 }
             val engine = Engine(dummyOutput)
+            val openSource = { source.bufferedReader(StandardCharsets.UTF_8) }
 
-            when (val result = engine.format(reader, version) { Formatter(rules).format(it, writer) }) {
+            when (val result = engine.format(openSource, version) { Formatter(rules).format(it, writer) }) {
                 is FormatResult.Success -> Unit
                 is FormatResult.Failure -> onError(result.message)
             }
+            source.delete()
         } catch (e: OutOfMemoryError) {
             onError("Java heap space")
         } catch (t: Throwable) {
