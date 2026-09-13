@@ -5,6 +5,10 @@ plugins {
 
 dependencies {
     implementation(project(":runner"))
+    implementation(project(":common"))
+    implementation(project(":interpreter"))
+    implementation(project(":formatter"))
+    implementation(project(":linter"))
     implementation("com.github.ajalt.clikt:clikt:4.4.0")
 }
 
@@ -23,4 +27,8 @@ tasks.register<Test>("loadTest") {
     classpath = sourceSets["test"].runtimeClasspath
     useJUnitPlatform { includeTags("load") }
     maxHeapSize = "16m"
+}
+
+tasks.check {
+    dependsOn("loadTest")
 }

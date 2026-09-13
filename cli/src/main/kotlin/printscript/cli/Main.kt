@@ -26,6 +26,16 @@ import java.io.Writer
 private val SUPPORTED_VERSIONS = LanguageVersion.entries.joinToString(", ") { it.label }
 private const val DEFAULT_VERSION = "1.0"
 
+// sin --config se aplican las reglas que la consigna pide siempre
+private val DEFAULT_FORMATTER_RULES =
+    FormatterRules(
+        lineBreakAfterStatement = true,
+        singleSpaceSeparation = true,
+        spaceSurroundingOperations = true,
+        ifBraceSameLine = true,
+        indentInsideIf = 4,
+    )
+
 class PrintScriptCli : CliktCommand(name = "printscript") {
     override fun run() = Unit
 }
@@ -115,7 +125,7 @@ class FormatCommand : CliktCommand(name = "format", help = "Format a .prs file a
 
     override fun run() {
         val languageVersion = requireSupportedVersion(version)
-        val rules = config?.let { FormatterRulesLoader.fromFile(it.path) } ?: FormatterRules()
+        val rules = config?.let { FormatterRulesLoader.fromFile(it.path) } ?: DEFAULT_FORMATTER_RULES
         val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress(showProgress(quiet))
 
