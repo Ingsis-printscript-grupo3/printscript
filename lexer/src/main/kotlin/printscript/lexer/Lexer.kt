@@ -48,7 +48,7 @@ class Lexer(
             readers.firstOrNull { it.matches(char) }
                 ?: run {
                     charStream.advance()
-                    throw LexicalError("Carácter inesperado: '$char'", start, charStream.position())
+                    throw LexicalError("Unexpected character: '$char'", start, charStream.position())
                 }
 
         return reader.read(charStream, start)

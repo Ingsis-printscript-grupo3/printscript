@@ -14,65 +14,65 @@ class LexerTest {
     private fun types(source: String): List<TokenType> = tokenize(source).map { it.type }
 
     @Test
-    fun `reconoce la keyword let`() {
+    fun `recognises the let keyword`() {
         assertEquals(listOf(TokenType.LET, TokenType.EOF), types("let"))
     }
 
     @Test
-    fun `reconoce la keyword println`() {
+    fun `recognises the println keyword`() {
         assertEquals(listOf(TokenType.PRINTLN, TokenType.EOF), types("println"))
     }
 
     @Test
-    fun `reconoce un identificador comun`() {
+    fun `recognises a plain identifier`() {
         val tokens = tokenize("nombre")
         assertEquals(TokenType.IDENTIFIER, tokens[0].type)
         assertEquals("nombre", tokens[0].value)
     }
 
     @Test
-    fun `identificador que empieza igual que una keyword no se confunde`() {
+    fun `an identifier that starts like a keyword is not mistaken for one`() {
         val tokens = tokenize("letx")
         assertEquals(TokenType.IDENTIFIER, tokens[0].type)
         assertEquals("letx", tokens[0].value)
     }
 
     @Test
-    fun `reconoce number y string como tipos`() {
+    fun `recognises number and string as types`() {
         assertEquals(listOf(TokenType.NUMBERTYPE, TokenType.EOF), types("number"))
         assertEquals(listOf(TokenType.STRINGTYPE, TokenType.EOF), types("string"))
     }
 
     @Test
-    fun `reconoce numero entero`() {
+    fun `recognises an integer number`() {
         val tokens = tokenize("12")
         assertEquals(TokenType.NUMBERLITERAL, tokens[0].type)
         assertEquals("12", tokens[0].value)
     }
 
     @Test
-    fun `reconoce numero decimal`() {
+    fun `recognises a decimal number`() {
         val tokens = tokenize("3.14")
         assertEquals(TokenType.NUMBERLITERAL, tokens[0].type)
         assertEquals("3.14", tokens[0].value)
     }
 
     @Test
-    fun `reconoce string con comillas dobles`() {
+    fun `recognises a string in double quotes`() {
         val tokens = tokenize("\"hola\"")
         assertEquals(TokenType.STRINGLITERAL, tokens[0].type)
         assertEquals("hola", tokens[0].value)
     }
 
     @Test
-    fun `reconoce string con comillas simples`() {
+    fun `recognises a string in single quotes`() {
         val tokens = tokenize("'hola'")
         assertEquals(TokenType.STRINGLITERAL, tokens[0].type)
         assertEquals("hola", tokens[0].value)
     }
 
     @Test
-    fun `reconoce cada operador aritmetico`() {
+    fun `recognises every arithmetic operator`() {
         assertEquals(
             listOf(TokenType.PLUS, TokenType.MINUS, TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.EOF),
             types("+ - * /"),
@@ -80,7 +80,7 @@ class LexerTest {
     }
 
     @Test
-    fun `reconoce cada simbolo`() {
+    fun `recognises every symbol`() {
         assertEquals(
             listOf(
                 TokenType.ASSIGN,
@@ -95,7 +95,7 @@ class LexerTest {
     }
 
     @Test
-    fun `saltea espacios tabs y saltos de linea sin generar tokens espurios`() {
+    fun `skips spaces, tabs and line breaks without emitting spurious tokens`() {
         val tokens = tokenize("let  \t x\n=\n5;")
         assertEquals(
             listOf(
@@ -111,7 +111,7 @@ class LexerTest {
     }
 
     @Test
-    fun `la posicion del token respeta los saltos de linea`() {
+    fun `the token position follows the line breaks`() {
         val tokens = tokenize("let\nx")
         val xToken = tokens[1]
         assertEquals(2, xToken.start.line)
@@ -119,7 +119,7 @@ class LexerTest {
     }
 
     @Test
-    fun `ejemplo 1 de la consigna`() {
+    fun `first example of the assignment`() {
         val source =
             """
             let name: string = "Joe";
@@ -142,7 +142,7 @@ class LexerTest {
     }
 
     @Test
-    fun `ejemplo 2 de la consigna`() {
+    fun `second example of the assignment`() {
         val source =
             """
             let a: number = 12;
@@ -167,7 +167,7 @@ class LexerTest {
     }
 
     @Test
-    fun `ejemplo 3 de la consigna`() {
+    fun `third example of the assignment`() {
         val source =
             """
             let a: number = 12;
@@ -192,49 +192,49 @@ class LexerTest {
     }
 
     @Test
-    fun `caracter invalido lanza LexicalError con posicion`() {
+    fun `an invalid character throws a LexicalError carrying its position`() {
         val error = assertFailsWith<LexicalError> { tokenize("let x = @;") }
         assertEquals(1, error.start.line)
         assertEquals(9, error.start.column)
     }
 
     @Test
-    fun `string sin cerrar lanza LexicalError`() {
+    fun `an unterminated string throws a LexicalError`() {
         assertFailsWith<LexicalError> { tokenize("\"hola") }
     }
 
     @Test
-    fun `reconoce la keyword const`() {
+    fun `recognises the const keyword`() {
         assertEquals(listOf(TokenType.CONST, TokenType.EOF), types("const"))
     }
 
     @Test
-    fun `reconoce la keyword boolean`() {
+    fun `recognises the boolean keyword`() {
         assertEquals(listOf(TokenType.BOOLEANTYPE, TokenType.EOF), types("boolean"))
     }
 
     @Test
-    fun `reconoce la keyword if`() {
+    fun `recognises the if keyword`() {
         assertEquals(listOf(TokenType.IF, TokenType.EOF), types("if"))
     }
 
     @Test
-    fun `reconoce la keyword else`() {
+    fun `recognises the else keyword`() {
         assertEquals(listOf(TokenType.ELSE, TokenType.EOF), types("else"))
     }
 
     @Test
-    fun `reconoce la keyword readInput`() {
+    fun `recognises the readInput keyword`() {
         assertEquals(listOf(TokenType.READINPUT, TokenType.EOF), types("readInput"))
     }
 
     @Test
-    fun `reconoce la keyword readEnv`() {
+    fun `recognises the readEnv keyword`() {
         assertEquals(listOf(TokenType.READENV, TokenType.EOF), types("readEnv"))
     }
 
     @Test
-    fun `reconoce true y false como BOOLEANLITERAL`() {
+    fun `recognises true and false as BOOLEANLITERAL`() {
         assertEquals(listOf(TokenType.BOOLEANLITERAL, TokenType.EOF), types("true"))
         assertEquals(listOf(TokenType.BOOLEANLITERAL, TokenType.EOF), types("false"))
         val tokens = tokenize("true")
@@ -242,7 +242,7 @@ class LexerTest {
     }
 
     @Test
-    fun `reconoce llave izquierda y derecha con posicion`() {
+    fun `recognises the left and right braces with their position`() {
         val tokens = tokenize("{}")
         assertEquals(
             listOf(TokenType.LEFTBRACE, TokenType.RIGHTBRACE, TokenType.EOF),
@@ -253,63 +253,63 @@ class LexerTest {
     }
 
     @Test
-    fun `identificador constante no se confunde con la keyword const`() {
+    fun `the identifier constante is not mistaken for the const keyword`() {
         val tokens = tokenize("constante")
         assertEquals(TokenType.IDENTIFIER, tokens[0].type)
         assertEquals("constante", tokens[0].value)
     }
 
     @Test
-    fun `identificador booleanx no se confunde con la keyword boolean`() {
+    fun `the identifier booleanx is not mistaken for the boolean keyword`() {
         val tokens = tokenize("booleanx")
         assertEquals(TokenType.IDENTIFIER, tokens[0].type)
         assertEquals("booleanx", tokens[0].value)
     }
 
     @Test
-    fun `identificador truex no se confunde con la keyword true`() {
+    fun `the identifier truex is not mistaken for true`() {
         val tokens = tokenize("truex")
         assertEquals(TokenType.IDENTIFIER, tokens[0].type)
         assertEquals("truex", tokens[0].value)
     }
 
     @Test
-    fun `identificador falsex no se confunde con la keyword false`() {
+    fun `the identifier falsex is not mistaken for false`() {
         val tokens = tokenize("falsex")
         assertEquals(TokenType.IDENTIFIER, tokens[0].type)
         assertEquals("falsex", tokens[0].value)
     }
 
     @Test
-    fun `identificador ifx no se confunde con la keyword if`() {
+    fun `the identifier ifx is not mistaken for the if keyword`() {
         val tokens = tokenize("ifx")
         assertEquals(TokenType.IDENTIFIER, tokens[0].type)
         assertEquals("ifx", tokens[0].value)
     }
 
     @Test
-    fun `identificador elsewhere no se confunde con la keyword else`() {
+    fun `the identifier elsewhere is not mistaken for the else keyword`() {
         val tokens = tokenize("elsewhere")
         assertEquals(TokenType.IDENTIFIER, tokens[0].type)
         assertEquals("elsewhere", tokens[0].value)
     }
 
     @Test
-    fun `identificador readInputX no se confunde con la keyword readInput`() {
+    fun `the identifier readInputX is not mistaken for readInput`() {
         val tokens = tokenize("readInputX")
         assertEquals(TokenType.IDENTIFIER, tokens[0].type)
         assertEquals("readInputX", tokens[0].value)
     }
 
     @Test
-    fun `identificador readEnvX no se confunde con la keyword readEnv`() {
+    fun `the identifier readEnvX is not mistaken for readEnv`() {
         val tokens = tokenize("readEnvX")
         assertEquals(TokenType.IDENTIFIER, tokens[0].type)
         assertEquals("readEnvX", tokens[0].value)
     }
 
     @Test
-    fun `ejemplo mixto de tokens 1_0 y 1_1 con const y boolean`() {
+    fun `a mixed 1_0 and 1_1 sample with const and boolean`() {
         val source = "const flag: boolean = true;"
 
         val tokens = tokenize(source)
@@ -333,7 +333,7 @@ class LexerTest {
     }
 
     @Test
-    fun `ejemplo mixto de if else llaves readInput y readEnv`() {
+    fun `a mixed sample with if, else, braces, readInput and readEnv`() {
         val source = "if (cond) { println(readInput()); } else { println(readEnv()); }"
 
         assertEquals(
