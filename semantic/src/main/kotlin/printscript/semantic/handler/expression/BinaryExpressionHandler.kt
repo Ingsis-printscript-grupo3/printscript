@@ -16,21 +16,22 @@ class BinaryExpressionHandler : Handler<Expression, ExpressionResolver, Semantic
         ctx: ExpressionResolver,
     ): SemanticResult<String> {
         if (node !is BinaryExpression) {
-            return SemanticResult.Failure("Semantic Error: Unexpected node in BinaryExpressionHandler.", node.position)
+            return SemanticResult.Failure("Unexpected node in BinaryExpressionHandler.", node.position)
         }
 
-        val leftResult = ctx.resolveType(node.left)
-        val rightResult = ctx.resolveType(node.right)
-
-        return when {
-            leftResult is SemanticResult.Failure -> leftResult
-            rightResult is SemanticResult.Failure -> rightResult
-            else -> {
-                val left = (leftResult as SemanticResult.Success).value
-                val right = (rightResult as SemanticResult.Success).value
-                resultFor(node.operator, left, right, node.position)
+        val left =
+            when (val leftResult = ctx.resolveType(node.left)) {
+                is SemanticResult.Failure -> return leftResult
+                is SemanticResult.Success -> leftResult.value
             }
-        }
+
+        val right =
+            when (val rightResult = ctx.resolveType(node.right)) {
+                is SemanticResult.Failure -> return rightResult
+                is SemanticResult.Success -> rightResult.value
+            }
+
+        return resultFor(node.operator, left, right, node.position)
     }
 
     private fun resultFor(
@@ -41,7 +42,7 @@ class BinaryExpressionHandler : Handler<Expression, ExpressionResolver, Semantic
     ): SemanticResult<String> {
         if (left == "boolean" || right == "boolean") {
             return SemanticResult.Failure(
-                "Semantic Error: Operator '$operator' cannot be applied to boolean types.",
+                "Operator '$operator' cannot be applied to boolean types.",
                 position,
             )
         }
@@ -51,7 +52,7 @@ class BinaryExpressionHandler : Handler<Expression, ExpressionResolver, Semantic
             operator == TokenType.PLUS && (left == "string" || right == "string") -> SemanticResult.Success("string")
             operator in listOf(TokenType.MINUS, TokenType.MULTIPLY, TokenType.DIVIDE) &&
                 left == "number" && right == "number" -> SemanticResult.Success("number")
-            else -> SemanticResult.Failure("Semantic Error: Incompatible types in operation.", position)
+            else -> SemanticResult.Failure("Incompatible types in operation.", position)
         }
     }
 }

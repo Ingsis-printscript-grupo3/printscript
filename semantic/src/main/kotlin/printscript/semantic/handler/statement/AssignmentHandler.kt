@@ -14,33 +14,32 @@ class AssignmentHandler : Handler<Statement, StatementValidator, SemanticResult<
         ctx: StatementValidator,
     ): SemanticResult<Unit> {
         if (node !is Assignment) {
-            return SemanticResult.Failure("Semantic Error: Unexpected node in AssignmentHandler.", node.position)
+            return SemanticResult.Failure("Unexpected node in AssignmentHandler.", node.position)
         }
 
-        val variableResult = ctx.symbolTable.lookupVariable(node.name)
-        if (variableResult is SemanticResult.Failure) {
-            return SemanticResult.Failure(variableResult.message, node.position)
-        }
+        val variable =
+            when (val variableResult = ctx.symbolTable.lookup(node.name)) {
+                is SemanticResult.Failure -> return SemanticResult.Failure(variableResult.message, node.position)
+                is SemanticResult.Success -> variableResult.value
+            }
 
-        val variable = (variableResult as SemanticResult.Success).value
         if (variable.isConst) {
             return SemanticResult.Failure(
-                "Semantic Error: Cannot reassign constant '${node.name}'.",
+                "Cannot reassign constant '${node.name}'.",
                 node.position,
             )
         }
 
-        val exprResult = ctx.expressionResolver.resolveType(node.value, expectedType = variable.type)
-        if (exprResult is SemanticResult.Failure) {
-            return exprResult
-        }
-
-        val exprType = (exprResult as SemanticResult.Success).value
-        if (exprType != variable.type) {
-            return SemanticResult.Failure(
-                "Semantic Error: Incompatible types in assignment.",
-                node.position,
-            )
+        when (val exprResult = ctx.expressionResolver.resolveType(node.value, expectedType = variable.type)) {
+            is SemanticResult.Failure -> return exprResult
+            is SemanticResult.Success -> {
+                if (exprResult.value != variable.type) {
+                    return SemanticResult.Failure(
+                        "Incompatible types in assignment.",
+                        node.position,
+                    )
+                }
+            }
         }
 
         return SemanticResult.Success(Unit)

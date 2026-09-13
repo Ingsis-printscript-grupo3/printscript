@@ -64,6 +64,53 @@ class EndToEndTest {
     }
 
     @Test
+    fun `consigna example - concatenation of two string variables Joe Doe`() {
+        val (result, output) =
+            runEngine(
+                """
+                let name: string = "Joe";
+                let lastName: string = "Doe";
+                println(name + " " + lastName);
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Success)
+        assertEquals(listOf("Joe Doe"), output)
+    }
+
+    @Test
+    fun `consigna example - division stored in a variable and concatenated`() {
+        val (result, output) =
+            runEngine(
+                """
+                let a: number = 12;
+                let b: number = 4;
+                let c: number = a / b;
+                println("Result: " + c);
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Success)
+        assertEquals(listOf("Result: 3"), output)
+    }
+
+    @Test
+    fun `consigna example - reassignment of an already declared variable`() {
+        val (result, output) =
+            runEngine(
+                """
+                let a: number = 12;
+                let b: number = 4;
+                a = a / b;
+                println("Result: " + a);
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Success)
+        assertEquals(listOf("Result: 3"), output)
+    }
+
+    @Test
     fun `error 1 - lexical error with invalid character`() {
         val code =
             """

@@ -15,7 +15,7 @@ class SymbolTableTest {
         val defineResult = table.define("x", "number")
         assertIs<SemanticResult.Success<*>>(defineResult)
 
-        val lookupResult = table.lookupVariable("x")
+        val lookupResult = table.lookup("x")
         assertIs<SemanticResult.Success<VariableSymbol>>(lookupResult)
         assertEquals("number", lookupResult.value.type)
         assertFalse(lookupResult.value.isConst)
@@ -30,7 +30,7 @@ class SymbolTableTest {
         val table = SymbolTable()
         table.define("PI", "number", isConst = true)
 
-        val lookupResult = table.lookupVariable("PI")
+        val lookupResult = table.lookup("PI")
         assertIs<SemanticResult.Success<VariableSymbol>>(lookupResult)
         assertEquals("number", lookupResult.value.type)
         assertTrue(lookupResult.value.isConst)
@@ -64,7 +64,7 @@ class SymbolTableTest {
         table.define("globalVar", "string")
 
         table.enterScope()
-        val lookupResult = table.lookupVariable("globalVar")
+        val lookupResult = table.lookup("globalVar")
         assertIs<SemanticResult.Success<VariableSymbol>>(lookupResult)
         assertEquals("string", lookupResult.value.type)
         table.exitScope()
@@ -80,7 +80,7 @@ class SymbolTableTest {
         val innerDefine = table.define("x", "string", isConst = true)
         assertIs<SemanticResult.Success<*>>(innerDefine)
 
-        val innerLookup = table.lookupVariable("x")
+        val innerLookup = table.lookup("x")
         assertIs<SemanticResult.Success<VariableSymbol>>(innerLookup)
         assertEquals("string", innerLookup.value.type)
         assertTrue(innerLookup.value.isConst)
@@ -88,7 +88,7 @@ class SymbolTableTest {
         table.exitScope()
 
         // Outer scope is restored
-        val outerLookup = table.lookupVariable("x")
+        val outerLookup = table.lookup("x")
         assertIs<SemanticResult.Success<VariableSymbol>>(outerLookup)
         assertEquals("number", outerLookup.value.type)
         assertFalse(outerLookup.value.isConst)
@@ -124,9 +124,17 @@ class SymbolTableTest {
         table.enterScope() // Scope 2
         table.define("c", "boolean")
 
-        assertEquals("number", (table.lookupType("a") as SemanticResult.Success).value)
-        assertEquals("string", (table.lookupType("b") as SemanticResult.Success).value)
-        assertEquals("boolean", (table.lookupType("c") as SemanticResult.Success).value)
+        val aType = table.lookupType("a")
+        assertIs<SemanticResult.Success<String>>(aType)
+        assertEquals("number", aType.value)
+
+        val bType = table.lookupType("b")
+        assertIs<SemanticResult.Success<String>>(bType)
+        assertEquals("string", bType.value)
+
+        val cType = table.lookupType("c")
+        assertIs<SemanticResult.Success<String>>(cType)
+        assertEquals("boolean", cType.value)
 
         table.exitScope() // Exit Scope 2
         assertIs<SemanticResult.Failure>(table.lookup("c"))

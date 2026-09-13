@@ -14,7 +14,7 @@ class StringLiteralHandler : Handler<Expression, ExpressionResolver, SemanticRes
         ctx: ExpressionResolver,
     ): SemanticResult<String> {
         if (node !is StringLiteral) {
-            return SemanticResult.Failure("Semantic Error: Unexpected node in StringLiteralHandler.", node.position)
+            return SemanticResult.Failure("Unexpected node in StringLiteralHandler.", node.position)
         }
         return SemanticResult.Success("string")
     }

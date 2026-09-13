@@ -26,11 +26,8 @@ class UnknownExpressionError(val expression: Expression) :
 class CannotAssignToConstError(val name: String) :
     InterpreterError("Cannot reassign constant '$name'")
 
-class ReadInputConversionError(val value: String, val targetType: String) :
-    InterpreterError("Cannot convert input '$value' to $targetType")
-
-class ReadEnvConversionError(val name: String, val value: String, val targetType: String) :
-    InterpreterError("Cannot convert environment variable '$name' with value '$value' to $targetType")
+class ValueConversionError(val value: Value, val targetType: String) :
+    InterpreterError("Cannot convert value '${value.textOf()}' to type '$targetType'")
 
 class EnvVariableNotFoundError(val name: String) :
     InterpreterError("Environment variable '$name' is not defined")

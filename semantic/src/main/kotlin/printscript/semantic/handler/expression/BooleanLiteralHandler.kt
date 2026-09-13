@@ -14,13 +14,7 @@ class BooleanLiteralHandler : Handler<Expression, ExpressionResolver, SemanticRe
         ctx: ExpressionResolver,
     ): SemanticResult<String> {
         if (node !is BooleanLiteral) {
-            return SemanticResult.Failure("Semantic Error: Unexpected node in BooleanLiteralHandler.", node.position)
-        }
-        if (!ctx.rules.allowsBooleans) {
-            return SemanticResult.Failure(
-                "Semantic Error: Booleans are not supported in PrintScript ${ctx.rules.version.label}.",
-                node.position,
-            )
+            return SemanticResult.Failure("Unexpected node in BooleanLiteralHandler.", node.position)
         }
         return SemanticResult.Success("boolean")
     }
