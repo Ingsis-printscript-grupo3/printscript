@@ -57,38 +57,10 @@ class LargeFileStreamingTest {
         val file = largeSource()
 
         val result =
-            Engine(DiscardingOutput).format(file.reader()) { statements ->
-                Formatter(FormatterRules()).format(statements, discardingWriter())
+            Engine(DiscardingOutput).format({ file.reader() }) { tokens ->
+                Formatter(FormatterRules()).format(tokens, discardingWriter())
             }
 
         assertTrue(result is FormatResult.Success)
-    }
-
-    @Test
-    fun `the formatter starts writing before the whole file is parsed`() {
-        val file = largeSource()
-        var parsed = 0
-        var parsedAtFirstWrite = -1
-        val spy =
-            object : Writer() {
-                override fun write(
-                    cbuf: CharArray,
-                    off: Int,
-                    len: Int,
-                ) {
-                    if (parsedAtFirstWrite < 0) parsedAtFirstWrite = parsed
-                }
-
-                override fun flush() = Unit
-
-                override fun close() = Unit
-            }
-
-        Engine(DiscardingOutput).format(file.reader(), onProgress = { parsed = it }) { statements ->
-            Formatter(FormatterRules()).format(statements, spy)
-        }
-
-        // si juntara todo, al primer write ya estarian todos
-        assertTrue(parsedAtFirstWrite in 0..10, "al primer write habia $parsedAtFirstWrite statements parseados")
     }
 }

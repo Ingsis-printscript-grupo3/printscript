@@ -6,6 +6,8 @@ import java.io.PrintStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class FormatterRulesLoaderTest {
@@ -48,10 +50,10 @@ class FormatterRulesLoaderTest {
 
         assertTrue(rules.spaceBeforeColon)
         assertTrue(rules.spaceAfterColon)
-        assertTrue(rules.spaceAroundAssignment)
+        assertTrue(rules.spacingAroundEquals)
         assertEquals(2, rules.lineBreaksAfterPrintln)
         assertEquals(2, rules.indentInsideIf)
-        assertEquals(false, rules.braceOnSameLine)
+        assertTrue(rules.ifBraceBelowLine)
     }
 
     @Test
@@ -66,7 +68,7 @@ class FormatterRulesLoaderTest {
         val rules = FormatterRulesLoader.fromYaml(yaml)
 
         assertTrue(rules.spaceBeforeColon)
-        assertEquals(false, rules.spaceAroundAssignment)
+        assertTrue(rules.noSpacingAroundEquals)
         assertEquals(1, rules.lineBreaksAfterPrintln)
     }
 
@@ -157,16 +159,16 @@ class FormatterRulesLoaderTest {
     }
 
     @Test
-    fun `falls back to default when a value is null in json or empty in yaml`() {
+    fun `a null value in json or an empty one in yaml leaves the rule off`() {
         val json = """{"line-breaks-after-println": null, "enforce-spacing-around-equals": null}"""
         val rulesJson = FormatterRulesLoader.fromJson(json)
-        assertEquals(0, rulesJson.lineBreaksAfterPrintln)
-        assertEquals(true, rulesJson.spacingAroundEquals)
+        assertNull(rulesJson.lineBreaksAfterPrintln)
+        assertFalse(rulesJson.spacingAroundEquals)
 
         val yaml = "line-breaks-after-println:\nenforce-spacing-around-equals: # empty"
         val rulesYaml = FormatterRulesLoader.fromYaml(yaml)
-        assertEquals(0, rulesYaml.lineBreaksAfterPrintln)
-        assertEquals(true, rulesYaml.spacingAroundEquals)
+        assertNull(rulesYaml.lineBreaksAfterPrintln)
+        assertFalse(rulesYaml.spacingAroundEquals)
     }
 
     @Test

@@ -4,7 +4,6 @@ import java.io.File
 import java.io.InputStream
 
 object FormatterRulesLoader {
-    private const val DEFAULT_INDENT_INSIDE_IF = 4
     private val jsonPairRegex = Regex(""""([^"]+)"\s*:\s*("(?:\\.|[^"\\])*"|\[[^\]]*\]|\{[^}]*\}|[^,\s{}]+)""")
 
     private val knownKeys =
@@ -74,10 +73,9 @@ object FormatterRulesLoader {
     private fun bool(
         map: Map<String, String>,
         key: String,
-        default: Boolean,
     ): Boolean =
         when (map[key]?.lowercase()) {
-            null, "", "null" -> default
+            null, "", "null" -> false
             "true" -> true
             "false" -> false
             else -> throw IllegalArgumentException("Expected boolean for '$key'")
@@ -86,10 +84,9 @@ object FormatterRulesLoader {
     private fun int(
         map: Map<String, String>,
         key: String,
-        default: Int,
-    ): Int {
-        val raw = map[key] ?: return default
-        if (raw.isEmpty() || raw == "null") return default
+    ): Int? {
+        val raw = map[key] ?: return null
+        if (raw.isEmpty() || raw == "null") return null
         return raw.toIntOrNull() ?: throw IllegalArgumentException("Expected integer for '$key', got '$raw'")
     }
 
@@ -98,17 +95,17 @@ object FormatterRulesLoader {
             System.err.println("formatter: ignoro la clave desconocida '$it'")
         }
         return FormatterRules(
-            spaceBeforeColon = bool(map, "enforce-spacing-before-colon-in-declaration", false),
-            spaceAfterColon = bool(map, "enforce-spacing-after-colon-in-declaration", false),
-            spacingAroundEquals = bool(map, "enforce-spacing-around-equals", true),
-            noSpacingAroundEquals = bool(map, "enforce-no-spacing-around-equals", false),
-            lineBreaksAfterPrintln = int(map, "line-breaks-after-println", 0),
-            singleSpaceSeparation = bool(map, "mandatory-single-space-separation", true),
-            spaceSurroundingOperations = bool(map, "mandatory-space-surrounding-operations", true),
-            lineBreakAfterStatement = bool(map, "mandatory-line-break-after-statement", true),
-            indentInsideIf = int(map, "indent-inside-if", DEFAULT_INDENT_INSIDE_IF),
-            ifBraceSameLine = bool(map, "if-brace-same-line", false),
-            ifBraceBelowLine = bool(map, "if-brace-below-line", false),
+            spaceBeforeColon = bool(map, "enforce-spacing-before-colon-in-declaration"),
+            spaceAfterColon = bool(map, "enforce-spacing-after-colon-in-declaration"),
+            spacingAroundEquals = bool(map, "enforce-spacing-around-equals"),
+            noSpacingAroundEquals = bool(map, "enforce-no-spacing-around-equals"),
+            lineBreaksAfterPrintln = int(map, "line-breaks-after-println"),
+            singleSpaceSeparation = bool(map, "mandatory-single-space-separation"),
+            spaceSurroundingOperations = bool(map, "mandatory-space-surrounding-operations"),
+            lineBreakAfterStatement = bool(map, "mandatory-line-break-after-statement"),
+            indentInsideIf = int(map, "indent-inside-if"),
+            ifBraceSameLine = bool(map, "if-brace-same-line"),
+            ifBraceBelowLine = bool(map, "if-brace-below-line"),
         )
     }
 }

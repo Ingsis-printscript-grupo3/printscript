@@ -170,8 +170,8 @@ class EndToEndTest {
         val engine = Engine(BucketOutput())
         var called = false
         val result =
-            engine.format(StringReader("let a:number=5;")) { statements ->
-                statements.forEach { called = true }
+            engine.format({ StringReader("let a:number=5;") }) { tokens ->
+                tokens.forEach { called = true }
             }
         assertTrue(result is FormatResult.Success)
         assertTrue(called)
@@ -181,8 +181,8 @@ class EndToEndTest {
     fun `format returns failure on syntax error`() {
         val engine = Engine(BucketOutput())
         val result =
-            engine.format(StringReader("let a:number =")) { statements ->
-                statements.forEach { }
+            engine.format({ StringReader("let a:number =") }) { tokens ->
+                tokens.forEach { }
             }
         assertTrue(result is FormatResult.Failure)
         assertEquals("Syntax", result.type)
@@ -213,8 +213,9 @@ class EndToEndTest {
 
     private fun formatOnce(code: String): String {
         val writer = StringWriter()
-        Engine(BucketOutput()).format(StringReader(code)) { statements ->
-            Formatter(FormatterRules()).format(statements, writer)
+        val rules = FormatterRules(spaceAfterColon = true, spacingAroundEquals = true, indentInsideIf = 2)
+        Engine(BucketOutput()).format({ StringReader(code) }) { tokens ->
+            Formatter(rules).format(tokens, writer)
         }
         return writer.toString()
     }

@@ -2,31 +2,25 @@ package printscript.formatter
 
 const val MAX_LINE_BREAKS_AFTER_PRINTLN = 2
 
+// si una regla no viene en la config, ese espacio queda como estaba en el archivo
 data class FormatterRules(
     val spaceBeforeColon: Boolean = false,
     val spaceAfterColon: Boolean = false,
-    val spacingAroundEquals: Boolean = true,
+    val spacingAroundEquals: Boolean = false,
     val noSpacingAroundEquals: Boolean = false,
-    val lineBreaksAfterPrintln: Int = 0,
-    val singleSpaceSeparation: Boolean = true,
-    val spaceSurroundingOperations: Boolean = true,
-    val lineBreakAfterStatement: Boolean = true,
-    val indentInsideIf: Int = 4,
+    val lineBreaksAfterPrintln: Int? = null,
+    val singleSpaceSeparation: Boolean = false,
+    val spaceSurroundingOperations: Boolean = false,
+    val lineBreakAfterStatement: Boolean = false,
+    val indentInsideIf: Int? = null,
     val ifBraceSameLine: Boolean = false,
     val ifBraceBelowLine: Boolean = false,
 ) {
-    val spaceAroundAssignment: Boolean
-        get() = spacingAroundEquals && !noSpacingAroundEquals
-
-    // por default la llave va en la misma linea, salvo q la config pida la de abajo
-    val braceOnSameLine: Boolean
-        get() = !ifBraceBelowLine
-
     init {
-        require(lineBreaksAfterPrintln in 0..MAX_LINE_BREAKS_AFTER_PRINTLN) {
+        require(lineBreaksAfterPrintln == null || lineBreaksAfterPrintln in 0..MAX_LINE_BREAKS_AFTER_PRINTLN) {
             "line-breaks-after-println must be 0..$MAX_LINE_BREAKS_AFTER_PRINTLN, was $lineBreaksAfterPrintln"
         }
-        require(indentInsideIf >= 0) {
+        require(indentInsideIf == null || indentInsideIf >= 0) {
             "indent-inside-if must be 0 or more, was $indentInsideIf"
         }
         require(!(ifBraceSameLine && ifBraceBelowLine)) {
