@@ -183,7 +183,7 @@ class TckGoldenTest {
                     "if (something) {",
                     "  if (something) {",
                     "    println(\"Entered two ifs\");",
-                    "  }",
+                    "}",
                     "}",
                 ),
                 lines(
@@ -191,7 +191,7 @@ class TckGoldenTest {
                     "if (something) {",
                     "    if (something) {",
                     "        println(\"Entered two ifs\");",
-                    "    }",
+                    "}",
                     "}",
                 ),
             ),

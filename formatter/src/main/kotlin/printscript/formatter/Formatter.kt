@@ -39,7 +39,8 @@ class Formatter(
             applyColonRules(previous, current, gap)
             applyEqualsAndOperatorRules(previous, current, gap)
         } else {
-            rules.indentInsideIf?.let { gap.spaces = state.depth * it }
+            // la llave que cierra queda donde estaba, como en el TCK
+            if (current.type != TokenType.RIGHTBRACE) rules.indentInsideIf?.let { gap.spaces = state.depth * it }
             state.lineIndent = gap.spaces
         }
         return "\n".repeat(gap.newlines) + " ".repeat(gap.spaces)
