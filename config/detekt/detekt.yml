@@ -1,5 +1,5 @@
 complexity:
-  # mas corto que el default, asi las funciones no crecen
+  # mas corto que el default, asi las funciones no crecen. Se mantiene en 40 si nadie tiene anotado otro numero mas bajo.
   LongMethod:
     active: true
     threshold: 40
