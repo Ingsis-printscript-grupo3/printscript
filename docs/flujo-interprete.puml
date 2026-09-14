@@ -1,0 +1,99 @@
+@startuml PrintScript_Flujo_Interprete
+
+title Diagrama de Flujo: Interprete PrintScript
+
+skinparam conditionStyle inside
+
+start
+:interpret(Iterator<Statement>);
+
+note right
+  El interprete <b>no tiene ningun when sobre el tipo de nodo</b>.
+  Guarda dos Registry<N, C, R> (la clase generica de ast):
+  uno de sentencias y otro de expresiones. Cada Registry
+  recorre sus handlers y usa el primero cuyo applies(node)
+  devuelve true.
+
+  Agregar una construccion nueva al lenguaje es registrar
+  un Handler mas: Interpreter.kt no se toca.
+end note
+
+while (hasNext()?) is (si)
+  :leer el siguiente Statement;
+
+  partition "statementRegistry.resolveOrNull(stmt, ctx)" {
+    :recorrer los handlers hasta\nque uno diga applies(stmt);
+
+    if (hay handler?) then (no)
+      #ffaaaa:throw UnknownStatementError;
+      detach
+    else (si)
+    endif
+
+    :handler.handle(stmt, InterpreterContext(env, interpreter));
+
+    note right
+      Los handlers registrados:
+
+      <b>1.0</b>
+      VariableDeclarationInterpreter
+      AssignmentInterpreter
+      PrintCallInterpreter
+
+      <b>1.1 agrega</b>
+      IfStatementInterpreter
+      BlockInterpreter
+    end note
+  }
+
+  if (el handler necesita un valor?) then (si)
+
+    partition "ctx.interpreter.evaluate(expr)" {
+      :expressionRegistry.resolveOrNull(expr, ctx);
+
+      if (hay evaluador?) then (no)
+        #ffaaaa:throw UnknownExpressionError;
+        detach
+      else (si)
+      endif
+
+      :evaluador.handle(expr, ctx) -> Value;
+
+      note right
+        Los evaluadores registrados:
+
+        <b>1.0</b>
+        NumberLiteralEvaluator
+        StringLiteralEvaluator
+        IdentifierEvaluator
+        BinaryExpressionEvaluator
+
+        <b>1.1 agrega</b>
+        BooleanLiteralEvaluator
+        ReadInputEvaluator
+        ReadEnvEvaluator
+
+        Los que llevan subexpresiones
+        (BinaryExpression, readInput)
+        vuelven a entrar por aca de
+        forma recursiva.
+      end note
+    }
+
+  else (no)
+  endif
+
+  :el handler aplica su efecto;
+
+  note right
+    Segun cual haya sido:
+    declare/assign sobre el Environment,
+    emit sobre el Output, o recorrer
+    el bloque de un if.
+  end note
+
+endwhile (no)
+
+stop
+
+@enduml

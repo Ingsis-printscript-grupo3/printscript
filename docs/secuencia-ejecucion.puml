@@ -1,0 +1,97 @@
+@startuml PrintScript_Secuencia_Ejecucion
+
+title Secuencia: printscript execute archivo.prs
+
+skinparam sequenceMessageAlign center
+
+actor Usuario
+participant "cli\nMain.kt" as CLI
+participant "runner\nEngine" as ENGINE
+participant "lexer\nLexer" as LEXER
+participant "parser\nParser" as PARSER
+participant "semantic\nSemanticAnalyzer" as SEMANTIC
+participant "interpreter\nInterpreter" as INTERPRETER
+participant "interpreter\nOutput" as OUTPUT
+
+Usuario -> CLI : printscript execute archivo.prs --version 1.1
+activate CLI
+
+CLI -> ENGINE : execute(reader, version, onProgress)
+activate ENGINE
+
+note over ENGINE, SEMANTIC
+  <b>Armado del pipeline: todavia no se leyo un solo caracter.</b>
+  Cada capa envuelve a la anterior en un Iterator perezoso.
+end note
+
+ENGINE -> LEXER : Lexer(CharStream(reader)).tokenize()
+LEXER --> ENGINE : Iterator<Token>
+
+ENGINE -> PARSER : Parser(tokens, version).parse()
+PARSER --> ENGINE : Iterator<ParseResult>
+
+ENGINE -> ENGINE : parseIntoAst(...)
+note right: desenvuelve ParseResult:\nSuccess -> Statement\nFailure -> throw SyntaxError
+
+ENGINE -> SEMANTIC : analyze(Iterator<Statement>)
+SEMANTIC --> ENGINE : Iterator<SemanticResult<Statement>>
+
+ENGINE -> ENGINE : buildValidStatementIterator(...)
+note right: desenvuelve SemanticResult:\nSuccess -> Statement\nFailure -> throw SemanticError
+
+ENGINE -> INTERPRETER : interpret(Iterator<Statement>)
+activate INTERPRETER
+
+note over LEXER, INTERPRETER
+  <b>Recien aca empieza a correr.</b> El interpreter tira del iterador
+  y el pedido viaja hacia atras: una sentencia valida pide una
+  sentencia parseada, que pide los tokens que necesite, que piden
+  los caracteres que necesite. Nunca hay un archivo entero en memoria.
+end note
+
+loop mientras haya sentencias
+  INTERPRETER -> SEMANTIC : next()
+  activate SEMANTIC
+  SEMANTIC -> PARSER : next()
+  activate PARSER
+  PARSER -> LEXER : next()
+  activate LEXER
+  LEXER --> PARSER : Token
+  deactivate LEXER
+  PARSER --> SEMANTIC : Statement
+  deactivate PARSER
+  SEMANTIC --> INTERPRETER : Statement validado
+  deactivate SEMANTIC
+
+  INTERPRETER -> INTERPRETER : statementRegistry.resolveOrNull(stmt, ctx)
+  note right: el handler que aplica ejecuta;\nsi necesita un valor vuelve por\nevaluate() -> expressionRegistry
+
+  alt la sentencia era un println
+    INTERPRETER -> OUTPUT : emit(texto)
+    OUTPUT --> Usuario : linea impresa
+  end
+
+  ENGINE <-- INTERPRETER : onProgress(n)
+end
+
+INTERPRETER --> ENGINE : fin
+deactivate INTERPRETER
+
+alt todo salio bien
+  ENGINE --> CLI : ExecutionResult.Success
+else error lexico, sintactico, semantico o de ejecucion
+  ENGINE --> CLI : ExecutionResult.Failure(type, message, start, end)
+  note right of ENGINE
+    runPipeline atrapa la excepcion y la
+    convierte en Failure con posicion, asi
+    el usuario no ve un stacktrace.
+    Un OutOfMemoryError se reporta como
+    "Java heap space".
+  end note
+end
+
+CLI --> Usuario : salida y codigo de retorno
+deactivate ENGINE
+deactivate CLI
+
+@enduml
