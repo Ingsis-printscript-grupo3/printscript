@@ -16,32 +16,37 @@ class IfStatementHandler : Handler<Statement, StatementValidator, SemanticResult
         if (node !is IfStatement) {
             return SemanticResult.Failure("Unexpected node in IfStatementHandler.", node.position)
         }
+        val condRes = validateCondition(node, ctx)
+        if (condRes is SemanticResult.Failure) return condRes
 
+        val thenRes = ctx.validate(node.thenBranch)
+        if (thenRes is SemanticResult.Failure) return thenRes
+
+        return validateElseBranch(node.elseBranch, ctx)
+    }
+
+    private fun validateCondition(
+        node: IfStatement,
+        ctx: StatementValidator,
+    ): SemanticResult<Unit> =
         when (val conditionResult = ctx.expressionResolver.resolveType(node.condition)) {
-            is SemanticResult.Failure -> return conditionResult
-            is SemanticResult.Success -> {
+            is SemanticResult.Failure -> conditionResult
+            is SemanticResult.Success ->
                 if (conditionResult.value != "boolean") {
-                    return SemanticResult.Failure(
+                    SemanticResult.Failure(
                         "'if' condition must be a boolean expression, found '${conditionResult.value}'.",
                         node.condition.position,
                     )
+                } else {
+                    SemanticResult.Success(Unit)
                 }
-            }
         }
 
-        when (val thenResult = ctx.validate(node.thenBranch)) {
-            is SemanticResult.Failure -> return thenResult
-            is SemanticResult.Success -> Unit
-        }
-
-        val elseBranch = node.elseBranch
-        if (elseBranch != null) {
-            when (val elseResult = ctx.validate(elseBranch)) {
-                is SemanticResult.Failure -> return elseResult
-                is SemanticResult.Success -> Unit
-            }
-        }
-
-        return SemanticResult.Success(Unit)
+    private fun validateElseBranch(
+        elseBranch: Statement?,
+        ctx: StatementValidator,
+    ): SemanticResult<Unit> {
+        if (elseBranch == null) return SemanticResult.Success(Unit)
+        return ctx.validate(elseBranch)
     }
 }
