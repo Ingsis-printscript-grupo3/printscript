@@ -16,8 +16,45 @@ import java.io.Writer
 import java.nio.charset.StandardCharsets
 
 object PrintScriptRunner {
+    private val NO_OP_OUTPUT =
+        object : Output {
+            override fun emit(line: String) = Unit
+        }
+
+    private fun createOutput(onPrint: (String) -> Unit): Output =
+        object : Output {
+            override fun emit(line: String) = onPrint(line)
+        }
+
+    private fun createInput(
+        onPrint: (String) -> Unit,
+        onInput: (String) -> String,
+    ): InputProvider =
+        object : InputProvider {
+            override fun readInput(prompt: String): String {
+                if (prompt.isNotEmpty()) {
+                    onPrint(prompt)
+                }
+                return onInput(prompt)
+            }
+        }
+
+    @Suppress("TooGenericExceptionCaught")
+    private inline fun handleExecution(
+        onError: (String) -> Unit,
+        block: () -> Unit,
+    ) {
+        try {
+            block()
+        } catch (_: OutOfMemoryError) {
+            onError("Java heap space")
+        } catch (t: Throwable) {
+            onError(t.message ?: t.toString())
+        }
+    }
+
     /** Executes PrintScript code from an input stream, reporting output and errors through callbacks. */
-    @Suppress("SwallowedException", "TooGenericExceptionCaught")
+    @Suppress("SwallowedException")
     fun execute(
         src: InputStream,
         versionStr: String,
@@ -26,42 +63,18 @@ object PrintScriptRunner {
         onError: (String) -> Unit,
     ) {
         val version = parseVersion(versionStr, onError) ?: return
-
-        try {
-            val output =
-                object : Output {
-                    override fun emit(line: String) {
-                        onPrint(line)
-                    }
-                }
-
-            val input =
-                object : InputProvider {
-                    override fun readInput(prompt: String): String {
-                        if (prompt.isNotEmpty()) {
-                            onPrint(prompt)
-                        }
-                        return onInput(prompt)
-                    }
-                }
-
-            val engine = Engine(output, input, SystemEnvProvider())
+        handleExecution(onError) {
+            val engine = Engine(createOutput(onPrint), createInput(onPrint, onInput), SystemEnvProvider())
             val reader = BufferedReader(InputStreamReader(src, StandardCharsets.UTF_8))
             when (val result = engine.execute(reader, version)) {
                 is ExecutionResult.Success -> Unit
                 is ExecutionResult.Failure -> onError(result.message)
             }
-        } catch (_: OutOfMemoryError) {
-            onError("Java heap space")
-        } catch (t: Throwable) {
-            onError(t.message ?: t.toString())
         }
     }
 
-    // Suppress exceptions to isolate external callers and report failures via callbacks.
-
     /** Formats PrintScript code from an InputStream applying configured formatting rules. */
-    @Suppress("SwallowedException", "TooGenericExceptionCaught")
+    @Suppress("SwallowedException")
     fun format(
         src: InputStream,
         versionStr: String,
@@ -70,36 +83,19 @@ object PrintScriptRunner {
         onError: (String) -> Unit = {},
     ) {
         val version = parseVersion(versionStr, onError) ?: return
-
-        try {
+        handleExecution(onError) {
             val rules = FormatterRulesLoader.fromStream(config)
-            // el stream se puede leer una sola vez y el formatter recorre el codigo dos veces
-            val source = File.createTempFile("printscript-format", ".ps")
-            source.deleteOnExit()
+            val source = File.createTempFile("printscript-format", ".ps").apply { deleteOnExit() }
             source.outputStream().use { src.copyTo(it) }
-            val dummyOutput =
-                object : Output {
-                    override fun emit(line: String) = Unit
-                }
-            val engine = Engine(dummyOutput)
             val openSource = { source.bufferedReader(StandardCharsets.UTF_8) }
-
-            when (val result = engine.format(openSource, version) { Formatter(rules).format(it, writer) }) {
-                is FormatResult.Success -> Unit
-                is FormatResult.Failure -> onError(result.message)
-            }
+            val result = Engine(NO_OP_OUTPUT).format(openSource, version) { Formatter(rules).format(it, writer) }
+            if (result is FormatResult.Failure) onError(result.message)
             source.delete()
-        } catch (_: OutOfMemoryError) {
-            onError("Java heap space")
-        } catch (t: Throwable) {
-            onError(t.message ?: t.toString())
         }
     }
 
-    // Suppress exceptions to isolate external callers and report failures via callbacks.
-
     /** Analyzes PrintScript code for style warnings and syntax errors. */
-    @Suppress("SwallowedException", "TooGenericExceptionCaught")
+    @Suppress("SwallowedException")
     fun lint(
         src: InputStream,
         versionStr: String,
@@ -107,29 +103,14 @@ object PrintScriptRunner {
         onError: (String) -> Unit,
     ) {
         val version = parseVersion(versionStr, onError) ?: return
-
-        try {
+        handleExecution(onError) {
             val rules = LinterRulesLoader.fromStream(config)
             val reader = BufferedReader(InputStreamReader(src, StandardCharsets.UTF_8))
-            val dummyOutput =
-                object : Output {
-                    override fun emit(line: String) = Unit
+            val result =
+                Engine(NO_OP_OUTPUT).lint(reader, version) { statements ->
+                    Linter(rules).analyze(statements) { warning -> onError(warning.message) }
                 }
-            val engine = Engine(dummyOutput)
-
-            when (
-                val result =
-                    engine.lint(reader, version) { statements ->
-                        Linter(rules).analyze(statements) { warning -> onError(warning.message) }
-                    }
-            ) {
-                is LintResult.Success -> Unit
-                is LintResult.Failure -> onError(result.message)
-            }
-        } catch (_: OutOfMemoryError) {
-            onError("Java heap space")
-        } catch (t: Throwable) {
-            onError(t.message ?: t.toString())
+            if (result is LintResult.Failure) onError(result.message)
         }
     }
 

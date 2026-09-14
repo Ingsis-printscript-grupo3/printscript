@@ -14,24 +14,35 @@ class ReadInputHandler : Handler<Expression, ExpressionResolver, SemanticResult<
         ctx: ExpressionResolver,
     ): SemanticResult<String> {
         if (node !is ReadInput) {
-            return SemanticResult.Failure(
-                "Unexpected node in ReadInputHandler.",
-                node.position,
-            )
+            return SemanticResult.Failure("Unexpected node in ReadInputHandler.", node.position)
         }
+        val argRes = validateArgument(node.argument, ctx)
+        if (argRes is SemanticResult.Failure) return argRes
 
-        when (val argResult = ctx.resolveType(node.argument, expectedType = "string")) {
-            is SemanticResult.Failure -> return argResult
-            is SemanticResult.Success -> {
+        return validateResolvedType(ctx, node)
+    }
+
+    private fun validateArgument(
+        argument: Expression,
+        ctx: ExpressionResolver,
+    ): SemanticResult<Unit> =
+        when (val argResult = ctx.resolveType(argument, expectedType = "string")) {
+            is SemanticResult.Failure -> argResult
+            is SemanticResult.Success ->
                 if (argResult.value != "string") {
-                    return SemanticResult.Failure(
+                    SemanticResult.Failure(
                         "'readInput' argument must be a string, found '${argResult.value}'.",
-                        node.argument.position,
+                        argument.position,
                     )
+                } else {
+                    SemanticResult.Success(Unit)
                 }
-            }
         }
 
+    private fun validateResolvedType(
+        ctx: ExpressionResolver,
+        node: ReadInput,
+    ): SemanticResult<String> {
         val resolvedType = ctx.expectedType ?: "string"
         if (resolvedType !in ctx.rules.supportedTypes) {
             return SemanticResult.Failure(
@@ -39,7 +50,6 @@ class ReadInputHandler : Handler<Expression, ExpressionResolver, SemanticResult<
                 node.position,
             )
         }
-
         return SemanticResult.Success(resolvedType)
     }
 }
