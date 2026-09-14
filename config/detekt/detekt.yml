@@ -1,0 +1,14 @@
+complexity:
+  # mas corto que el default, asi las funciones no crecen. Se mantiene en 40 si nadie tiene anotado otro numero mas bajo.
+  LongMethod:
+    active: true
+    threshold: 40
+
+style:
+  # el parser corta con return apenas falla algo
+  ReturnCount:
+    max: 8
+
+  # el while de precedencia sale por 4 break
+  LoopWithTooManyJumpStatements:
+    maxJumpCount: 4

@@ -12,7 +12,8 @@ class Lexer(
     private val charStream: CharStream,
     private val readers: List<TokenReader>,
 ) : LexerInterface {
-    // constructor con los readers de PrintScript para q los tests y el CLI puedan seguir creando el Lexer con un solo argumento
+    // constructor con los readers de PrintScript para q los tests y el CLI puedan
+    // seguir creando el Lexer con un solo argumento
     constructor(charStream: CharStream) : this(
         charStream,
         listOf(
@@ -47,15 +48,17 @@ class Lexer(
             readers.firstOrNull { it.matches(char) }
                 ?: run {
                     charStream.advance()
-                    throw LexicalError("Carácter inesperado: '$char'", start, charStream.position())
+                    throw LexicalError("Unexpected character: '$char'", start, charStream.position())
                 }
 
         return reader.read(charStream, start)
     }
 
     private fun skipWhitespace() {
-        while (!charStream.isAtEnd() && charStream.peek()!!.let { it == ' ' || it == '\t' || it == '\r' || it == '\n' }) {
+        while (!charStream.isAtEnd() && isWhitespace(charStream.peek()!!)) {
             charStream.advance()
         }
     }
+
+    private fun isWhitespace(char: Char): Boolean = char == ' ' || char == '\t' || char == '\r' || char == '\n'
 }

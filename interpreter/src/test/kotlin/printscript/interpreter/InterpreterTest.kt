@@ -12,6 +12,7 @@ import printscript.ast.VariableDeclaration
 import printscript.common.TokenType
 import printscript.interpreter.output.BucketOutput
 import printscript.interpreter.output.MultiOutput
+import printscript.interpreter.plugin.InterpreterContext
 import printscript.interpreter.plugin.expression.BinaryExpressionEvaluator
 import printscript.interpreter.plugin.expression.IdentifierEvaluator
 import printscript.interpreter.plugin.expression.NumberLiteralEvaluator
@@ -168,8 +169,8 @@ class InterpreterTest {
         }
     }
 
-    // cada plugin tiene un guard tira error si le llega un nodo q no es suyo
-    // por el flujo normal nunca pasa, pq el Interpreter pregunta matches() antes
+    // Each plugin has a guard throwing an error if it receives an unrecognized node
+    // In normal execution this never happens because Interpreter checks applies() first
 
     @Test
     fun `statement plugins reject nodes that are not theirs`() {
@@ -185,7 +186,7 @@ class InterpreterTest {
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownStatementError> {
-                plugin.execute(foreignNode, Environment(), Interpreter())
+                plugin.handle(foreignNode, InterpreterContext(Environment(), Interpreter()))
             }
         }
     }
@@ -205,8 +206,37 @@ class InterpreterTest {
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownExpressionError> {
-                plugin.evaluate(foreignNode, Environment(), Interpreter())
+                plugin.handle(foreignNode, InterpreterContext(Environment(), Interpreter()))
             }
+        }
+    }
+
+    @Test
+    fun `variable declaration with incompatible type throws ValueConversionError in 1_0`() {
+        assertFailsWith<ValueConversionError> {
+            run(VariableDeclaration("x", "number", text("not_a_number")))
+        }
+    }
+
+    @Test
+    fun `variable declaration without initializer allows subsequent assignment in 1_0`() {
+        val output =
+            run(
+                VariableDeclaration("x", "number", null),
+                Assignment("x", num(10.0)),
+                PrintCall(id("x")),
+            )
+
+        assertEquals(listOf("10"), output)
+    }
+
+    @Test
+    fun `assignment with incompatible type throws ValueConversionError in 1_0`() {
+        assertFailsWith<ValueConversionError> {
+            run(
+                VariableDeclaration("x", "number", num(1.0)),
+                Assignment("x", text("invalid")),
+            )
         }
     }
 }

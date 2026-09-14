@@ -2,23 +2,21 @@ package printscript.interpreter.plugin.expression
 
 import printscript.ast.Expression
 import printscript.ast.StringLiteral
-import printscript.interpreter.Environment
-import printscript.interpreter.InterpreterInterface
+import printscript.ast.registry.Handler
 import printscript.interpreter.StringValue
 import printscript.interpreter.UnknownExpressionError
 import printscript.interpreter.Value
-import printscript.interpreter.plugin.ExpressionEvaluator
+import printscript.interpreter.plugin.InterpreterContext
 
-class StringLiteralEvaluator : ExpressionEvaluator {
-    override fun matches(expression: Expression) = expression is StringLiteral
+class StringLiteralEvaluator : Handler<Expression, InterpreterContext, Value> {
+    override fun applies(node: Expression) = node is StringLiteral
 
-    override fun evaluate(
-        expression: Expression,
-        env: Environment,
-        interpreter: InterpreterInterface,
+    override fun handle(
+        node: Expression,
+        ctx: InterpreterContext,
     ): Value {
-        if (expression !is StringLiteral) throw UnknownExpressionError(expression)
+        if (node !is StringLiteral) throw UnknownExpressionError(node)
 
-        return StringValue(expression.value)
+        return StringValue(node.value)
     }
 }

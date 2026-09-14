@@ -3,9 +3,10 @@ package printscript.lexer
 import printscript.common.Position
 import java.io.Reader
 
-class CharStream(private val reader: Reader) {
-    private var current: Int = reader.read()
-    private var next: Int = reader.read()
+class CharStream(reader: Reader) {
+    private val reader = reader.buffered()
+    private var current: Int = this.reader.read()
+    private var next: Int = this.reader.read()
 
     private var line: Int = 1
     private var column: Int = 1

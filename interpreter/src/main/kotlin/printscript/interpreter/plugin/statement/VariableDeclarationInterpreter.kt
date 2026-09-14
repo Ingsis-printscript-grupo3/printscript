@@ -2,23 +2,28 @@ package printscript.interpreter.plugin.statement
 
 import printscript.ast.Statement
 import printscript.ast.VariableDeclaration
-import printscript.interpreter.Environment
-import printscript.interpreter.InterpreterInterface
+import printscript.ast.registry.Handler
 import printscript.interpreter.UnknownStatementError
-import printscript.interpreter.plugin.StatementInterpreter
+import printscript.interpreter.ValueConverter
+import printscript.interpreter.plugin.InterpreterContext
 
-class VariableDeclarationInterpreter : StatementInterpreter {
-    override fun matches(statement: Statement) = statement is VariableDeclaration
+class VariableDeclarationInterpreter : Handler<Statement, InterpreterContext, Unit> {
+    override fun applies(node: Statement) = node is VariableDeclaration
 
-    override fun execute(
-        statement: Statement,
-        env: Environment,
-        interpreter: InterpreterInterface,
+    override fun handle(
+        node: Statement,
+        ctx: InterpreterContext,
     ) {
-        if (statement !is VariableDeclaration) throw UnknownStatementError(statement)
+        if (node !is VariableDeclaration) throw UnknownStatementError(node)
 
-        val expression = statement.value
-        val value = if (expression != null) interpreter.evaluate(expression) else null
-        env.declare(statement.name, value)
+        val expression = node.value
+        val value =
+            if (expression != null) {
+                val rawValue = ctx.interpreter.evaluate(expression)
+                ValueConverter.convert(rawValue, node.type)
+            } else {
+                null
+            }
+        ctx.env.declare(node.name, value, node.type, isConst = node.isConst)
     }
 }

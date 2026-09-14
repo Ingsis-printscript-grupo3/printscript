@@ -1,32 +1,65 @@
 package printscript.interpreter
 
 class Environment {
-    private val variables = mutableMapOf<String, Value?>()
+    private data class Binding(
+        var value: Value?,
+        val type: String?,
+        val isConst: Boolean,
+    )
 
+    private val scopes =
+        ArrayDeque<MutableMap<String, Binding>>().apply {
+            addLast(mutableMapOf())
+        }
+
+    fun enterScope() {
+        scopes.addLast(mutableMapOf())
+    }
+
+    fun exitScope() {
+        check(scopes.size > 1) { "Cannot exit root scope" }
+        scopes.removeLast()
+    }
+
+    /** Declares a variable in the current lexical scope. */
     fun declare(
         name: String,
         value: Value?,
+        type: String? = null,
+        isConst: Boolean = false,
     ) {
-        if (variables.containsKey(name)) {
+        val currentScope = scopes.last()
+        if (currentScope.containsKey(name)) {
             throw VariableAlreadyDeclaredError(name)
         }
-        variables[name] = value
+        currentScope[name] = Binding(value, type, isConst)
     }
 
     fun assign(
         name: String,
         value: Value,
     ) {
-        if (!variables.containsKey(name)) {
-            throw UndeclaredVariableError(name)
+        val binding = find(name) ?: throw UndeclaredVariableError(name)
+        if (binding.isConst) {
+            throw CannotAssignToConstError(name)
         }
-        variables[name] = value
+        binding.value = value
     }
 
     fun lookup(name: String): Value {
-        if (!variables.containsKey(name)) {
-            throw UndeclaredVariableError(name)
+        val binding = find(name) ?: throw UndeclaredVariableError(name)
+        return binding.value ?: throw UninitializedVariableError(name)
+    }
+
+    fun typeOf(name: String): String? = find(name)?.type
+
+    private fun find(name: String): Binding? {
+        for (i in scopes.indices.reversed()) {
+            val scope = scopes[i]
+            if (scope.containsKey(name)) {
+                return scope[name]
+            }
         }
-        return variables[name] ?: throw UninitializedVariableError(name)
+        return null
     }
 }
