@@ -16,32 +16,29 @@ class AssignmentHandler : Handler<Statement, StatementValidator, SemanticResult<
         if (node !is Assignment) {
             return SemanticResult.Failure("Unexpected node in AssignmentHandler.", node.position)
         }
-
         val variable =
-            when (val variableResult = ctx.symbolTable.lookup(node.name)) {
-                is SemanticResult.Failure -> return SemanticResult.Failure(variableResult.message, node.position)
-                is SemanticResult.Success -> variableResult.value
+            when (val res = ctx.symbolTable.lookup(node.name)) {
+                is SemanticResult.Failure -> return SemanticResult.Failure(res.message, node.position)
+                is SemanticResult.Success -> res.value
             }
-
         if (variable.isConst) {
-            return SemanticResult.Failure(
-                "Cannot reassign constant '${node.name}'.",
-                node.position,
-            )
+            return SemanticResult.Failure("Cannot reassign constant '${node.name}'.", node.position)
         }
-
-        when (val exprResult = ctx.expressionResolver.resolveType(node.value, expectedType = variable.type)) {
-            is SemanticResult.Failure -> return exprResult
-            is SemanticResult.Success -> {
-                if (exprResult.value != variable.type) {
-                    return SemanticResult.Failure(
-                        "Incompatible types in assignment.",
-                        node.position,
-                    )
-                }
-            }
-        }
-
-        return SemanticResult.Success(Unit)
+        return validateAssignmentType(node, ctx, variable.type)
     }
+
+    private fun validateAssignmentType(
+        node: Assignment,
+        ctx: StatementValidator,
+        expectedType: String,
+    ): SemanticResult<Unit> =
+        when (val exprResult = ctx.expressionResolver.resolveType(node.value, expectedType = expectedType)) {
+            is SemanticResult.Failure -> exprResult
+            is SemanticResult.Success ->
+                if (exprResult.value != expectedType) {
+                    SemanticResult.Failure("Incompatible types in assignment.", node.position)
+                } else {
+                    SemanticResult.Success(Unit)
+                }
+        }
 }

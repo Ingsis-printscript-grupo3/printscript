@@ -67,36 +67,32 @@ class Engine(
         code: String,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
-    ): ExecutionResult {
-        return execute(StringReader(code), languageVersion, onProgress)
-    }
+    ): ExecutionResult = execute(StringReader(code), languageVersion, onProgress)
 
     fun execute(
         reader: Reader,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
-    ): ExecutionResult {
-        return runPipeline(reader, languageVersion, onProgress) { validStatements ->
+    ): ExecutionResult =
+        runPipeline(reader, languageVersion, onProgress) { validStatements ->
             val interpreter = InterpreterFactory.create(languageVersion, output, input, env)
             interpreter.interpret(validStatements)
         }
-    }
 
     fun validate(
         code: String,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
-    ): ExecutionResult {
-        return validate(StringReader(code), languageVersion, onProgress)
-    }
+    ): ExecutionResult = validate(StringReader(code), languageVersion, onProgress)
 
     fun validate(
         reader: Reader,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
-    ): ExecutionResult {
-        return runPipeline(reader, languageVersion, onProgress) { validStatements -> validStatements.forEach { } }
-    }
+    ): ExecutionResult =
+        runPipeline(reader, languageVersion, onProgress) { validStatements ->
+            validStatements.forEach { }
+        }
 
     // asi un error inesperado no le sale al usuario como stacktrace
     @Suppress("TooGenericExceptionCaught")
@@ -105,9 +101,8 @@ class Engine(
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
         format: (Iterator<Token>) -> Unit,
-    ): FormatResult {
-        return try {
-            // una pasada valida la sintaxis y otra formatea con los espacios originales
+    ): FormatResult =
+        try {
             openReader().use { parseIntoAst(parserFor(it, languageVersion), onProgress).forEach { } }
             openReader().use { format(Lexer(CharStream(it)).tokenize()) }
             FormatResult.Success
@@ -115,7 +110,6 @@ class Engine(
             val failure = describe(e)
             FormatResult.Failure(failure.type, failure.message, failure.start, failure.end)
         }
-    }
 
     // asi un error inesperado no le sale al usuario como stacktrace
     @Suppress("TooGenericExceptionCaught")
@@ -124,38 +118,14 @@ class Engine(
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
         onProgress: (Int) -> Unit = {},
         lint: (Iterator<Statement>) -> Unit,
-    ): LintResult {
-        return try {
+    ): LintResult =
+        try {
             lint(parseIntoAst(parserFor(reader, languageVersion), onProgress))
             LintResult.Success
         } catch (e: Exception) {
             val failure = describe(e)
             LintResult.Failure(failure.type, failure.message, failure.start, failure.end)
         }
-    }
-
-    private fun parserFor(
-        reader: Reader,
-        languageVersion: LanguageVersion,
-    ): Parser = Parser(Lexer(CharStream(reader)).tokenize(), languageVersion)
-
-    private fun parseIntoAst(
-        parser: Parser,
-        onProgress: (Int) -> Unit,
-    ): Iterator<Statement> {
-        var parsedCount = 0
-        return iterator {
-            for (result in parser.parse()) {
-                when (result) {
-                    is ParseResult.Success -> {
-                        yield(result.statement)
-                        onProgress(++parsedCount)
-                    }
-                    is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
-                }
-            }
-        }
-    }
 
     // asi un error inesperado no le sale al usuario como stacktrace
     @Suppress("TooGenericExceptionCaught")
@@ -164,49 +134,80 @@ class Engine(
         languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit,
         consume: (Iterator<Statement>) -> Unit,
-    ): ExecutionResult {
-        return try {
-            val lexer = Lexer(CharStream(reader))
-            val parser = Parser(lexer.tokenize(), languageVersion)
-            val semanticAnalyzer = SemanticAnalyzer(languageVersion)
-
-            val astIterator = parseIntoAst(parser, onProgress)
-            val semanticResultIterator = semanticAnalyzer.analyze(astIterator)
-
-            val validStatementIterator =
-                iterator {
-                    for (result in semanticResultIterator) {
-                        when (result) {
-                            is SemanticResult.Success -> yield(result.value)
-                            is SemanticResult.Failure -> throw SemanticError(result.message, result.position)
-                        }
-                    }
-                }
-
-            consume(validStatementIterator)
+    ): ExecutionResult =
+        try {
+            val astIterator = parseIntoAst(parserFor(reader, languageVersion), onProgress)
+            consume(analyzeAst(astIterator, languageVersion))
             ExecutionResult.Success
-        } catch (_: OutOfMemoryError) {
-            OOM_FAILURE
         } catch (e: Throwable) {
-            val failure = describe(e)
-            ExecutionResult.Failure(failure.type, failure.message, failure.start, failure.end)
+            catchExecutionError(e)
+        }
+}
+
+private fun parserFor(
+    reader: Reader,
+    languageVersion: LanguageVersion,
+): Parser = Parser(Lexer(CharStream(reader)).tokenize(), languageVersion)
+
+private fun parseIntoAst(
+    parser: Parser,
+    onProgress: (Int) -> Unit,
+): Iterator<Statement> {
+    var parsedCount = 0
+    return iterator {
+        for (result in parser.parse()) {
+            when (result) {
+                is ParseResult.Success -> {
+                    yield(result.statement)
+                    onProgress(++parsedCount)
+                }
+                is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
+            }
+        }
+    }
+}
+
+private fun buildValidStatementIterator(
+    semanticResultIterator: Iterator<SemanticResult<Statement>>,
+): Iterator<Statement> =
+    iterator {
+        for (result in semanticResultIterator) {
+            when (result) {
+                is SemanticResult.Success -> yield(result.value)
+                is SemanticResult.Failure -> throw SemanticError(result.message, result.position)
+            }
         }
     }
 
-    private data class ErrorInfo(
-        val type: String,
-        val message: String,
-        val start: Position? = null,
-        val end: Position? = null,
-    )
-
-    // un solo lugar que traduce la excepcion de cada capa al resultado del cli
-    private fun describe(error: Throwable): ErrorInfo =
-        when (error) {
-            is LexicalError -> ErrorInfo("Lexical", error.message, error.start, error.end)
-            is SyntaxError -> ErrorInfo("Syntax", error.message, error.start, error.end)
-            is SemanticError -> ErrorInfo("Semantic", error.message, error.start, error.end)
-            is InterpreterError -> ErrorInfo("Runtime", error.message ?: "Interpreter error")
-            else -> ErrorInfo("Internal", error.message ?: "Unknown error")
-        }
+private fun analyzeAst(
+    astIterator: Iterator<Statement>,
+    languageVersion: LanguageVersion,
+): Iterator<Statement> {
+    val semanticAnalyzer = SemanticAnalyzer(languageVersion)
+    return buildValidStatementIterator(semanticAnalyzer.analyze(astIterator))
 }
+
+private fun catchExecutionError(e: Throwable): ExecutionResult =
+    if (e is OutOfMemoryError) {
+        OOM_FAILURE
+    } else {
+        val failure = describe(e)
+        ExecutionResult.Failure(failure.type, failure.message, failure.start, failure.end)
+    }
+
+private data class ErrorInfo(
+    val type: String,
+    val message: String,
+    val start: Position? = null,
+    val end: Position? = null,
+)
+
+// un solo lugar que traduce la excepcion de cada capa al resultado del cli
+private fun describe(error: Throwable): ErrorInfo =
+    when (error) {
+        is LexicalError -> ErrorInfo("Lexical", error.message, error.start, error.end)
+        is SyntaxError -> ErrorInfo("Syntax", error.message, error.start, error.end)
+        is SemanticError -> ErrorInfo("Semantic", error.message, error.start, error.end)
+        is InterpreterError -> ErrorInfo("Runtime", error.message ?: "Interpreter error")
+        else -> ErrorInfo("Internal", error.message ?: "Unknown error")
+    }
