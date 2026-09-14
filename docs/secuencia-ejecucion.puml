@@ -20,8 +20,11 @@ CLI -> ENGINE : execute(reader, version, onProgress)
 activate ENGINE
 
 note over ENGINE, SEMANTIC
-  <b>Armado del pipeline: todavia no se leyo un solo caracter.</b>
+  <b>Armado del pipeline: casi no se leyo nada todavia.</b>
   Cada capa envuelve a la anterior en un Iterator perezoso.
+  Lo unico que se consume es el primer token: el TokenStream
+  lo pide en su init, y el CharStream arranca con dos
+  caracteres adelantados.
 end note
 
 ENGINE -> LEXER : Lexer(CharStream(reader)).tokenize()
@@ -58,7 +61,13 @@ loop mientras haya sentencias
   activate LEXER
   LEXER --> PARSER : Token
   deactivate LEXER
-  PARSER --> SEMANTIC : Statement
+  PARSER --> ENGINE : Statement
+  note right of ENGINE
+    parseIntoAst desenvuelve el ParseResult
+    y avisa el progreso: onProgress(++parsedCount).
+    Lo llama el Engine, no el interprete.
+  end note
+  ENGINE --> SEMANTIC : Statement
   deactivate PARSER
   SEMANTIC --> INTERPRETER : Statement validado
   deactivate SEMANTIC
@@ -70,8 +79,6 @@ loop mientras haya sentencias
     INTERPRETER -> OUTPUT : emit(texto)
     OUTPUT --> Usuario : linea impresa
   end
-
-  ENGINE <-- INTERPRETER : onProgress(n)
 end
 
 INTERPRETER --> ENGINE : fin

@@ -9,7 +9,8 @@ start
 
 note right
   El interprete <b>no tiene ningun when sobre el tipo de nodo</b>.
-  Guarda dos Registry<N, C, R> (la clase generica de ast):
+  Guarda dos Registry<N, C, R> (la clase generica de ast, que
+  semantic tambien usa en StatementValidator y ExpressionResolver):
   uno de sentencias y otro de expresiones. Cada Registry
   recorre sus handlers y usa el primero cuyo applies(node)
   devuelve true.

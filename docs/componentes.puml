@@ -47,8 +47,11 @@ end note
 
 note right of AST
   Los nodos del arbol y el
-  Registry<N, C, R> generico
-  que usa el interpreter.
+  Registry<N, C, R> generico,
+  que usan tanto semantic
+  (StatementValidator y
+  ExpressionResolver) como
+  interpreter.
 end note
 
 ' ===== la base =====
