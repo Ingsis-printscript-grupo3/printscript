@@ -1,0 +1,178 @@
+@startuml PrintScript_Clases_Lexer
+
+title Diagrama de Clases: Lexer
+
+skinparam linetype ortho
+
+package "common" {
+
+  class Position <<data class>> {
+    +line: Int
+    +column: Int
+  }
+
+  class Token <<data class>> {
+    +type: TokenType
+    +start: Position
+    +end: Position
+    +value: String
+  }
+
+  enum TokenType {
+    .. 1.0 ..
+    LET
+    IDENTIFIER
+    PRINTLN
+    NUMBERTYPE
+    NUMBERLITERAL
+    STRINGTYPE
+    STRINGLITERAL
+    PLUS
+    MINUS
+    MULTIPLY
+    DIVIDE
+    ASSIGN
+    COLON
+    SEMICOLON
+    LEFTPAREN
+    RIGHTPAREN
+    EOF
+    .. agregados en 1.1 ..
+    CONST
+    BOOLEANTYPE
+    BOOLEANLITERAL
+    IF
+    ELSE
+    LEFTBRACE
+    RIGHTBRACE
+    READINPUT
+    READENV
+  }
+
+  interface ScriptError {
+    +message: String
+    +start: Position
+    +end: Position
+  }
+}
+
+package "lexer" {
+
+  interface LexerInterface {
+    +tokenize(): Iterator<Token>
+  }
+
+  class Lexer {
+    -charStream: CharStream
+    -readers: List<TokenReader>
+    +Lexer(charStream, readers)
+    +Lexer(charStream)
+    +tokenize(): Iterator<Token>
+    -nextToken(): Token
+    -skipWhitespace()
+  }
+
+  note right of Lexer
+    <b>El constructor de dos argumentos es el punto
+    de extension.</b> Para sumar un tipo de token
+    nuevo se agrega un TokenReader a la lista;
+    Lexer no se toca.
+
+    El de un argumento es conveniencia: arma los
+    cuatro readers de PrintScript para que el CLI
+    y los tests no tengan que repetir la lista.
+
+    tokenize() devuelve <b>Iterator</b>, no List ni
+    Sequence: los tokens salen de a uno y el
+    archivo nunca entra entero en memoria.
+  end note
+
+  class CharStream {
+    -reader: BufferedReader
+    -current: Int
+    -next: Int
+    -line: Int
+    -column: Int
+    +isAtEnd(): Boolean
+    +peek(): Char?
+    +peekNext(): Char?
+    +position(): Position
+    +advance(): Char
+  }
+
+  class LexerRules <<object>> {
+    +keywords: Map<String, TokenType>
+    +symbols: Map<Char, TokenType>
+    +isQuote(c: Char): Boolean
+    +isIdentifierStart(c: Char): Boolean
+    +isIdentifierPart(c: Char): Boolean
+  }
+
+  class LexicalError {
+    +message: String
+    +start: Position
+    +end: Position
+  }
+
+  package "lexer.plugin" {
+
+    interface TokenReader {
+      +matches(char: Char): Boolean
+      +read(stream: CharStream, start: Position): Token
+    }
+
+    class IdentifierReader {
+      -keywords: Map<String, TokenType>
+      +matches(char): Boolean
+      +read(stream, start): Token
+    }
+
+    class NumberReader {
+      +matches(char): Boolean
+      +read(stream, start): Token
+    }
+
+    class StringLiteralReader {
+      +matches(char): Boolean
+      +read(stream, start): Token
+    }
+
+    class SymbolReader {
+      -symbols: Map<Char, TokenType>
+      +matches(char): Boolean
+      +read(stream, start): Token
+    }
+  }
+}
+
+class RuntimeException
+
+' ===== relaciones =====
+Token "1" --> "1" TokenType : type
+Token "1" --> "2" Position : start / end
+
+ScriptError <|.. LexicalError
+RuntimeException <|-- LexicalError
+LexicalError ..> Position
+
+LexerInterface <|.. Lexer
+Lexer "1" o-- "1" CharStream
+Lexer "1" o-- "*" TokenReader : pregunta matches()\ny delega read()
+Lexer ..> Token : crea el EOF
+Lexer ..> LexicalError : lanza si ningun\nreader matchea
+
+TokenReader <|.. IdentifierReader
+TokenReader <|.. NumberReader
+TokenReader <|.. StringLiteralReader
+TokenReader <|.. SymbolReader
+
+IdentifierReader ..> LexerRules : isIdentifierStart / isIdentifierPart
+StringLiteralReader ..> LexerRules : isQuote
+StringLiteralReader ..> LexicalError : string sin cerrar
+TokenReader ..> Token : crea
+TokenReader ..> CharStream : consume
+
+CharStream ..> Position : crea
+LexerRules ..> TokenType : mapea
+
+@enduml
