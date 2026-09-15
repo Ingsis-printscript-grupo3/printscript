@@ -34,6 +34,7 @@ por módulo y el test de carga con heap acotado):
 | Componentes: los 10 módulos y sus dependencias | [`docs/componentes.puml`](docs/componentes.puml) |
 | Secuencia: cómo interactúan durante un `execute` | [`docs/secuencia-ejecucion.puml`](docs/secuencia-ejecucion.puml) |
 | Clases del lexer | [`docs/clases-lexer.puml`](docs/clases-lexer.puml) |
+| Clases del Registry (extensibilidad de semantic e interpreter) | [`docs/clases-registry.puml`](docs/clases-registry.puml) |
 | Flujo del intérprete | [`docs/flujo-interprete.puml`](docs/flujo-interprete.puml) |
 
 Están en PlantUML. Se ven con el plugin de PlantUML de IntelliJ, o pegando el contenido en
@@ -173,8 +174,13 @@ por defecto es la de `gradle.properties` (`0.0.1-SNAPSHOT`) y se pisa con `-Pver
 **A un repositorio local**, que es lo que se usa para probar contra el TCK:
 
 ```bash
-./gradlew publishToMavenLocal -Pversion=1.0.0
+./gradlew publishToMavenLocal "-Pversion=1.0.0"
 ```
+
+> Las comillas alrededor de `-Pversion=1.0.0` son necesarias en PowerShell: sin ellas,
+> interpreta el `=` como separador de argumentos y trunca el valor (`Task '.0.0' not found`).
+> En bash no hacen falta, pero tampoco molestan, así que quedan puestas en todos los
+> ejemplos de este documento.
 
 El `-Pversion` no es opcional acá: el fork del TCK pide `org.printscript:runner:1.0.0`, y sin
 esa opción se publicaría `0.0.1-SNAPSHOT` y no resolvería la dependencia. Los `.jar` quedan
@@ -190,7 +196,7 @@ Para publicar a mano hacen falta las variables de entorno `GITHUB_ACTOR` y `GITH
 con un token que tenga permiso `write:packages`:
 
 ```bash
-./gradlew publish -Pversion=1.0.1
+./gradlew publish "-Pversion=1.0.1"
 ```
 
 > GitHub Packages **no permite subir dos veces la misma versión**. La `1.0.0` ya está
@@ -203,7 +209,7 @@ El TCK de la cátedra vive en un repo aparte y se engancha a esta implementació
 
 ```bash
 # 1. publicar esta implementación en el repositorio local
-./gradlew publishToMavenLocal -Pversion=1.0.0
+./gradlew publishToMavenLocal "-Pversion=1.0.0"
 
 # 2. clonar el fork del grupo, en la rama de validación
 git clone -b group-3-validation https://github.com/Ingsis-printscript-grupo3/printscript-tck.git
