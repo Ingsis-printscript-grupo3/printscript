@@ -62,13 +62,26 @@ object VariableDeclarationHandler : StatementHandler {
         version: LanguageVersion,
     ): ASTResult<Token> {
         if (!stream.match(TokenType.NUMBERTYPE, TokenType.STRINGTYPE, TokenType.BOOLEANTYPE)) {
-            val errorToken = stream.peek()
-            val pos = errorToken?.start ?: checkNotNull(stream.previous()) { "the type follows a ':'" }.end
-            return ASTResult.Failure("Expected 'number', 'string' or 'boolean'.", pos, errorToken?.end ?: pos)
+            val message =
+                if (version == LanguageVersion.V1_0) {
+                    "Expected 'number' or 'string'."
+                } else {
+                    "Expected 'number', 'string' or 'boolean'."
+                }
+            return typeError(stream, message)
         }
         val typeToken = checkNotNull(stream.previous()) { "match consumed the type token" }
         VersionFeatures.unavailable(typeToken, version)?.let { return it }
         return ASTResult.Success(typeToken)
+    }
+
+    private fun typeError(
+        stream: TokenStream,
+        message: String,
+    ): ASTResult.Failure {
+        val errorToken = stream.peek()
+        val pos = errorToken?.start ?: checkNotNull(stream.previous()) { "the type follows a ':'" }.end
+        return ASTResult.Failure(message, pos, errorToken?.end ?: pos)
     }
 
     private fun parseInitializer(

@@ -10,6 +10,7 @@ import printscript.ast.PrintCall
 import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
+import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
@@ -24,9 +25,14 @@ class ParserTest {
         value: String = "",
     ) = Token(type, pos(), pos(), value)
 
-    private fun parse(vararg tokens: Token): List<Statement> {
+    private fun parse(vararg tokens: Token): List<Statement> = parse(LanguageVersion.V1_1, *tokens)
+
+    private fun parse(
+        version: LanguageVersion,
+        vararg tokens: Token,
+    ): List<Statement> {
         val tokenList = tokens.toList() + createToken(TokenType.EOF)
-        val parser = Parser(tokenList.iterator())
+        val parser = Parser(tokenList.iterator(), version)
         return parser.parse().asSequence().map { result ->
             when (result) {
                 is ParseResult.Success -> result.statement
@@ -233,13 +239,140 @@ class ParserTest {
                     createToken(TokenType.LET),
                     createToken(TokenType.IDENTIFIER, "x"),
                     createToken(TokenType.COLON),
-                    // Inesperado, se esperaba number o string
                     createToken(TokenType.ASSIGN),
                     createToken(TokenType.NUMBERLITERAL, "5"),
                     createToken(TokenType.SEMICOLON),
                 )
             }
         assert(exception.message.contains("Expected 'number', 'string' or 'boolean'"))
+    }
+
+    @Test
+    fun `fails when the declaration has no type in version 1_0`() {
+        // let x: = 5;
+        val exception =
+            assertThrows<SyntaxError> {
+                parse(
+                    LanguageVersion.V1_0,
+                    createToken(TokenType.LET),
+                    createToken(TokenType.IDENTIFIER, "x"),
+                    createToken(TokenType.COLON),
+                    createToken(TokenType.ASSIGN),
+                    createToken(TokenType.NUMBERLITERAL, "5"),
+                    createToken(TokenType.SEMICOLON),
+                )
+            }
+        assert(exception.message.contains("Expected 'number' or 'string'."))
+    }
+
+    @Test
+    fun `fails when the declaration has an unknown type in version 1_0`() {
+        // let x: customType = 5;
+        val exception =
+            assertThrows<SyntaxError> {
+                parse(
+                    LanguageVersion.V1_0,
+                    createToken(TokenType.LET),
+                    createToken(TokenType.IDENTIFIER, "x"),
+                    createToken(TokenType.COLON),
+                    createToken(TokenType.IDENTIFIER, "customType"),
+                    createToken(TokenType.ASSIGN),
+                    createToken(TokenType.NUMBERLITERAL, "5"),
+                    createToken(TokenType.SEMICOLON),
+                )
+            }
+        assert(exception.message.contains("Expected 'number' or 'string'."))
+    }
+
+    @Test
+    fun `fails when the declaration has boolean type in version 1_0`() {
+        // let x: boolean = true;
+        val exception =
+            assertThrows<SyntaxError> {
+                parse(
+                    LanguageVersion.V1_0,
+                    createToken(TokenType.LET),
+                    createToken(TokenType.IDENTIFIER, "x"),
+                    createToken(TokenType.COLON),
+                    createToken(TokenType.BOOLEANTYPE, "boolean"),
+                    createToken(TokenType.SEMICOLON),
+                )
+            }
+        assert(exception.message.contains("'boolean type' requires PrintScript 1.1, but version 1.0 was requested."))
+    }
+
+    @Test
+    fun `fails when the declaration has an unknown type in version 1_1`() {
+        // let x: customType = 5;
+        val exception =
+            assertThrows<SyntaxError> {
+                parse(
+                    LanguageVersion.V1_1,
+                    createToken(TokenType.LET),
+                    createToken(TokenType.IDENTIFIER, "x"),
+                    createToken(TokenType.COLON),
+                    createToken(TokenType.IDENTIFIER, "customType"),
+                    createToken(TokenType.ASSIGN),
+                    createToken(TokenType.NUMBERLITERAL, "5"),
+                    createToken(TokenType.SEMICOLON),
+                )
+            }
+        assert(exception.message.contains("Expected 'number', 'string' or 'boolean'."))
+    }
+
+    @Test
+    fun `parses number and string variable declarations in version 1_0`() {
+        val statements =
+            parse(
+                LanguageVersion.V1_0,
+                createToken(TokenType.LET),
+                createToken(TokenType.IDENTIFIER, "n"),
+                createToken(TokenType.COLON),
+                createToken(TokenType.NUMBERTYPE, "number"),
+                createToken(TokenType.SEMICOLON),
+                createToken(TokenType.LET),
+                createToken(TokenType.IDENTIFIER, "s"),
+                createToken(TokenType.COLON),
+                createToken(TokenType.STRINGTYPE, "string"),
+                createToken(TokenType.SEMICOLON),
+            )
+        assertEquals(2, statements.size)
+    }
+
+    @Test
+    fun `fails when input ends immediately after colon without EOF token in version 1_0`() {
+        val colon = Token(TokenType.COLON, Position(1, 7), Position(1, 8), ":")
+        val tokens =
+            listOf(
+                Token(TokenType.LET, Position(1, 1), Position(1, 4), "let"),
+                Token(TokenType.IDENTIFIER, Position(1, 5), Position(1, 6), "x"),
+                colon,
+            )
+        val parser = Parser(tokens.iterator(), LanguageVersion.V1_0)
+        val results = parser.parse().asSequence().toList()
+        assertEquals(1, results.size)
+        val failure = results[0] as ParseResult.Failure
+        assertEquals("Expected 'number' or 'string'.", failure.message)
+        assertEquals(Position(1, 8), failure.start)
+        assertEquals(Position(1, 8), failure.end)
+    }
+
+    @Test
+    fun `fails when input ends immediately after colon without EOF token in version 1_1`() {
+        val colon = Token(TokenType.COLON, Position(1, 7), Position(1, 8), ":")
+        val tokens =
+            listOf(
+                Token(TokenType.LET, Position(1, 1), Position(1, 4), "let"),
+                Token(TokenType.IDENTIFIER, Position(1, 5), Position(1, 6), "x"),
+                colon,
+            )
+        val parser = Parser(tokens.iterator(), LanguageVersion.V1_1)
+        val results = parser.parse().asSequence().toList()
+        assertEquals(1, results.size)
+        val failure = results[0] as ParseResult.Failure
+        assertEquals("Expected 'number', 'string' or 'boolean'.", failure.message)
+        assertEquals(Position(1, 8), failure.start)
+        assertEquals(Position(1, 8), failure.end)
     }
 
     @Test
