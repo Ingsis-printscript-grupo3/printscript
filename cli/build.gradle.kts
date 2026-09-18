@@ -6,6 +6,7 @@ plugins {
 dependencies {
     implementation(project(":runner"))
     implementation(project(":common"))
+    implementation(project(":ast"))
     implementation(project(":interpreter"))
     implementation(project(":formatter"))
     implementation(project(":linter"))
