@@ -28,10 +28,16 @@ internal inline fun runCatchingErrors(block: () -> Unit): ErrorInfo? =
         describe(e)
     }
 
+// PREASIGNADOS A PROPOSITO: cuando salta un OutOfMemoryError ya no queda memoria para crear el objeto
+// que lo reporta. Si los construis en el momento, el reporte puede tirar un segundo OOM y el usuario
+// se queda sin mensaje. El TCK ejerce este caso con un heap de 6m (InterpreterLargeFileTest).
+private val OUT_OF_MEMORY = ErrorInfo("OutOfMemory", "Java heap space")
+private val OUT_OF_MEMORY_RESULT = ExecutionResult.Failure("OutOfMemory", "Java heap space")
+
 // un solo lugar que traduce la excepcion de cada capa al error que entiende el cli
 internal fun describe(error: Throwable): ErrorInfo =
     when (error) {
-        is OutOfMemoryError -> ErrorInfo("OutOfMemory", "Java heap space")
+        is OutOfMemoryError -> OUT_OF_MEMORY
         is LexicalError -> ErrorInfo("Lexical", error.message, error.start, error.end)
         is SyntaxError -> ErrorInfo("Syntax", error.message, error.start, error.end)
         is SemanticError -> ErrorInfo("Semantic", error.message, error.start, error.end)
@@ -42,7 +48,12 @@ internal fun describe(error: Throwable): ErrorInfo =
 // ejecutar, formatear y lintear son operaciones distintas, y cada una devuelve su propio resultado
 
 internal fun ErrorInfo?.asExecutionResult(): ExecutionResult =
-    if (this == null) ExecutionResult.Success else ExecutionResult.Failure(type, message, start, end)
+    when {
+        this == null -> ExecutionResult.Success
+        // el caso sin memoria usa el resultado ya construido, por lo mismo que arriba
+        this === OUT_OF_MEMORY -> OUT_OF_MEMORY_RESULT
+        else -> ExecutionResult.Failure(type, message, start, end)
+    }
 
 internal fun ErrorInfo?.asFormatResult(): FormatResult =
     if (this == null) FormatResult.Success else FormatResult.Failure(type, message, start, end)
