@@ -208,10 +208,11 @@ private fun formatError(
     start: Position?,
     end: Position?,
 ): String =
-    if (start == null || end == null) {
-        "Error $type: $message"
-    } else {
-        "[${start.line}:${start.column}-${end.line}:${end.column}] $type: $message"
+    when {
+        start == null || end == null -> "Error $type: $message"
+        // un error de un solo punto no repite la posicion dos veces
+        start == end -> "[${start.line}:${start.column}] $type: $message"
+        else -> "[${start.line}:${start.column}-${end.line}:${end.column}] $type: $message"
     }
 
 fun main(args: Array<String>) =

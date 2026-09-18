@@ -14,6 +14,7 @@ import printscript.ast.ReadInput
 import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
+import printscript.common.Position
 import printscript.common.TokenType
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.QueueInput
@@ -391,5 +392,20 @@ class Interpreter11Test {
             }
 
         assertEquals("x", error.name)
+    }
+
+    // la posicion es la del identificador que no existe, no la del println que lo contiene
+    @Test
+    fun `an undeclared variable error points at the identifier`() {
+        val interpreter = InterpreterFactory.create11()
+        val missing = Identifier("x", Position(4, 9))
+
+        val error =
+            assertFailsWith<UndeclaredVariableError> {
+                interpreter.interpret(listOf(PrintCall(missing, Position(4, 1))).iterator())
+            }
+
+        assertEquals(Position(4, 9), error.start)
+        assertEquals(error.start, error.end)
     }
 }

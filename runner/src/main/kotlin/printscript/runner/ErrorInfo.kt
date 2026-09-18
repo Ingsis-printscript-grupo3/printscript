@@ -35,7 +35,7 @@ internal fun describe(error: Throwable): ErrorInfo =
         is LexicalError -> ErrorInfo("Lexical", error.message, error.start, error.end)
         is SyntaxError -> ErrorInfo("Syntax", error.message, error.start, error.end)
         is SemanticError -> ErrorInfo("Semantic", error.message, error.start, error.end)
-        is InterpreterError -> ErrorInfo("Runtime", error.message ?: "Interpreter error")
+        is InterpreterError -> ErrorInfo("Runtime", error.message, error.start, error.end)
         else -> ErrorInfo("Internal", error.message ?: "Unknown error")
     }
 
