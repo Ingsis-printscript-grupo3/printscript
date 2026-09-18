@@ -63,12 +63,12 @@ class Engine(
 ) {
     fun execute(
         code: String,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
     ): ExecutionResult = execute(StringReader(code), languageVersion)
 
     fun execute(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
     ): ExecutionResult =
         runCatchingErrors {
             val interpreter = InterpreterFactory.create(languageVersion, output, input, env)
@@ -77,13 +77,13 @@ class Engine(
 
     fun validate(
         code: String,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
     ): ExecutionResult = validate(StringReader(code), languageVersion)
 
     // validar es correr el pipeline entero sin interpretar: alcanza con recorrer los statements
     fun validate(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
     ): ExecutionResult =
         runCatchingErrors {
             consume(analyzedStatements(reader, languageVersion, onProgress))
@@ -95,7 +95,7 @@ class Engine(
      */
     fun format(
         openReader: () -> Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
         format: (Iterator<Token>) -> Unit,
     ): FormatResult =
         runCatchingErrors {
@@ -106,7 +106,7 @@ class Engine(
     // el linter trabaja sobre el ast crudo: no necesita el chequeo semantico
     fun lint(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
         lint: (Iterator<Statement>) -> Unit,
     ): LintResult =
         runCatchingErrors {

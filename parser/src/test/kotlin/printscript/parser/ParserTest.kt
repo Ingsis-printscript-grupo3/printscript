@@ -10,6 +10,7 @@ import printscript.ast.PrintCall
 import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
+import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
@@ -24,9 +25,12 @@ class ParserTest {
         value: String = "",
     ) = Token(type, pos(), pos(), value)
 
-    private fun parse(vararg tokens: Token): List<Statement> {
+    private fun parse(
+        vararg tokens: Token,
+        version: LanguageVersion = LanguageVersion.DEFAULT,
+    ): List<Statement> {
         val tokenList = tokens.toList() + createToken(TokenType.EOF)
-        val parser = Parser(tokenList.iterator())
+        val parser = Parser(tokenList.iterator(), version)
         return parser.parse().asSequence().map { result ->
             when (result) {
                 is ParseResult.Success -> result.statement
@@ -286,6 +290,7 @@ class ParserTest {
                     createToken(TokenType.STRINGLITERAL, "a"),
                     // falta el RIGHTPAREN que cierra readInput
                     createToken(TokenType.SEMICOLON),
+                    version = LanguageVersion.V1_1,
                 )
             }
 

@@ -12,7 +12,7 @@ object DefaultExpressionParselets {
             TokenType.DIVIDE to BinaryOperatorParselet(precedence = 2),
         )
 
-    fun prefix(version: LanguageVersion = LanguageVersion.V1_1): Map<TokenType, PrefixParselet> =
+    fun prefix(version: LanguageVersion = LanguageVersion.DEFAULT): Map<TokenType, PrefixParselet> =
         when (version) {
             LanguageVersion.V1_0 -> prefix10
             LanguageVersion.V1_1 -> prefix10 + prefix11

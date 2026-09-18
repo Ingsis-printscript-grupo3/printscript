@@ -12,7 +12,7 @@ import printscript.parser.stream.TokenStream
 
 class Parser(
     tokens: Iterator<Token>,
-    version: LanguageVersion = LanguageVersion.V1_1,
+    version: LanguageVersion = LanguageVersion.DEFAULT,
 ) : ParserInterface {
     private val stream = TokenStream(tokens)
     private val expressionParser =

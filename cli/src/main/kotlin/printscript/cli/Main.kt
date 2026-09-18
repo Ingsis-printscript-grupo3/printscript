@@ -24,7 +24,6 @@ import printscript.runner.LintResult
 import java.io.Writer
 
 private val SUPPORTED_VERSIONS = LanguageVersion.entries.joinToString(", ") { it.label }
-private const val DEFAULT_VERSION = "1.0"
 
 // sin --config se aplican las reglas que la consigna pide siempre
 private val DEFAULT_FORMATTER_RULES =
@@ -180,7 +179,7 @@ private fun CliktCommand.versionOption() =
     option(
         "--version",
         help = "Version of the PrintScript language to use. Supported: $SUPPORTED_VERSIONS.",
-    ).default(DEFAULT_VERSION)
+    ).default(LanguageVersion.DEFAULT.label)
 
 private fun CliktCommand.requireSupportedVersion(version: String): LanguageVersion =
     runCatching { LanguageVersion.parse(version) }

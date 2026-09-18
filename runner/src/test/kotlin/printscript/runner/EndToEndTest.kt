@@ -295,4 +295,21 @@ class EndToEndTest {
 
         assertEquals(once, formatOnce(once))
     }
+
+    // el Engine defaulteaba a 1.1 mientras el CLI defaulteaba a 1.0: ahora los dos salen de
+    // LanguageVersion.DEFAULT, asi que sin version explicita corre el lenguaje mas chico
+    @Test
+    fun `without an explicit version the engine runs the conservative one`() {
+        val code =
+            """
+            if (true) {
+                println(1);
+            }
+            """.trimIndent()
+
+        val (result, _) = runEngine(code)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertTrue(result.message.contains("1.1"))
+    }
 }

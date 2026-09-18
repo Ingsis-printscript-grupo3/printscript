@@ -13,7 +13,7 @@ class StatementParser(
     private val stream: TokenStream,
     private val expressionParser: ExpressionParser,
     private val handlers: Map<TokenType, StatementHandler> = DefaultStatementHandlers.map(),
-    val version: LanguageVersion = LanguageVersion.V1_1,
+    val version: LanguageVersion = LanguageVersion.DEFAULT,
 ) {
     fun parseStatement(): ASTResult<Statement> {
         val token = stream.peek()
