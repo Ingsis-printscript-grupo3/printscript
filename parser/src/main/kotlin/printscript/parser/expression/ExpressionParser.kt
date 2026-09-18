@@ -40,7 +40,8 @@ class ExpressionParser(
     private fun parsePrimary(): ASTResult<Expression> {
         val token = stream.peek()
         if (token == null) {
-            val pos = stream.previous()?.end ?: Position(0, 0)
+            // sin token previo estamos al principio del archivo
+            val pos = stream.previous()?.end ?: Position(1, 1)
             return ASTResult.Failure("Expected a value or expression.", pos, pos)
         }
 

@@ -57,7 +57,8 @@ class TokenStream(private val tokens: Iterator<Token>) {
             if (token != null) return ASTResult.Success(token)
         }
         val errorToken = peek()
-        val pos = errorToken?.start ?: previousToken?.end ?: Position(0, 0)
+        // sin token previo estamos al principio del archivo
+        val pos = errorToken?.start ?: previousToken?.end ?: Position(1, 1)
         return ASTResult.Failure(errorMessage, pos, errorToken?.end ?: pos)
     }
 }

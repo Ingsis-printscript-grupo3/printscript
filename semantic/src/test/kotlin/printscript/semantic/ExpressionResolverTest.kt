@@ -10,11 +10,15 @@ import printscript.ast.ReadInput
 import printscript.ast.StringLiteral
 import printscript.ast.registry.Registry
 import printscript.common.LanguageVersion
+import printscript.common.Position
 import printscript.common.TokenType
 import printscript.semantic.symbol.SymbolTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+
+// posicion de mentira: estos tests miran el resultado, no donde ocurrio
+private val AT = Position(1, 1)
 
 class ExpressionResolverTest {
     private fun resolver(
@@ -39,7 +43,7 @@ class ExpressionResolverTest {
     @Test
     fun `resolves a declared identifier to its declared type`() {
         val symbolTable = SymbolTable()
-        symbolTable.define("a", "number")
+        symbolTable.define("a", "number", at = AT)
 
         val result = resolver(symbolTable).resolveType(Identifier("a"))
 
@@ -217,7 +221,7 @@ class ExpressionResolverTest {
     @Test
     fun `resolves readInput when argument is a string variable from symbol table`() {
         val table = SymbolTable()
-        table.define("prompt", "string")
+        table.define("prompt", "string", at = AT)
         val result = resolver(table).resolveType(ReadInput(Identifier("prompt")))
         assertEquals(SemanticResult.Success("string"), result)
     }

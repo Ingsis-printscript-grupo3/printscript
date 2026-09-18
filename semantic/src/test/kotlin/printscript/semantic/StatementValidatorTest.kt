@@ -24,6 +24,9 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
+// posicion de mentira: estos tests miran el resultado, no donde ocurrio
+private val AT = Position(1, 1)
+
 class StatementValidatorTest {
     private fun validator(
         symbolTable: SymbolTable = SymbolTable(),
@@ -369,7 +372,7 @@ class StatementValidatorTest {
         assertIs<SemanticResult.Failure>(result)
 
         // Scope was properly exited: temp variable no longer exists
-        val lookup = symbolTable.lookup("temp")
+        val lookup = symbolTable.lookup("temp", at = AT)
         assertIs<SemanticResult.Failure>(lookup)
 
         // We are at root scope: attempting to exit root scope throws exception
@@ -453,7 +456,7 @@ class StatementValidatorTest {
         val types = listOf("number", "string", "boolean")
         for (type in types) {
             val table = SymbolTable()
-            table.define("x", type)
+            table.define("x", type, at = AT)
             val v = validator(table)
             val assign = Assignment("x", ReadInput(StringLiteral("prompt:")))
             val result = v.validate(assign)
@@ -464,7 +467,7 @@ class StatementValidatorTest {
     @Test
     fun `assigning readEnv to a declared variable infers variable type`() {
         val table = SymbolTable()
-        table.define("port", "number")
+        table.define("port", "number", at = AT)
         val v = validator(table)
         val assign = Assignment("port", ReadEnv(StringLiteral("PORT")))
         val result = v.validate(assign)
@@ -496,7 +499,7 @@ class StatementValidatorTest {
     @Test
     fun `assigning readInput with non-string argument fails and propagates failure`() {
         val table = SymbolTable()
-        table.define("x", "string")
+        table.define("x", "string", at = AT)
         val v = validator(table)
         val assign = Assignment("x", ReadInput(BooleanLiteral(false)))
         val result = v.validate(assign)

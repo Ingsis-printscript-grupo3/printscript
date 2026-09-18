@@ -18,7 +18,8 @@ class StatementParser(
     fun parseStatement(): ASTResult<Statement> {
         val token = stream.peek()
         if (token == null) {
-            val pos = stream.previous()?.end ?: Position(0, 0)
+            // sin token previo estamos al principio del archivo
+            val pos = stream.previous()?.end ?: Position(1, 1)
             return ASTResult.Failure("Unexpected end of input.", pos, pos)
         }
 
