@@ -24,7 +24,7 @@ class ExpressionResolverTest {
     private fun resolver(
         symbolTable: SymbolTable = SymbolTable(),
         version: LanguageVersion = LanguageVersion.V1_1,
-    ) = ExpressionResolver(symbolTable, version)
+    ) = ExpressionResolver(symbolTable, SemanticRules.from(version))
 
     @Test
     fun `resolves number literals`() {
@@ -98,7 +98,12 @@ class ExpressionResolverTest {
     @Test
     fun `an expression with no handler registered fails explicitly with the node position`() {
         val emptyRegistry = Registry<Expression, ExpressionResolver, SemanticResult<String>>()
-        val resolver = ExpressionResolver(SymbolTable(), LanguageVersion.V1_1, emptyRegistry)
+        val resolver =
+            ExpressionResolver(
+                SymbolTable(),
+                SemanticRules.from(LanguageVersion.V1_1),
+                registry = emptyRegistry,
+            )
         val node = NumberLiteral(1.0, printscript.common.Position(4, 2))
 
         val result = resolver.resolveType(node)

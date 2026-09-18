@@ -36,14 +36,14 @@ object InterpreterFactory {
             LanguageVersion.V1_1 -> create11(output, input, env)
         }
 
-    fun create(
-        version: String,
-        output: Output = ConsoleOutput(),
-        input: InputProvider = ConsoleInput(),
-        env: EnvProvider = SystemEnvProvider(),
-    ): Interpreter = create(LanguageVersion.parse(version), output, input, env)
-
-    fun create10(output: Output = ConsoleOutput()): Interpreter = Interpreter(output)
+    // el interprete decide por version QUE handlers registra: si le llega un nodo que su version
+    // no conoce, corta con UnknownStatementError. Es al reves del semantico, que registra siempre los
+    // mismos y pone la diferencia en los datos (ver SemanticRules)
+    fun create10(output: Output = ConsoleOutput()): Interpreter =
+        Interpreter(
+            statementInterpreters = default10StatementInterpreters(output),
+            expressionEvaluators = default10ExpressionEvaluators(),
+        )
 
     fun create11(
         output: Output = ConsoleOutput(),
@@ -55,21 +55,21 @@ object InterpreterFactory {
             expressionEvaluators = default11ExpressionEvaluators(input, env),
         )
 
-    fun default10StatementInterpreters(output: Output): List<Handler<Statement, InterpreterContext, Unit>> =
+    internal fun default10StatementInterpreters(output: Output): List<Handler<Statement, InterpreterContext, Unit>> =
         listOf(
             VariableDeclarationInterpreter(),
             AssignmentInterpreter(),
             PrintCallInterpreter(output),
         )
 
-    fun default11StatementInterpreters(output: Output): List<Handler<Statement, InterpreterContext, Unit>> =
+    internal fun default11StatementInterpreters(output: Output): List<Handler<Statement, InterpreterContext, Unit>> =
         default10StatementInterpreters(output) +
             listOf(
                 IfStatementInterpreter(),
                 BlockInterpreter(),
             )
 
-    fun default10ExpressionEvaluators(): List<Handler<Expression, InterpreterContext, Value>> =
+    internal fun default10ExpressionEvaluators(): List<Handler<Expression, InterpreterContext, Value>> =
         listOf(
             NumberLiteralEvaluator(),
             StringLiteralEvaluator(),
@@ -77,7 +77,7 @@ object InterpreterFactory {
             BinaryExpressionEvaluator(),
         )
 
-    fun default11ExpressionEvaluators(
+    internal fun default11ExpressionEvaluators(
         input: InputProvider,
         env: EnvProvider,
     ): List<Handler<Expression, InterpreterContext, Value>> =

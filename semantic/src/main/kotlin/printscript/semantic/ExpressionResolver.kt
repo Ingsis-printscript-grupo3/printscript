@@ -3,7 +3,6 @@ package printscript.semantic
 import printscript.ast.Expression
 import printscript.ast.registry.Handler
 import printscript.ast.registry.Registry
-import printscript.common.LanguageVersion
 import printscript.semantic.handler.expression.BinaryExpressionHandler
 import printscript.semantic.handler.expression.BooleanLiteralHandler
 import printscript.semantic.handler.expression.IdentifierHandler
@@ -20,15 +19,6 @@ class ExpressionResolver(
     private val registry: Registry<Expression, ExpressionResolver, SemanticResult<String>> =
         Registry(defaultHandlers()),
 ) {
-    val version: LanguageVersion get() = rules.version
-
-    constructor(
-        symbolTable: SymbolTable,
-        version: LanguageVersion,
-        registry: Registry<Expression, ExpressionResolver, SemanticResult<String>> =
-            Registry(defaultHandlers()),
-    ) : this(symbolTable, SemanticRules.from(version), null, registry)
-
     companion object {
         fun defaultHandlers(): List<Handler<Expression, ExpressionResolver, SemanticResult<String>>> =
             listOf(

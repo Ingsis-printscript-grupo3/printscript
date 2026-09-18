@@ -31,7 +31,10 @@ class StatementValidatorTest {
     private fun validator(
         symbolTable: SymbolTable = SymbolTable(),
         version: LanguageVersion = LanguageVersion.V1_1,
-    ) = StatementValidator(symbolTable, ExpressionResolver(symbolTable, version), version)
+    ): StatementValidator {
+        val rules = SemanticRules.from(version)
+        return StatementValidator(symbolTable, ExpressionResolver(symbolTable, rules), rules)
+    }
 
     @Test
     fun `declaring a variable without an initializer succeeds`() {
@@ -153,8 +156,8 @@ class StatementValidatorTest {
         val validator =
             StatementValidator(
                 symbolTable,
-                ExpressionResolver(symbolTable, LanguageVersion.V1_1),
-                LanguageVersion.V1_1,
+                ExpressionResolver(symbolTable, SemanticRules.from(LanguageVersion.V1_1)),
+                SemanticRules.from(LanguageVersion.V1_1),
                 emptyRegistry,
             )
         val node = PrintCall(NumberLiteral(1.0), Position(9, 1))

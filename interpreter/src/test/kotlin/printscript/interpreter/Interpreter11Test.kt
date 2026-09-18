@@ -41,19 +41,11 @@ class Interpreter11Test {
 
     @Test
     fun `factory creates 1_0 and 1_1 interpreters`() {
-        val interp10 = InterpreterFactory.create("1.0")
-        val interp11 = InterpreterFactory.create("1.1")
-        val interp10Enum = InterpreterFactory.create(printscript.common.LanguageVersion.V1_0)
-        val interp11Enum = InterpreterFactory.create(printscript.common.LanguageVersion.V1_1)
+        val interp10 = InterpreterFactory.create(printscript.common.LanguageVersion.V1_0)
+        val interp11 = InterpreterFactory.create(printscript.common.LanguageVersion.V1_1)
 
         assertNotNull(interp10)
         assertNotNull(interp11)
-        assertNotNull(interp10Enum)
-        assertNotNull(interp11Enum)
-
-        assertFailsWith<IllegalArgumentException> {
-            InterpreterFactory.create("2.0")
-        }
     }
 
     @Test
