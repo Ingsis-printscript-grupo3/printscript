@@ -1,363 +1,191 @@
 package printscript.parser.expression
 
 import org.junit.jupiter.api.Test
-import printscript.ast.BinaryExpression
-import printscript.ast.Expression
-import printscript.ast.Identifier
-import printscript.ast.NumberLiteral
-import printscript.common.Position
-import printscript.common.Token
 import printscript.common.TokenType
-import printscript.parser.result.ASTResult
-import printscript.parser.stream.TokenStream
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.test.assertTrue
 
 class UnaryMinusEdgeCasesTest {
-    private fun pos(
-        line: Int = 1,
-        column: Int = 1,
-    ) = Position(line, column)
-
-    private fun token(
-        type: TokenType,
-        value: String = "",
-        line: Int = 1,
-        column: Int = 1,
-    ) = Token(type, pos(line, column), Position(line, column + value.length), value)
-
-    private fun parseExpression(vararg tokens: Token): ASTResult<Expression> {
-        val tokenList = tokens.toList() + token(TokenType.EOF)
-        val stream = TokenStream(tokenList.iterator())
-        val expressionParser = ExpressionParser(stream)
-        return expressionParser.parseExpression()
-    }
-
-    private fun parseExpressionSuccess(vararg tokens: Token): Expression {
-        val result = parseExpression(*tokens)
-        assertIs<ASTResult.Success<*>>(result)
-        return result.value as Expression
-    }
-
     @Test
-    fun `constant folding on negative zero literal`() {
-        val expr =
-            parseExpressionSuccess(
-                token(TokenType.MINUS, "-"),
-                token(TokenType.NUMBERLITERAL, "0"),
-            )
-
-        assertIs<NumberLiteral>(expr)
-        assertEquals(0.0, expr.value)
-    }
-
-    @Test
-    fun `constant folding on negative zero float literal`() {
-        val expr =
-            parseExpressionSuccess(
-                token(TokenType.MINUS, "-"),
-                token(TokenType.NUMBERLITERAL, "0.0"),
-            )
-
-        assertIs<NumberLiteral>(expr)
-        assertEquals(0.0, expr.value)
+    fun `constant folding on negative zero literals`() {
+        listOf("0", "0.0").forEach { literal ->
+            val expr = parseExpressionSuccess(minusToken(), num(literal))
+            assertNumber(expr, 0.0)
+        }
     }
 
     @Test
     fun `desugaring on negative parenthesized numeric literal`() {
         // -(5)  =>  0.0 - 5.0
-        val expr =
-            parseExpressionSuccess(
-                token(TokenType.MINUS, "-"),
-                token(TokenType.LEFTPAREN, "("),
-                token(TokenType.NUMBERLITERAL, "5"),
-                token(TokenType.RIGHTPAREN, ")"),
-            )
-
-        assertIs<BinaryExpression>(expr)
-        assertEquals(TokenType.MINUS, expr.operator)
-        assertEquals(0.0, (expr.left as NumberLiteral).value)
-        assertEquals(5.0, (expr.right as NumberLiteral).value)
+        val expr = parseExpressionSuccess(minusToken(), lparenToken(), num("5"), rparenToken())
+        assertNumber(assertDesugaredMinus(expr), 5.0)
     }
 
     @Test
     fun `desugaring on negative parenthesized negative literal`() {
         // -(-5)  =>  0.0 - (-5.0)
-        val expr =
-            parseExpressionSuccess(
-                token(TokenType.MINUS, "-"),
-                token(TokenType.LEFTPAREN, "("),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.NUMBERLITERAL, "5"),
-                token(TokenType.RIGHTPAREN, ")"),
-            )
-
-        assertIs<BinaryExpression>(expr)
-        assertEquals(TokenType.MINUS, expr.operator)
-        assertEquals(0.0, (expr.left as NumberLiteral).value)
-        assertEquals(-5.0, (expr.right as NumberLiteral).value)
+        val expr = parseExpressionSuccess(minusToken(), lparenToken(), minusToken(), num("5"), rparenToken())
+        assertNumber(assertDesugaredMinus(expr), -5.0)
     }
 
     @Test
     fun `nested parenthesized negative variable`() {
         // -( -x )  =>  0.0 - (0.0 - x)
-        val expr =
-            parseExpressionSuccess(
-                token(TokenType.MINUS, "-"),
-                token(TokenType.LEFTPAREN, "("),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.IDENTIFIER, "x"),
-                token(TokenType.RIGHTPAREN, ")"),
-            )
-
-        assertIs<BinaryExpression>(expr)
-        assertEquals(TokenType.MINUS, expr.operator)
-        assertEquals(0.0, (expr.left as NumberLiteral).value)
-
-        val right = expr.right as BinaryExpression
-        assertEquals(TokenType.MINUS, right.operator)
-        assertEquals(0.0, (right.left as NumberLiteral).value)
-        assertEquals("x", (right.right as Identifier).name)
+        val expr = parseExpressionSuccess(minusToken(), lparenToken(), minusToken(), id("x"), rparenToken())
+        assertId(assertDesugaredMinus(assertDesugaredMinus(expr)), "x")
     }
 
     @Test
     fun `consecutive triple chained minus with numeric literal`() {
         // - - -5  =>  0.0 - (0.0 - (-5.0))
-        val expr =
-            parseExpressionSuccess(
-                token(TokenType.MINUS, "-"),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.NUMBERLITERAL, "5"),
-            )
-
-        assertIs<BinaryExpression>(expr)
-        assertEquals(TokenType.MINUS, expr.operator)
-        assertEquals(0.0, (expr.left as NumberLiteral).value)
-
-        val inner = expr.right as BinaryExpression
-        assertEquals(TokenType.MINUS, inner.operator)
-        assertEquals(0.0, (inner.left as NumberLiteral).value)
-        assertEquals(-5.0, (inner.right as NumberLiteral).value)
+        val expr = parseExpressionSuccess(minusToken(), minusToken(), minusToken(), num("5"))
+        assertNumber(assertDesugaredMinus(assertDesugaredMinus(expr)), -5.0)
     }
 
     @Test
     fun `consecutive triple chained minus with variable`() {
         // - - -x  =>  0.0 - (0.0 - (0.0 - x))
-        val expr =
-            parseExpressionSuccess(
-                token(TokenType.MINUS, "-"),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.IDENTIFIER, "x"),
-            )
-
-        assertIs<BinaryExpression>(expr)
-        assertEquals(TokenType.MINUS, expr.operator)
-
-        val second = expr.right as BinaryExpression
-        assertEquals(TokenType.MINUS, second.operator)
-
-        val third = second.right as BinaryExpression
-        assertEquals(TokenType.MINUS, third.operator)
-        assertEquals(0.0, (third.left as NumberLiteral).value)
-        assertEquals("x", (third.right as Identifier).name)
+        val expr = parseExpressionSuccess(minusToken(), minusToken(), minusToken(), id("x"))
+        assertId(assertDesugaredMinus(assertDesugaredMinus(assertDesugaredMinus(expr))), "x")
     }
 
     @Test
     fun `constant folded negative number in addition on left and right`() {
         // -5 + 3  =>  (-5.0) + 3.0
         val exprLeft =
-            parseExpressionSuccess(
-                token(TokenType.MINUS, "-"),
-                token(TokenType.NUMBERLITERAL, "5"),
-                token(TokenType.PLUS, "+"),
-                token(TokenType.NUMBERLITERAL, "3"),
+            assertBinary(
+                parseExpressionSuccess(minusToken(), num("5"), plusToken(), num("3")),
+                TokenType.PLUS,
             )
-        assertIs<BinaryExpression>(exprLeft)
-        assertEquals(TokenType.PLUS, exprLeft.operator)
-        assertEquals(-5.0, (exprLeft.left as NumberLiteral).value)
-        assertEquals(3.0, (exprLeft.right as NumberLiteral).value)
+        assertNumber(exprLeft.left, -5.0)
+        assertNumber(exprLeft.right, 3.0)
 
         // 3 + -5  =>  3.0 + (-5.0)
         val exprRight =
-            parseExpressionSuccess(
-                token(TokenType.NUMBERLITERAL, "3"),
-                token(TokenType.PLUS, "+"),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.NUMBERLITERAL, "5"),
+            assertBinary(
+                parseExpressionSuccess(num("3"), plusToken(), minusToken(), num("5")),
+                TokenType.PLUS,
             )
-        assertIs<BinaryExpression>(exprRight)
-        assertEquals(TokenType.PLUS, exprRight.operator)
-        assertEquals(3.0, (exprRight.left as NumberLiteral).value)
-        assertEquals(-5.0, (exprRight.right as NumberLiteral).value)
+        assertNumber(exprRight.left, 3.0)
+        assertNumber(exprRight.right, -5.0)
     }
 
     @Test
     fun `constant folded negative number in multiplication on left and right`() {
         // -5 * 3  =>  (-5.0) * 3.0
         val exprLeft =
-            parseExpressionSuccess(
-                token(TokenType.MINUS, "-"),
-                token(TokenType.NUMBERLITERAL, "5"),
-                token(TokenType.MULTIPLY, "*"),
-                token(TokenType.NUMBERLITERAL, "3"),
+            assertBinary(
+                parseExpressionSuccess(minusToken(), num("5"), multToken(), num("3")),
+                TokenType.MULTIPLY,
             )
-        assertIs<BinaryExpression>(exprLeft)
-        assertEquals(TokenType.MULTIPLY, exprLeft.operator)
-        assertEquals(-5.0, (exprLeft.left as NumberLiteral).value)
-        assertEquals(3.0, (exprLeft.right as NumberLiteral).value)
+        assertNumber(exprLeft.left, -5.0)
+        assertNumber(exprLeft.right, 3.0)
 
         // 3 * -5  =>  3.0 * (-5.0)
         val exprRight =
-            parseExpressionSuccess(
-                token(TokenType.NUMBERLITERAL, "3"),
-                token(TokenType.MULTIPLY, "*"),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.NUMBERLITERAL, "5"),
+            assertBinary(
+                parseExpressionSuccess(num("3"), multToken(), minusToken(), num("5")),
+                TokenType.MULTIPLY,
             )
-        assertIs<BinaryExpression>(exprRight)
-        assertEquals(TokenType.MULTIPLY, exprRight.operator)
-        assertEquals(3.0, (exprRight.left as NumberLiteral).value)
-        assertEquals(-5.0, (exprRight.right as NumberLiteral).value)
+        assertNumber(exprRight.left, 3.0)
+        assertNumber(exprRight.right, -5.0)
     }
 
     @Test
     fun `multiplication with negative variable on the right`() {
         // x * -y  =>  x * (0.0 - y)
         val expr =
-            parseExpressionSuccess(
-                token(TokenType.IDENTIFIER, "x"),
-                token(TokenType.MULTIPLY, "*"),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.IDENTIFIER, "y"),
+            assertBinary(
+                parseExpressionSuccess(id("x"), multToken(), minusToken(), id("y")),
+                TokenType.MULTIPLY,
             )
-
-        assertIs<BinaryExpression>(expr)
-        assertEquals(TokenType.MULTIPLY, expr.operator)
-        assertEquals("x", (expr.left as Identifier).name)
-
-        val right = expr.right as BinaryExpression
-        assertEquals(TokenType.MINUS, right.operator)
-        assertEquals(0.0, (right.left as NumberLiteral).value)
-        assertEquals("y", (right.right as Identifier).name)
+        assertId(expr.left, "x")
+        assertId(assertDesugaredMinus(expr.right), "y")
     }
 
     @Test
     fun `addition with negative variable on the right`() {
         // x + -y  =>  x + (0.0 - y)
         val expr =
-            parseExpressionSuccess(
-                token(TokenType.IDENTIFIER, "x"),
-                token(TokenType.PLUS, "+"),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.IDENTIFIER, "y"),
+            assertBinary(
+                parseExpressionSuccess(id("x"), plusToken(), minusToken(), id("y")),
+                TokenType.PLUS,
             )
-
-        assertIs<BinaryExpression>(expr)
-        assertEquals(TokenType.PLUS, expr.operator)
-        assertEquals("x", (expr.left as Identifier).name)
-
-        val right = expr.right as BinaryExpression
-        assertEquals(TokenType.MINUS, right.operator)
-        assertEquals(0.0, (right.left as NumberLiteral).value)
-        assertEquals("y", (right.right as Identifier).name)
+        assertId(expr.left, "x")
+        assertId(assertDesugaredMinus(expr.right), "y")
     }
 
     @Test
     fun `unary minus precedence with multiplication and addition`() {
         // x + -y * z  =>  x + ((0.0 - y) * z)
         val expr =
-            parseExpressionSuccess(
-                token(TokenType.IDENTIFIER, "x"),
-                token(TokenType.PLUS, "+"),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.IDENTIFIER, "y"),
-                token(TokenType.MULTIPLY, "*"),
-                token(TokenType.IDENTIFIER, "z"),
+            assertBinary(
+                parseExpressionSuccess(
+                    id("x"),
+                    plusToken(),
+                    minusToken(),
+                    id("y"),
+                    multToken(),
+                    id("z"),
+                ),
+                TokenType.PLUS,
             )
+        assertId(expr.left, "x")
 
-        assertIs<BinaryExpression>(expr)
-        assertEquals(TokenType.PLUS, expr.operator)
-        assertEquals("x", (expr.left as Identifier).name)
-
-        val right = expr.right as BinaryExpression
-        assertEquals(TokenType.MULTIPLY, right.operator)
-        assertEquals("z", (right.right as Identifier).name)
-
-        val innerMinus = right.left as BinaryExpression
-        assertEquals(TokenType.MINUS, innerMinus.operator)
-        assertEquals(0.0, (innerMinus.left as NumberLiteral).value)
-        assertEquals("y", (innerMinus.right as Identifier).name)
+        val right = assertBinary(expr.right, TokenType.MULTIPLY)
+        assertId(right.right, "z")
+        assertId(assertDesugaredMinus(right.left), "y")
     }
 
     @Test
     fun `addition and multiplication are left associative`() {
         // 1 + 2 + 3  =>  ((1 + 2) + 3)
         val addExpr =
-            parseExpressionSuccess(
-                token(TokenType.NUMBERLITERAL, "1"),
-                token(TokenType.PLUS, "+"),
-                token(TokenType.NUMBERLITERAL, "2"),
-                token(TokenType.PLUS, "+"),
-                token(TokenType.NUMBERLITERAL, "3"),
+            assertBinary(
+                parseExpressionSuccess(num("1"), plusToken(), num("2"), plusToken(), num("3")),
+                TokenType.PLUS,
             )
-        assertIs<BinaryExpression>(addExpr)
-        assertEquals(TokenType.PLUS, addExpr.operator)
-        assertEquals(3.0, (addExpr.right as NumberLiteral).value)
-        val addLeft = addExpr.left as BinaryExpression
-        assertEquals(1.0, (addLeft.left as NumberLiteral).value)
-        assertEquals(2.0, (addLeft.right as NumberLiteral).value)
+        assertNumber(addExpr.right, 3.0)
+        val addLeft = assertBinary(addExpr.left, TokenType.PLUS)
+        assertNumber(addLeft.left, 1.0)
+        assertNumber(addLeft.right, 2.0)
 
         // 2 * 3 * 4  =>  ((2 * 3) * 4)
         val mulExpr =
-            parseExpressionSuccess(
-                token(TokenType.NUMBERLITERAL, "2"),
-                token(TokenType.MULTIPLY, "*"),
-                token(TokenType.NUMBERLITERAL, "3"),
-                token(TokenType.MULTIPLY, "*"),
-                token(TokenType.NUMBERLITERAL, "4"),
+            assertBinary(
+                parseExpressionSuccess(num("2"), multToken(), num("3"), multToken(), num("4")),
+                TokenType.MULTIPLY,
             )
-        assertIs<BinaryExpression>(mulExpr)
-        assertEquals(TokenType.MULTIPLY, mulExpr.operator)
-        assertEquals(4.0, (mulExpr.right as NumberLiteral).value)
-        val mulLeft = mulExpr.left as BinaryExpression
-        assertEquals(2.0, (mulLeft.left as NumberLiteral).value)
-        assertEquals(3.0, (mulLeft.right as NumberLiteral).value)
+        assertNumber(mulExpr.right, 4.0)
+        val mulLeft = assertBinary(mulExpr.left, TokenType.MULTIPLY)
+        assertNumber(mulLeft.left, 2.0)
+        assertNumber(mulLeft.right, 3.0)
     }
 
     @Test
     fun `right-associative operator chaining across four operands`() {
         // a = b = c = d  =>  (a = (b = (c = d)))
         val rightAssoc = BinaryOperatorParselet(precedence = 25, isRightAssociative = true)
-        val tokens =
-            listOf(
-                token(TokenType.IDENTIFIER, "a"),
-                token(TokenType.ASSIGN, "="),
-                token(TokenType.IDENTIFIER, "b"),
-                token(TokenType.ASSIGN, "="),
-                token(TokenType.IDENTIFIER, "c"),
-                token(TokenType.ASSIGN, "="),
-                token(TokenType.IDENTIFIER, "d"),
-                token(TokenType.EOF),
+        val expr =
+            assertBinary(
+                parseExpressionSuccessWithInfix(
+                    mapOf(TokenType.ASSIGN to rightAssoc),
+                    id("a"),
+                    assignToken(),
+                    id("b"),
+                    assignToken(),
+                    id("c"),
+                    assignToken(),
+                    id("d"),
+                ),
+                TokenType.ASSIGN,
             )
-        val parser =
-            ExpressionParser(
-                stream = TokenStream(tokens.iterator()),
-                infixParselets = mapOf(TokenType.ASSIGN to rightAssoc),
-            )
+        assertId(expr.left, "a")
 
-        val result = parser.parseExpression()
-        assertIs<ASTResult.Success<*>>(result)
-        val expr = result.value as BinaryExpression
+        val bLevel = assertBinary(expr.right, TokenType.ASSIGN)
+        assertId(bLevel.left, "b")
 
-        assertEquals("a", (expr.left as Identifier).name)
-        val bLevel = expr.right as BinaryExpression
-        assertEquals("b", (bLevel.left as Identifier).name)
-        val cLevel = bLevel.right as BinaryExpression
-        assertEquals("c", (cLevel.left as Identifier).name)
-        assertEquals("d", (cLevel.right as Identifier).name)
+        val cLevel = assertBinary(bLevel.right, TokenType.ASSIGN)
+        assertId(cLevel.left, "c")
+        assertId(cLevel.right, "d")
     }
 
     @Test
@@ -365,92 +193,41 @@ class UnaryMinusEdgeCasesTest {
         // a = b + c  =>  (a = (b + c))
         val rightAssoc = BinaryOperatorParselet(precedence = 5, isRightAssociative = true)
         val leftAssocPlus = BinaryOperatorParselet(precedence = 10, isRightAssociative = false)
-        val tokens =
-            listOf(
-                token(TokenType.IDENTIFIER, "a"),
-                token(TokenType.ASSIGN, "="),
-                token(TokenType.IDENTIFIER, "b"),
-                token(TokenType.PLUS, "+"),
-                token(TokenType.IDENTIFIER, "c"),
-                token(TokenType.EOF),
-            )
-        val parser =
-            ExpressionParser(
-                stream = TokenStream(tokens.iterator()),
-                infixParselets =
+        val expr =
+            assertBinary(
+                parseExpressionSuccessWithInfix(
                     mapOf(
                         TokenType.ASSIGN to rightAssoc,
                         TokenType.PLUS to leftAssocPlus,
                     ),
+                    id("a"),
+                    assignToken(),
+                    id("b"),
+                    plusToken(),
+                    id("c"),
+                ),
+                TokenType.ASSIGN,
             )
+        assertId(expr.left, "a")
 
-        val result = parser.parseExpression()
-        assertIs<ASTResult.Success<*>>(result)
-        val expr = result.value as BinaryExpression
-
-        assertEquals(TokenType.ASSIGN, expr.operator)
-        assertEquals("a", (expr.left as Identifier).name)
-        val right = expr.right as BinaryExpression
-        assertEquals(TokenType.PLUS, right.operator)
-        assertEquals("b", (right.left as Identifier).name)
-        assertEquals("c", (right.right as Identifier).name)
+        val right = assertBinary(expr.right, TokenType.PLUS)
+        assertId(right.left, "b")
+        assertId(right.right, "c")
     }
 
     @Test
-    fun `fails on consecutive minuses ending at EOF`() {
-        // - -
-        val result =
-            parseExpression(
-                token(TokenType.MINUS, "-"),
-                token(TokenType.MINUS, "-"),
-            )
-
-        assertIs<ASTResult.Failure>(result)
-        assertTrue(result.message.contains("Expected a value or expression"))
-    }
-
-    @Test
-    fun `fails on unary minus followed by division`() {
-        // - / 5
-        val result =
-            parseExpression(
-                token(TokenType.MINUS, "-"),
-                token(TokenType.DIVIDE, "/"),
-                token(TokenType.NUMBERLITERAL, "5"),
-            )
-
-        assertIs<ASTResult.Failure>(result)
-        assertTrue(result.message.contains("Expected a value or expression"))
-    }
-
-    @Test
-    fun `fails on double trailing unary minus after addition`() {
-        // 5 + - -
-        val result =
-            parseExpression(
-                token(TokenType.NUMBERLITERAL, "5"),
-                token(TokenType.PLUS, "+"),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.MINUS, "-"),
-            )
-
-        assertIs<ASTResult.Failure>(result)
-        assertTrue(result.message.contains("Expected a value or expression"))
-    }
-
-    @Test
-    fun `fails on trailing unary minus inside parenthesized expression`() {
-        // ( 5 + - )
-        val result =
-            parseExpression(
-                token(TokenType.LEFTPAREN, "("),
-                token(TokenType.NUMBERLITERAL, "5"),
-                token(TokenType.PLUS, "+"),
-                token(TokenType.MINUS, "-"),
-                token(TokenType.RIGHTPAREN, ")"),
-            )
-
-        assertIs<ASTResult.Failure>(result)
-        assertTrue(result.message.contains("Expected a value or expression"))
+    fun `fails on invalid or trailing unary minus edge cases`() {
+        listOf(
+            // - -
+            arrayOf(minusToken(), minusToken()),
+            // - / 5
+            arrayOf(minusToken(), divToken(), num("5")),
+            // 5 + - -
+            arrayOf(num("5"), plusToken(), minusToken(), minusToken()),
+            // ( 5 + - )
+            arrayOf(lparenToken(), num("5"), plusToken(), minusToken(), rparenToken()),
+        ).forEach { tokens ->
+            assertParseFailure(*tokens)
+        }
     }
 }
