@@ -1,0 +1,7 @@
+const activo: boolean = true;
+if (activo) {
+  println("entro al if");
+} else {
+  println("entro al else");
+}
+println("afuera");

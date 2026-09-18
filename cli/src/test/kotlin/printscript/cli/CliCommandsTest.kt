@@ -122,6 +122,19 @@ class CliCommandsTest {
     }
 
     @Test
+    fun `analyze reports an invalid config as an error instead of crashing`() {
+        val file = prsFile("let saludo: string = \"hola\";\n")
+        val config = File.createTempFile("printscript-cli-test-linter-rules", ".json")
+        tempFiles += config
+        config.writeText("""{"identifier_format": "kebab case"}""")
+
+        val result = AnalyzeCommand().test(listOf(file.path, "--config", config.path))
+
+        assertEquals(1, result.statusCode)
+        assertTrue(result.stderr.contains("Error Config:"))
+    }
+
+    @Test
     fun `format prints the formatted code without touching the original file`() {
         val originalCode = "let   total :number=1+2;println(total);\n"
         val file = prsFile(originalCode)
@@ -157,6 +170,19 @@ class CliCommandsTest {
     }
 
     @Test
+    fun `format reports an invalid config as an error instead of crashing`() {
+        val file = prsFile("let saludo: string = \"hola\";\n")
+        val config = File.createTempFile("printscript-cli-test-rules", ".json")
+        tempFiles += config
+        config.writeText("""{"enforce-spacing-around-equals": "si"}""")
+
+        val result = FormatCommand().test(listOf(file.path, "--config", config.path))
+
+        assertEquals(1, result.statusCode)
+        assertTrue(result.stderr.contains("Error Config: Expected boolean for 'enforce-spacing-around-equals'"))
+    }
+
+    @Test
     fun `format reports an error and exits non-zero for invalid code`() {
         val file = prsFile("let a: number = \n")
 
@@ -182,7 +208,7 @@ class CliCommandsTest {
         val result = ValidateCommand().test(listOf(file.path, "--version", "2.0"))
 
         assertEquals(1, result.statusCode)
-        assertTrue(result.stderr.contains("UnsupportedVersion"))
+        assertTrue(result.stderr.contains("invalid choice: 2.0. (choose from 1.0, 1.1)"))
     }
 
     private fun stderrOf(block: () -> Unit): String {

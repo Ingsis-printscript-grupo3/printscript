@@ -1,0 +1,6 @@
+let   x:number=5+2*3;println(x);
+let ok:boolean=true;
+if(ok)
+{
+println("adentro");
+}
