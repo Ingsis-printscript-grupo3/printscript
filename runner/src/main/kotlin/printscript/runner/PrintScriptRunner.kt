@@ -9,7 +9,7 @@ import printscript.interpreter.output.Output
 import printscript.linter.Linter
 import printscript.linter.LinterRulesLoader
 import java.io.BufferedReader
-import java.io.File
+import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.Writer
@@ -85,12 +85,10 @@ object PrintScriptRunner {
         val version = parseVersion(versionStr, onError) ?: return
         handleExecution(onError) {
             val rules = FormatterRulesLoader.fromStream(config)
-            val source = File.createTempFile("printscript-format", ".ps").apply { deleteOnExit() }
-            source.outputStream().use { src.copyTo(it) }
-            val openSource = { source.bufferedReader(StandardCharsets.UTF_8) }
+            val bytes = src.readAllBytes()
+            val openSource = { ByteArrayInputStream(bytes).reader(StandardCharsets.UTF_8) }
             val result = Engine(NO_OP_OUTPUT).format(openSource, version) { Formatter(rules).format(it, writer) }
             if (result is FormatResult.Failure) onError(result.message)
-            source.delete()
         }
     }
 
