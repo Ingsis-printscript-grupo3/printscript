@@ -11,6 +11,7 @@ import printscript.ast.ReadEnv
 import printscript.ast.ReadInput
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
+import printscript.common.LanguageVersion
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.BucketOutput
@@ -51,7 +52,7 @@ class Handlers11Test {
     @Test
     fun `BooleanLiteralEvaluator evaluates boolean literals`() {
         val evaluator = BooleanLiteralEvaluator()
-        val ctx = InterpreterContext(Environment(), Interpreter())
+        val ctx = InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_1))
 
         assertEquals(BooleanValue(true), evaluator.handle(BooleanLiteral(true), ctx))
         assertEquals(BooleanValue(false), evaluator.handle(BooleanLiteral(false), ctx))
@@ -208,7 +209,7 @@ class Handlers11Test {
     @Test
     fun `IfStatementInterpreter rejects foreign nodes`() {
         val interpreter = IfStatementInterpreter()
-        val ctx = InterpreterContext(Environment(), Interpreter())
+        val ctx = InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_1))
 
         assertTrue(interpreter.applies(IfStatement(BooleanLiteral(true), Block(emptyList()), null)))
         assertFalse(interpreter.applies(Block(emptyList())))
@@ -221,7 +222,7 @@ class Handlers11Test {
     @Test
     fun `BlockInterpreter enters and exits scope`() {
         val blockHandler = BlockInterpreter()
-        val ctx = InterpreterContext(Environment(), Interpreter())
+        val ctx = InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_1))
 
         assertTrue(blockHandler.applies(Block(emptyList())))
         assertFalse(blockHandler.applies(PrintCall(StringLiteral("hi"))))
@@ -289,7 +290,7 @@ class Handlers11Test {
     fun `statement plugins reject foreign nodes`() {
         val varDecl = VariableDeclarationInterpreter()
         val assign = AssignmentInterpreter()
-        val ctx = InterpreterContext(Environment(), Interpreter())
+        val ctx = InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_1))
 
         val letNode = VariableDeclaration("x", "number", NumberLiteral(1.0), isConst = false)
         val constNode = VariableDeclaration("y", "number", NumberLiteral(2.0), isConst = true)

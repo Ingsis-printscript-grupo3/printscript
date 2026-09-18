@@ -43,7 +43,7 @@ object InterpreterFactory {
         env: EnvProvider = SystemEnvProvider(),
     ): Interpreter = create(LanguageVersion.parse(version), output, input, env)
 
-    fun create10(output: Output = ConsoleOutput()): Interpreter = Interpreter(output)
+    fun create10(output: Output = ConsoleOutput()): Interpreter = Interpreter(LanguageVersion.V1_0, output)
 
     fun create11(
         output: Output = ConsoleOutput(),

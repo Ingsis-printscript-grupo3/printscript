@@ -65,13 +65,13 @@ class Engine(
 ) {
     fun execute(
         code: String,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult = execute(StringReader(code), languageVersion, onProgress)
 
     fun execute(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult =
         runPipeline(reader, languageVersion, onProgress) { validStatements ->
@@ -81,13 +81,13 @@ class Engine(
 
     fun validate(
         code: String,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult = validate(StringReader(code), languageVersion, onProgress)
 
     fun validate(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult =
         runPipeline(reader, languageVersion, onProgress) { validStatements ->
@@ -98,7 +98,7 @@ class Engine(
     @Suppress("TooGenericExceptionCaught")
     fun format(
         openReader: () -> Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
         format: (Iterator<Token>) -> Unit,
     ): FormatResult =
@@ -115,7 +115,7 @@ class Engine(
     @Suppress("TooGenericExceptionCaught")
     fun lint(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
         lint: (Iterator<Statement>) -> Unit,
     ): LintResult =

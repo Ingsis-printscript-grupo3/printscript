@@ -25,8 +25,7 @@ class ExpressionPositionTest {
         val expressionParser =
             ExpressionParser(
                 stream,
-                DefaultExpressionParselets.prefix(LanguageVersion.V1_1),
-                DefaultExpressionParselets.infix,
+                LanguageVersion.V1_1,
             )
         return when (val result = expressionParser.parseExpression()) {
             is ASTResult.Success -> result.value
