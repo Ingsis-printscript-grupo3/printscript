@@ -207,7 +207,7 @@ class EndToEndTest {
         val reported = mutableListOf<Int>()
         val code = "let a: number = 1;\nlet b: number = 2;\nprintln(a + b);"
 
-        Engine(BucketOutput()).validate(StringReader(code), onProgress = reported::add)
+        Engine(BucketOutput(), onProgress = reported::add).validate(StringReader(code))
 
         assertEquals(listOf(1, 2, 3), reported)
     }

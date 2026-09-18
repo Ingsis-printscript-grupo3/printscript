@@ -6,7 +6,7 @@ import printscript.lexer.LexicalError
 import printscript.parser.SyntaxError
 import printscript.semantic.SemanticError
 
-//to do lo que el Engine necesita para no propagar excepciones: atraparlas, traducirlas
+// Lo que el Engine necesita para no propagar excepciones: atraparlas, traducirlas
 // y convertirlas en el resultado de cada operacion.
 
 // el error ya traducido, antes de saber si va a viajar como ExecutionResult, FormatResult o LintResult
@@ -18,7 +18,7 @@ internal data class ErrorInfo(
 )
 
 // unico lugar donde se atrapa una excepcion de cualquier capa, asi al usuario nunca le sale un stacktrace.
-// Devuelve null cuando salio to do bien; cada operacion traduce ese null a su propio resultado.
+// Devuelve null cuando no hubo errores; cada operacion traduce ese null a su propio resultado.
 @Suppress("TooGenericExceptionCaught")
 internal inline fun runCatchingErrors(block: () -> Unit): ErrorInfo? =
     try {

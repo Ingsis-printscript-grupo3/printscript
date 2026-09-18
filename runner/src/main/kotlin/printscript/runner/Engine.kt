@@ -58,17 +58,17 @@ class Engine(
     private val output: Output,
     private val input: InputProvider = ConsoleInput(),
     private val env: EnvProvider = SystemEnvProvider(),
+    // por donde el Engine avisa cuantos statements lleva parseados, igual que output es por donde imprime
+    private val onProgress: (Int) -> Unit = {},
 ) {
     fun execute(
         code: String,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
-        onProgress: (Int) -> Unit = {},
-    ): ExecutionResult = execute(StringReader(code), languageVersion, onProgress)
+    ): ExecutionResult = execute(StringReader(code), languageVersion)
 
     fun execute(
         reader: Reader,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
-        onProgress: (Int) -> Unit = {},
     ): ExecutionResult =
         runCatchingErrors {
             val interpreter = InterpreterFactory.create(languageVersion, output, input, env)
@@ -78,14 +78,12 @@ class Engine(
     fun validate(
         code: String,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
-        onProgress: (Int) -> Unit = {},
-    ): ExecutionResult = validate(StringReader(code), languageVersion, onProgress)
+    ): ExecutionResult = validate(StringReader(code), languageVersion)
 
     // validar es correr el pipeline entero sin interpretar: alcanza con recorrer los statements
     fun validate(
         reader: Reader,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
-        onProgress: (Int) -> Unit = {},
     ): ExecutionResult =
         runCatchingErrors {
             consume(analyzedStatements(reader, languageVersion, onProgress))
@@ -98,7 +96,6 @@ class Engine(
     fun format(
         openReader: () -> Reader,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
-        onProgress: (Int) -> Unit = {},
         format: (Iterator<Token>) -> Unit,
     ): FormatResult =
         runCatchingErrors {
@@ -110,7 +107,6 @@ class Engine(
     fun lint(
         reader: Reader,
         languageVersion: LanguageVersion = LanguageVersion.V1_1,
-        onProgress: (Int) -> Unit = {},
         lint: (Iterator<Statement>) -> Unit,
     ): LintResult =
         runCatchingErrors {
