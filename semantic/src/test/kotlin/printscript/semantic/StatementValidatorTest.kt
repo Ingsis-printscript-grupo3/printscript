@@ -17,18 +17,27 @@ import printscript.ast.registry.Registry
 import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.TokenType
+import printscript.semantic.handler.statement.BlockHandler
+import printscript.semantic.handler.statement.IfStatementHandler
 import printscript.semantic.symbol.SymbolTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+
+// posicion de mentira: estos tests miran el resultado, no donde ocurrio
+private val AT = Position(1, 1)
 
 class StatementValidatorTest {
     private fun validator(
         symbolTable: SymbolTable = SymbolTable(),
         version: LanguageVersion = LanguageVersion.V1_1,
-    ) = StatementValidator(symbolTable, ExpressionResolver(symbolTable, version), version)
+    ): StatementValidator {
+        val rules = SemanticRules.from(version)
+        return StatementValidator(symbolTable, ExpressionResolver(symbolTable, rules), rules)
+    }
 
     @Test
     fun `declaring a variable without an initializer succeeds`() {
@@ -150,8 +159,8 @@ class StatementValidatorTest {
         val validator =
             StatementValidator(
                 symbolTable,
-                ExpressionResolver(symbolTable, LanguageVersion.V1_1),
-                LanguageVersion.V1_1,
+                ExpressionResolver(symbolTable, SemanticRules.from(LanguageVersion.V1_1)),
+                SemanticRules.from(LanguageVersion.V1_1),
                 emptyRegistry,
             )
         val node = PrintCall(NumberLiteral(1.0), Position(9, 1))
@@ -369,7 +378,7 @@ class StatementValidatorTest {
         assertIs<SemanticResult.Failure>(result)
 
         // Scope was properly exited: temp variable no longer exists
-        val lookup = symbolTable.lookup("temp")
+        val lookup = symbolTable.lookup("temp", at = AT)
         assertIs<SemanticResult.Failure>(lookup)
 
         // We are at root scope: attempting to exit root scope throws exception
@@ -453,7 +462,7 @@ class StatementValidatorTest {
         val types = listOf("number", "string", "boolean")
         for (type in types) {
             val table = SymbolTable()
-            table.define("x", type)
+            table.define("x", type, at = AT)
             val v = validator(table)
             val assign = Assignment("x", ReadInput(StringLiteral("prompt:")))
             val result = v.validate(assign)
@@ -464,7 +473,7 @@ class StatementValidatorTest {
     @Test
     fun `assigning readEnv to a declared variable infers variable type`() {
         val table = SymbolTable()
-        table.define("port", "number")
+        table.define("port", "number", at = AT)
         val v = validator(table)
         val assign = Assignment("port", ReadEnv(StringLiteral("PORT")))
         val result = v.validate(assign)
@@ -496,7 +505,7 @@ class StatementValidatorTest {
     @Test
     fun `assigning readInput with non-string argument fails and propagates failure`() {
         val table = SymbolTable()
-        table.define("x", "string")
+        table.define("x", "string", at = AT)
         val v = validator(table)
         val assign = Assignment("x", ReadInput(BooleanLiteral(false)))
         val result = v.validate(assign)
@@ -527,5 +536,62 @@ class StatementValidatorTest {
         val result = validator().validate(decl)
         assertIs<SemanticResult.Failure>(result)
         assertEquals("Incompatible types.", result.message)
+    }
+
+    @Test
+    fun `default10Handlers does not include if statement or block handlers`() {
+        val handlers10 = StatementValidator.default10Handlers()
+        assertFalse(handlers10.any { it is IfStatementHandler })
+        assertFalse(handlers10.any { it is BlockHandler })
+        assertEquals(3, handlers10.size)
+    }
+
+    @Test
+    fun `default11Handlers includes all 10 handlers plus if statement and block handlers`() {
+        val handlers11 = StatementValidator.default11Handlers()
+        assertTrue(handlers11.any { it is IfStatementHandler })
+        assertTrue(handlers11.any { it is BlockHandler })
+        assertEquals(5, handlers11.size)
+    }
+
+    @Test
+    fun `validating if statement in 1_0 fails as unknown statement type`() {
+        val ifStmt =
+            IfStatement(
+                BooleanLiteral(true),
+                Block(emptyList()),
+                null,
+                Position(3, 1),
+            )
+        val result = validator(version = LanguageVersion.V1_0).validate(ifStmt)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Unknown statement type.", result.message)
+        assertEquals(Position(3, 1), result.position)
+    }
+
+    @Test
+    fun `validating block in 1_0 fails as unknown statement type`() {
+        val block = Block(emptyList(), Position(5, 1))
+        val result = validator(version = LanguageVersion.V1_0).validate(block)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Unknown statement type.", result.message)
+        assertEquals(Position(5, 1), result.position)
+    }
+
+    @Test
+    fun `defaultHandlers dispatches based on version`() {
+        val handlers10 = StatementValidator.defaultHandlers(LanguageVersion.V1_0)
+        val handlers11 = StatementValidator.defaultHandlers(LanguageVersion.V1_1)
+        assertEquals(3, handlers10.size)
+        assertEquals(5, handlers11.size)
+    }
+
+    @Test
+    fun `validating const declaration in 1_0 fails as unsupported`() {
+        val constDecl = VariableDeclaration("x", "number", NumberLiteral(10.0), Position(4, 1), isConst = true)
+        val result = validator(version = LanguageVersion.V1_0).validate(constDecl)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("'const' declarations are not supported in PrintScript 1.0.", result.message)
+        assertEquals(Position(4, 1), result.position)
     }
 }

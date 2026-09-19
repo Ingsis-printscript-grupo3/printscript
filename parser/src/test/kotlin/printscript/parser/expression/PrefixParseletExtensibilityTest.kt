@@ -2,6 +2,7 @@ package printscript.parser.expression
 
 import org.junit.jupiter.api.Test
 import printscript.ast.NumberLiteral
+import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
@@ -31,6 +32,7 @@ class PrefixParseletExtensibilityTest {
         val expressionParser =
             ExpressionParser(
                 stream,
+                LanguageVersion.V1_1,
                 prefixParselets = mapOf(TokenType.IDENTIFIER to fakeParselet),
             )
         val result = expressionParser.parseExpression()

@@ -7,8 +7,10 @@ import printscript.ast.PrintCall
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.LanguageVersion
+import printscript.common.Position
 import printscript.semantic.ExpressionResolver
 import printscript.semantic.SemanticResult
+import printscript.semantic.SemanticRules
 import printscript.semantic.StatementValidator
 import printscript.semantic.handler.expression.BinaryExpressionHandler
 import printscript.semantic.handler.expression.BooleanLiteralHandler
@@ -29,15 +31,18 @@ import kotlin.test.assertIs
 // Each handler has a guard that returns Failure if it receives an unexpected node
 // In normal execution this does not happen because the Registry checks applies() first
 
+// posicion de mentira: estos tests miran el resultado, no donde ocurrio
+private val AT = Position(1, 1)
+
 class HandlerGuardsTest {
-    private fun resolverContext() = ExpressionResolver(SymbolTable(), LanguageVersion.V1_1)
+    private fun resolverContext() = ExpressionResolver(SymbolTable(), SemanticRules.from(LanguageVersion.V1_1))
 
     private fun validatorContext(): StatementValidator {
         val symbolTable = SymbolTable()
         return StatementValidator(
             symbolTable,
-            ExpressionResolver(symbolTable, LanguageVersion.V1_1),
-            LanguageVersion.V1_1,
+            ExpressionResolver(symbolTable, SemanticRules.from(LanguageVersion.V1_1)),
+            SemanticRules.from(LanguageVersion.V1_1),
         )
     }
 
@@ -84,8 +89,8 @@ class HandlerGuardsTest {
     @Test
     fun `identifier handler looks up the symbol table from the context`() {
         val symbolTable = SymbolTable()
-        symbolTable.define("a", "string")
-        val resolver = ExpressionResolver(symbolTable, LanguageVersion.V1_1)
+        symbolTable.define("a", "string", at = AT)
+        val resolver = ExpressionResolver(symbolTable, SemanticRules.from(LanguageVersion.V1_1))
 
         val result = IdentifierHandler().handle(Identifier("a"), resolver)
 

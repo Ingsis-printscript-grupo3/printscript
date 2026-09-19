@@ -12,13 +12,14 @@ import printscript.parser.version.VersionFeatures
 class StatementParser(
     private val stream: TokenStream,
     private val expressionParser: ExpressionParser,
-    private val handlers: Map<TokenType, StatementHandler> = DefaultStatementHandlers.map(),
-    val version: LanguageVersion = LanguageVersion.V1_1,
+    internal val version: LanguageVersion,
+    private val handlers: Map<TokenType, StatementHandler> = DefaultStatementHandlers.map(version),
 ) {
     fun parseStatement(): ASTResult<Statement> {
         val token = stream.peek()
         if (token == null) {
-            val pos = stream.previous()?.end ?: Position(0, 0)
+            // sin token previo estamos al principio del archivo
+            val pos = stream.previous()?.end ?: Position(1, 1)
             return ASTResult.Failure("Unexpected end of input.", pos, pos)
         }
 

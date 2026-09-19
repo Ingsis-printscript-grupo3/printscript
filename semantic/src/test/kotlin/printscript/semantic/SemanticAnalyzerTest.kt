@@ -126,7 +126,7 @@ class SemanticAnalyzerTest {
             listOf(
                 VariableDeclaration("num", "number", NumberLiteral(5.0)),
                 IfStatement(
-                    Identifier("num"),
+                    Identifier("num", Position(2, 5)),
                     Block(emptyList()),
                     null,
                     Position(2, 1),
@@ -140,7 +140,8 @@ class SemanticAnalyzerTest {
         assertIs<SemanticResult.Success<*>>(results[0])
         val failure = results[1]
         assertIs<SemanticResult.Failure>(failure)
-        assertEquals(Position(2, 1), failure.position)
+        // apunta a la condicion, no al if que la contiene
+        assertEquals(Position(2, 5), failure.position)
         assertTrue(failure.message.contains("must be a boolean expression"))
     }
 
@@ -153,7 +154,7 @@ class SemanticAnalyzerTest {
                     Block(listOf(VariableDeclaration("scopedVar", "number", NumberLiteral(42.0)))),
                     null,
                 ),
-                PrintCall(Identifier("scopedVar"), Position(5, 1)),
+                PrintCall(Identifier("scopedVar", Position(5, 9)), Position(5, 1)),
             )
 
         val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
@@ -162,7 +163,8 @@ class SemanticAnalyzerTest {
         assertIs<SemanticResult.Success<*>>(results[0])
         val failure = results[1]
         assertIs<SemanticResult.Failure>(failure)
-        assertEquals(Position(5, 1), failure.position)
+        // apunta al identificador, no al println que lo contiene
+        assertEquals(Position(5, 9), failure.position)
         assertTrue(failure.message.contains("Variable 'scopedVar' not declared"))
     }
 
@@ -242,5 +244,87 @@ class SemanticAnalyzerTest {
         val failure = results.single()
         assertIs<SemanticResult.Failure>(failure)
         assertEquals(Position(15, 8), failure.position)
+    }
+
+    // los errores que nacen en la SymbolTable llegaban con Position(0, 0) y el analyzer se la parcheaba
+    // con la del statement; ahora la tabla la recibe y el error nace con la posicion del nombre
+    @Test
+    fun `an error born in the symbol table carries the position of the name`() {
+        val statements =
+            listOf(
+                VariableDeclaration("a", "number", NumberLiteral(1.0), Position(1, 1), namePosition = Position(1, 5)),
+                VariableDeclaration("a", "number", NumberLiteral(2.0), Position(2, 1), namePosition = Position(2, 5)),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_1).analyze(statements.iterator()).asSequence().toList()
+
+        val failure = results.last()
+        assertIs<SemanticResult.Failure>(failure)
+        assertTrue(failure.message.contains("already exists"))
+        assertEquals(Position(2, 5), failure.position)
+    }
+
+    @Test
+    fun `semantic analyzer in 1_0 rejects if statement with unknown statement type`() {
+        val statements =
+            listOf(
+                IfStatement(
+                    NumberLiteral(1.0),
+                    Block(emptyList()),
+                    null,
+                    Position(3, 1),
+                ),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(1, results.size)
+        val failure = results.single()
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals("Unknown statement type.", failure.message)
+        assertEquals(Position(3, 1), failure.position)
+    }
+
+    @Test
+    fun `semantic analyzer in 1_0 rejects readInput with unknown expression type`() {
+        val statements =
+            listOf(
+                VariableDeclaration(
+                    "x",
+                    "string",
+                    ReadInput(StringLiteral("prompt:"), Position(2, 20)),
+                    Position(2, 1),
+                ),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(1, results.size)
+        val failure = results.single()
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals("Unknown expression type.", failure.message)
+        assertEquals(Position(2, 20), failure.position)
+    }
+
+    @Test
+    fun `semantic analyzer in 1_0 rejects const declaration`() {
+        val statements =
+            listOf(
+                VariableDeclaration(
+                    "x",
+                    "number",
+                    NumberLiteral(10.0, Position(1, 17)),
+                    Position(1, 1),
+                    isConst = true,
+                ),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(1, results.size)
+        val failure = results.single()
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals("'const' declarations are not supported in PrintScript 1.0.", failure.message)
+        assertEquals(Position(1, 1), failure.position)
     }
 }

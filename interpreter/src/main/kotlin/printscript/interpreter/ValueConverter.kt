@@ -1,9 +1,12 @@
 package printscript.interpreter
 
+import printscript.common.Position
+
 object ValueConverter {
     fun convert(
         value: Value,
         targetType: String,
+        at: Position,
     ): Value {
         if (value.typeName() == targetType) {
             return value
@@ -17,6 +20,6 @@ object ValueConverter {
                 else -> null
             }
 
-        return converted ?: throw ValueConversionError(value, targetType)
+        return converted ?: throw ValueConversionError(value, targetType, at)
     }
 }

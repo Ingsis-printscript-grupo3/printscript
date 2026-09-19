@@ -4,17 +4,15 @@ import printscript.ast.Statement
 import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
-import printscript.interpreter.InterpreterError
 import printscript.interpreter.InterpreterFactory
 import printscript.interpreter.env.EnvProvider
 import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.input.InputProvider
 import printscript.interpreter.output.Output
-import printscript.lexer.CharStream
-import printscript.lexer.Lexer
-import printscript.lexer.LexicalError
-import printscript.parser.Parser
+import printscript.lexer.LexerFactory
+import printscript.parser.ParserFactory
+import printscript.parser.ParserInterface
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
 import printscript.semantic.SemanticAnalyzer
@@ -33,8 +31,6 @@ sealed interface ExecutionResult {
         val end: Position? = null,
     ) : ExecutionResult
 }
-
-private val OOM_FAILURE = ExecutionResult.Failure("OutOfMemory", "Java heap space")
 
 sealed interface FormatResult {
     object Success : FormatResult
@@ -65,92 +61,72 @@ class Engine(
 ) {
     fun execute(
         code: String,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult = execute(StringReader(code), languageVersion, onProgress)
 
     fun execute(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult =
-        runPipeline(reader, languageVersion, onProgress) { validStatements ->
+        runCatchingErrors {
             val interpreter = InterpreterFactory.create(languageVersion, output, input, env)
-            interpreter.interpret(validStatements)
-        }
+            interpreter.interpret(analyzedStatements(reader, languageVersion, onProgress))
+        }.asExecutionResult()
 
     fun validate(
         code: String,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult = validate(StringReader(code), languageVersion, onProgress)
 
+    // validar es correr el pipeline entero sin interpretar: alcanza con recorrer los statements
     fun validate(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult =
-        runPipeline(reader, languageVersion, onProgress) { validStatements ->
-            validStatements.forEach { }
-        }
+        runCatchingErrors {
+            consume(analyzedStatements(reader, languageVersion, onProgress))
+        }.asExecutionResult()
 
-    // asi un error inesperado no le sale al usuario como stacktrace
-    @Suppress("TooGenericExceptionCaught")
+    /**
+     * Lee el fuente dos veces: primero para avisar si no parsea, despues para formatear los tokens.
+     * Por eso recibe [openReader] y no un Reader ya abierto.
+     */
     fun format(
         openReader: () -> Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
         format: (Iterator<Token>) -> Unit,
     ): FormatResult =
-        try {
-            openReader().use { parseIntoAst(parserFor(it, languageVersion), onProgress).forEach { } }
-            openReader().use { format(Lexer(CharStream(it)).tokenize()) }
-            FormatResult.Success
-        } catch (e: Exception) {
-            val failure = describe(e)
-            FormatResult.Failure(failure.type, failure.message, failure.start, failure.end)
-        }
+        runCatchingErrors {
+            openReader().use { consume(parseIntoAst(parserFor(it, languageVersion), onProgress)) }
+            openReader().use { format(LexerFactory.create(it).tokenize()) }
+        }.asFormatResult()
 
-    // asi un error inesperado no le sale al usuario como stacktrace
-    @Suppress("TooGenericExceptionCaught")
+    // el linter trabaja sobre el ast crudo: no necesita el chequeo semantico
     fun lint(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.V1_1,
+        languageVersion: LanguageVersion,
         onProgress: (Int) -> Unit = {},
         lint: (Iterator<Statement>) -> Unit,
     ): LintResult =
-        try {
+        runCatchingErrors {
             lint(parseIntoAst(parserFor(reader, languageVersion), onProgress))
-            LintResult.Success
-        } catch (e: Exception) {
-            val failure = describe(e)
-            LintResult.Failure(failure.type, failure.message, failure.start, failure.end)
-        }
-
-    // asi un error inesperado no le sale al usuario como stacktrace
-    @Suppress("TooGenericExceptionCaught")
-    private fun runPipeline(
-        reader: Reader,
-        languageVersion: LanguageVersion,
-        onProgress: (Int) -> Unit,
-        consume: (Iterator<Statement>) -> Unit,
-    ): ExecutionResult =
-        try {
-            val astIterator = parseIntoAst(parserFor(reader, languageVersion), onProgress)
-            consume(analyzeAst(astIterator, languageVersion))
-            ExecutionResult.Success
-        } catch (e: Throwable) {
-            catchExecutionError(e)
-        }
+        }.asLintResult()
 }
 
+// primer paso: lexer y parser encadenados sobre el mismo reader
 private fun parserFor(
     reader: Reader,
     languageVersion: LanguageVersion,
-): Parser = Parser(Lexer(CharStream(reader)).tokenize(), languageVersion)
+): ParserInterface = ParserFactory.create(LexerFactory.create(reader).tokenize(), languageVersion)
 
+// segundo paso: de resultados del parser a statements, cortando con SyntaxError en el primer fallo
 private fun parseIntoAst(
-    parser: Parser,
+    parser: ParserInterface,
     onProgress: (Int) -> Unit,
 ): Iterator<Statement> {
     var parsedCount = 0
@@ -167,6 +143,7 @@ private fun parseIntoAst(
     }
 }
 
+// tercer paso: de resultados del analizador a statements, cortando con SemanticError en el primer fallo
 private fun buildValidStatementIterator(
     semanticResultIterator: Iterator<SemanticResult<Statement>>,
 ): Iterator<Statement> =
@@ -179,6 +156,7 @@ private fun buildValidStatementIterator(
         }
     }
 
+// chequeo semantico sobre el ast ya parseado
 private fun analyzeAst(
     astIterator: Iterator<Statement>,
     languageVersion: LanguageVersion,
@@ -187,27 +165,14 @@ private fun analyzeAst(
     return buildValidStatementIterator(semanticAnalyzer.analyze(astIterator))
 }
 
-private fun catchExecutionError(e: Throwable): ExecutionResult =
-    if (e is OutOfMemoryError) {
-        OOM_FAILURE
-    } else {
-        val failure = describe(e)
-        ExecutionResult.Failure(failure.type, failure.message, failure.start, failure.end)
-    }
+// el pipeline completo: lexer -> parser -> semantico. Lo que sale de aca ya se puede interpretar
+private fun analyzedStatements(
+    reader: Reader,
+    languageVersion: LanguageVersion,
+    onProgress: (Int) -> Unit,
+): Iterator<Statement> = analyzeAst(parseIntoAst(parserFor(reader, languageVersion), onProgress), languageVersion)
 
-private data class ErrorInfo(
-    val type: String,
-    val message: String,
-    val start: Position? = null,
-    val end: Position? = null,
-)
-
-// un solo lugar que traduce la excepcion de cada capa al resultado del cli
-private fun describe(error: Throwable): ErrorInfo =
-    when (error) {
-        is LexicalError -> ErrorInfo("Lexical", error.message, error.start, error.end)
-        is SyntaxError -> ErrorInfo("Syntax", error.message, error.start, error.end)
-        is SemanticError -> ErrorInfo("Semantic", error.message, error.start, error.end)
-        is InterpreterError -> ErrorInfo("Runtime", error.message ?: "Interpreter error")
-        else -> ErrorInfo("Internal", error.message ?: "Unknown error")
-    }
+// el pipeline es perezoso: hasta que alguien no recorre el iterador, no se lexea ni se parsea nada
+private fun consume(statements: Iterator<Statement>) {
+    while (statements.hasNext()) statements.next()
+}

@@ -17,8 +17,9 @@ import printscript.formatter.Formatter
 import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
 import printscript.interpreter.output.ConsoleOutput
-import printscript.linter.CAMEL_CASE
-import printscript.linter.Linter
+import printscript.linter.IdentifierFormat
+import printscript.linter.LinterFactory
+import printscript.linter.LinterInterface
 import printscript.linter.LinterRules
 import printscript.linter.LinterRulesLoader
 import printscript.linter.Warning
@@ -44,7 +45,7 @@ private val DEFAULT_FORMATTER_RULES =
 
 private val DEFAULT_LINTER_RULES =
     LinterRules(
-        identifierFormat = CAMEL_CASE,
+        identifierFormat = IdentifierFormat.CAMEL_CASE,
         printCallArgumentsMustBeLiteralOrIdentifier = true,
         readInputArgumentsMustBeLiteralOrIdentifier = true,
     )
@@ -61,7 +62,7 @@ abstract class PrintScriptCommand(name: String, help: String) : CliktCommand(nam
     // only accepts the labels of LanguageVersion ("1.0", "1.1") and gives back the enum value
     private val version by option("--version", help = "Version of the PrintScript language to use")
         .choice(LanguageVersion.entries.associateBy(LanguageVersion::label))
-        .default(LanguageVersion.V1_0)
+        .default(LanguageVersion.DEFAULT)
     private val quiet by option("--quiet", help = "Do not print parsing progress").flag()
 
     protected val engine = Engine(output = ConsoleOutput())
@@ -132,11 +133,11 @@ class AnalyzeCommand : PrintScriptCommand(
 ) {
     private val config by option("--config", help = "Path to a JSON or YAML file with linter rules")
         .file(mustExist = true, canBeDir = false, mustBeReadable = true)
-    private lateinit var rules: LinterRules
+    private lateinit var linter: LinterInterface
     private var warningCount = 0
 
     override fun runOn(version: LanguageVersion) {
-        rules = loadRules()
+        linter = LinterFactory.create(version, loadRules())
         checkResult(engine.lint(file.reader(), version, progress::report, ::lintStatements))
         if (warningCount == 0) echo("${file.path}: no warnings found")
     }
@@ -150,7 +151,7 @@ class AnalyzeCommand : PrintScriptCommand(
         }
     }
 
-    private fun lintStatements(statements: Iterator<Statement>) = Linter(rules).analyze(statements, ::printWarning)
+    private fun lintStatements(statements: Iterator<Statement>) = linter.analyze(statements, ::printWarning)
 
     private fun printWarning(warning: Warning) {
         warningCount++
@@ -221,10 +222,11 @@ private fun formatError(
     start: Position?,
     end: Position?,
 ): String =
-    if (start == null || end == null) {
-        "Error $type: $message"
-    } else {
-        "[${start.line}:${start.column}-${end.line}:${end.column}] $type: $message"
+    when {
+        start == null || end == null -> "Error $type: $message"
+        // un error de un solo punto no repite la posicion dos veces
+        start == end -> "[${start.line}:${start.column}] $type: $message"
+        else -> "[${start.line}:${start.column}-${end.line}:${end.column}] $type: $message"
     }
 
 fun main(args: Array<String>) =

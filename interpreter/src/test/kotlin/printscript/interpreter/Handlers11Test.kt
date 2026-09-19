@@ -11,6 +11,8 @@ import printscript.ast.ReadEnv
 import printscript.ast.ReadInput
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
+import printscript.common.LanguageVersion
+import printscript.common.Position
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.BucketOutput
@@ -29,6 +31,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+
+// posicion de mentira: estos tests miran el error, no donde ocurrio
+private val AT = Position(1, 1)
 
 class Handlers11Test {
     private fun createTestInterpreter(
@@ -51,7 +56,7 @@ class Handlers11Test {
     @Test
     fun `BooleanLiteralEvaluator evaluates boolean literals`() {
         val evaluator = BooleanLiteralEvaluator()
-        val ctx = InterpreterContext(Environment(), Interpreter())
+        val ctx = InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_1))
 
         assertEquals(BooleanValue(true), evaluator.handle(BooleanLiteral(true), ctx))
         assertEquals(BooleanValue(false), evaluator.handle(BooleanLiteral(false), ctx))
@@ -208,7 +213,7 @@ class Handlers11Test {
     @Test
     fun `IfStatementInterpreter rejects foreign nodes`() {
         val interpreter = IfStatementInterpreter()
-        val ctx = InterpreterContext(Environment(), Interpreter())
+        val ctx = InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_1))
 
         assertTrue(interpreter.applies(IfStatement(BooleanLiteral(true), Block(emptyList()), null)))
         assertFalse(interpreter.applies(Block(emptyList())))
@@ -221,7 +226,7 @@ class Handlers11Test {
     @Test
     fun `BlockInterpreter enters and exits scope`() {
         val blockHandler = BlockInterpreter()
-        val ctx = InterpreterContext(Environment(), Interpreter())
+        val ctx = InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_1))
 
         assertTrue(blockHandler.applies(Block(emptyList())))
         assertFalse(blockHandler.applies(PrintCall(StringLiteral("hi"))))
@@ -247,7 +252,7 @@ class Handlers11Test {
                         is BooleanLiteral -> BooleanValue(expression.value)
                         is ReadInput -> StringValue("99")
                         is ReadEnv -> StringValue("true")
-                        is Identifier -> env.lookup(expression.name)
+                        is Identifier -> env.lookup(expression.name, at = AT)
                         else -> throw IllegalArgumentException()
                     }
             }
@@ -259,19 +264,19 @@ class Handlers11Test {
             VariableDeclaration("inputNum", "number", ReadInput(StringLiteral("p"))),
             ctx,
         )
-        assertEquals(NumberValue(99.0), env.lookup("inputNum"))
+        assertEquals(NumberValue(99.0), env.lookup("inputNum", at = AT))
 
         varDecl.handle(
             VariableDeclaration("envBool", "boolean", ReadEnv(StringLiteral("B"))),
             ctx,
         )
-        assertEquals(BooleanValue(true), env.lookup("envBool"))
+        assertEquals(BooleanValue(true), env.lookup("envBool", at = AT))
 
         varDecl.handle(
             VariableDeclaration("c", "number", NumberLiteral(10.0), isConst = true),
             ctx,
         )
-        assertEquals(NumberValue(10.0), env.lookup("c"))
+        assertEquals(NumberValue(10.0), env.lookup("c", at = AT))
 
         assertFailsWith<CannotAssignToConstError> {
             assign.handle(Assignment("c", NumberLiteral(20.0)), ctx)
@@ -282,14 +287,14 @@ class Handlers11Test {
             ctx,
         )
         assign.handle(Assignment("mutableNum", ReadInput(StringLiteral("p"))), ctx)
-        assertEquals(NumberValue(99.0), env.lookup("mutableNum"))
+        assertEquals(NumberValue(99.0), env.lookup("mutableNum", at = AT))
     }
 
     @Test
     fun `statement plugins reject foreign nodes`() {
         val varDecl = VariableDeclarationInterpreter()
         val assign = AssignmentInterpreter()
-        val ctx = InterpreterContext(Environment(), Interpreter())
+        val ctx = InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_1))
 
         val letNode = VariableDeclaration("x", "number", NumberLiteral(1.0), isConst = false)
         val constNode = VariableDeclaration("y", "number", NumberLiteral(2.0), isConst = true)

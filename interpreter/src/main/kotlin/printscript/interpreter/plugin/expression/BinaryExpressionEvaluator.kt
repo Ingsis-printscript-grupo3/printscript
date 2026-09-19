@@ -41,7 +41,7 @@ class BinaryExpressionEvaluator : Handler<Expression, InterpreterContext, Value>
         }
 
         if (left !is NumberValue || right !is NumberValue) {
-            throw TypeMismatchError(left.typeName(), right.typeName())
+            throw TypeMismatchError(left.typeName(), right.typeName(), expression.position)
         }
 
         return when (operator) {

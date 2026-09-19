@@ -14,6 +14,7 @@ import printscript.ast.ReadInput
 import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
+import printscript.common.Position
 import printscript.common.TokenType
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.QueueInput
@@ -40,19 +41,11 @@ class Interpreter11Test {
 
     @Test
     fun `factory creates 1_0 and 1_1 interpreters`() {
-        val interp10 = InterpreterFactory.create("1.0")
-        val interp11 = InterpreterFactory.create("1.1")
-        val interp10Enum = InterpreterFactory.create(printscript.common.LanguageVersion.V1_0)
-        val interp11Enum = InterpreterFactory.create(printscript.common.LanguageVersion.V1_1)
+        val interp10 = InterpreterFactory.create(printscript.common.LanguageVersion.V1_0)
+        val interp11 = InterpreterFactory.create(printscript.common.LanguageVersion.V1_1)
 
         assertNotNull(interp10)
         assertNotNull(interp11)
-        assertNotNull(interp10Enum)
-        assertNotNull(interp11Enum)
-
-        assertFailsWith<IllegalArgumentException> {
-            InterpreterFactory.create("2.0")
-        }
     }
 
     @Test
@@ -391,5 +384,20 @@ class Interpreter11Test {
             }
 
         assertEquals("x", error.name)
+    }
+
+    // la posicion es la del identificador que no existe, no la del println que lo contiene
+    @Test
+    fun `an undeclared variable error points at the identifier`() {
+        val interpreter = InterpreterFactory.create11()
+        val missing = Identifier("x", Position(4, 9))
+
+        val error =
+            assertFailsWith<UndeclaredVariableError> {
+                interpreter.interpret(listOf(PrintCall(missing, Position(4, 1))).iterator())
+            }
+
+        assertEquals(Position(4, 9), error.start)
+        assertEquals(error.start, error.end)
     }
 }

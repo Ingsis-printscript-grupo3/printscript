@@ -1,7 +1,5 @@
 package printscript.linter
 
-import printscript.ast.Block
-import printscript.ast.IfStatement
 import printscript.ast.Statement
 import printscript.linter.rule.LinterRule
 import printscript.linter.rule.LinterRuleRegistry
@@ -9,6 +7,7 @@ import printscript.linter.rule.LinterRuleRegistry
 // una sola regla: si son varias vienen agrupadas en un CompositeRule
 class Linter(
     private val rule: LinterRule,
+    private val traverser: CompoundStatementTraverser = DefaultCompoundStatementTraverser(),
 ) : LinterInterface {
     constructor(config: LinterRules = LinterRules()) : this(LinterRuleRegistry().ruleFor(config))
 
@@ -29,13 +28,8 @@ class Linter(
     private fun flatten(statement: Statement): Sequence<Statement> =
         sequence {
             yield(statement)
-            when (statement) {
-                is IfStatement -> {
-                    yieldAll(flatten(statement.thenBranch))
-                    statement.elseBranch?.let { yieldAll(flatten(it)) }
-                }
-                is Block -> statement.statements.forEach { yieldAll(flatten(it)) }
-                else -> Unit
+            traverser.childrenOf(statement).forEach { child ->
+                yieldAll(flatten(child))
             }
         }
 }

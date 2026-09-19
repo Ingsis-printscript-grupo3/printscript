@@ -17,8 +17,8 @@ class AssignmentHandler : Handler<Statement, StatementValidator, SemanticResult<
             return SemanticResult.Failure("Unexpected node in AssignmentHandler.", node.position)
         }
         val variable =
-            when (val res = ctx.symbolTable.lookup(node.name)) {
-                is SemanticResult.Failure -> return SemanticResult.Failure(res.message, node.position)
+            when (val res = ctx.symbolTable.lookup(node.name, at = node.position)) {
+                is SemanticResult.Failure -> return res
                 is SemanticResult.Success -> res.value
             }
         if (variable.isConst) {
