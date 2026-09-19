@@ -1,0 +1,106 @@
+@startuml PrintScript_Componentes
+
+title Diagrama de Componentes: PrintScript
+
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+legend right
+  |= Flecha |= Significado |
+  | <b>——▶</b> | depende (api): lo re-expone a quien lo use |
+  | <b>- -▶</b> | depende (implementation): uso interno |
+  | <b>··▶</b> | solo en tests |
+endlegend
+
+package "Entrada" {
+  [cli] as CLI
+}
+
+package "Orquestacion" {
+  [runner] as RUNNER
+}
+
+package "Pipeline" {
+  [lexer] as LEXER
+  [parser] as PARSER
+  [semantic] as SEMANTIC
+  [interpreter] as INTERPRETER
+}
+
+package "Herramientas" {
+  [formatter] as FORMATTER
+  [linter] as LINTER
+}
+
+package "Base" {
+  [ast] as AST
+  [common] as COMMON
+}
+
+note right of COMMON
+  Token, TokenType, Position,
+  LanguageVersion, ScriptError
+  y ConfigParser (json/yaml plano,
+  compartido por formatter y linter).
+  No depende de nadie.
+end note
+
+note right of AST
+  Los nodos del arbol y el
+  Registry<N, C, R> generico,
+  que usan tanto semantic
+  (StatementValidator y
+  ExpressionResolver) como
+  interpreter.
+end note
+
+' ===== la base =====
+AST --> COMMON
+
+' ===== el pipeline: ninguno conoce al otro, todos hablan por common y ast =====
+LEXER --> COMMON
+PARSER --> COMMON
+PARSER --> AST
+SEMANTIC --> AST
+SEMANTIC --> COMMON
+INTERPRETER --> AST
+INTERPRETER ..> COMMON
+
+' ===== las herramientas: tampoco conocen al pipeline =====
+FORMATTER --> COMMON
+LINTER --> AST
+LINTER --> COMMON
+
+' ===== runner: el unico que conoce a todos =====
+RUNNER --> LEXER
+RUNNER --> PARSER
+RUNNER --> SEMANTIC
+RUNNER --> INTERPRETER
+RUNNER --> FORMATTER
+RUNNER --> LINTER
+RUNNER --> AST
+RUNNER --> COMMON
+
+' ===== cli: entra por runner, no habla con el pipeline =====
+CLI ..> RUNNER
+CLI ..> COMMON
+CLI ..> INTERPRETER
+CLI ..> FORMATTER
+CLI ..> LINTER
+
+' ===== dependencias que existen solo para los tests =====
+FORMATTER ...> LEXER : test
+LINTER ...> LEXER : test
+LINTER ...> PARSER : test
+
+note as N1
+  <b>cli no depende de lexer, parser ni semantic.</b>
+  Llega a ellos a traves de runner, que los
+  re-expone con api. De interpreter, formatter
+  y linter solo usa los tipos que necesita para
+  armar las opciones (Output, reglas de config).
+end note
+
+CLI .. N1
+
+@enduml

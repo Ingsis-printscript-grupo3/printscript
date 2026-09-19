@@ -1,0 +1,68 @@
+@startuml PrintScript_Clases_Registry
+
+title Diagrama de Clases: Registry y Handler (ast.registry)
+
+skinparam linetype ortho
+
+package "ast" {
+
+  interface PositionedNode {
+    +position: Position
+  }
+
+  note right of PositionedNode
+    Lo implementan Expression y
+    Statement (sealed interfaces
+    en AST.kt). Es lo unico que
+    Registry le exige a un nodo:
+    poder ubicarlo en el error si
+    ningun handler aplica.
+  end note
+
+  package "ast.registry" {
+
+    interface Handler<N : PositionedNode, C, R> {
+      +applies(node: N): Boolean
+      +handle(node: N, ctx: C): R
+    }
+
+    class Registry<N : PositionedNode, C, R> {
+      -handlers: List<Handler<N, C, R>>
+      +register(handler: Handler<N, C, R>): Registry<N, C, R>
+      +resolveOrNull(node: N, ctx: C): R?
+      +resolve(node: N, ctx: C): R
+    }
+
+    class NoHandlerFoundException {
+      +NoHandlerFoundException(node: PositionedNode)
+    }
+  }
+}
+
+class RuntimeException
+
+' ===== relaciones =====
+Registry "1" o-- "*" Handler : recorre en orden\nde registro
+Registry ..> NoHandlerFoundException : resolve() lanza si\nningun handler aplica
+Handler ..> PositionedNode : applies() inspecciona
+RuntimeException <|-- NoHandlerFoundException
+
+note bottom of Registry
+  register() devuelve un Registry nuevo en vez de mutar
+  el actual: un registro compartido se contaminaria entre
+  tests y entre instancias distintas del mismo componente.
+
+  resolveOrNull() usa el primer handler cuyo applies()
+  da true y no evalua el resto. resolve() es resolveOrNull()
+  mas la excepcion; nadie en el pipeline lo llama hoy, pero
+  esta disponible para quien no quiera manejar el null.
+
+  <b>Es el punto de extension comun a semantic e interpreter:</b>
+  StatementValidator y ExpressionResolver (semantic) usan cada
+  uno un Registry propio, y lo mismo Interpreter (uno de
+  sentencias y otro de expresiones). Agregar una construccion
+  nueva al lenguaje es sumar un Handler; ninguna de esas
+  clases se toca.
+end note
+
+@enduml
