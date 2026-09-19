@@ -211,7 +211,7 @@ class EndToEndTest {
         val reported = mutableListOf<Int>()
         val code = "let a: number = 1;\nlet b: number = 2;\nprintln(a + b);"
 
-        Engine(BucketOutput()).validate(StringReader(code), onProgress = reported::add)
+        Engine(BucketOutput()).validate(StringReader(code), LanguageVersion.V1_0, onProgress = reported::add)
 
         assertEquals(listOf(1, 2, 3), reported)
     }
@@ -221,7 +221,7 @@ class EndToEndTest {
         val engine = Engine(BucketOutput())
         var called = false
         val result =
-            engine.format({ StringReader("let a:number=5;") }) { tokens ->
+            engine.format({ StringReader("let a:number=5;") }, LanguageVersion.V1_0) { tokens ->
                 tokens.forEach { called = true }
             }
         assertTrue(result is FormatResult.Success)
@@ -232,7 +232,7 @@ class EndToEndTest {
     fun `format returns failure on syntax error`() {
         val engine = Engine(BucketOutput())
         val result =
-            engine.format({ StringReader("let a:number =") }) { tokens ->
+            engine.format({ StringReader("let a:number =") }, LanguageVersion.V1_0) { tokens ->
                 tokens.forEach { }
             }
         assertTrue(result is FormatResult.Failure)
@@ -244,7 +244,7 @@ class EndToEndTest {
         val engine = Engine(BucketOutput())
         var called = false
         val result =
-            engine.lint(StringReader("let a: number = 5;")) { statements ->
+            engine.lint(StringReader("let a: number = 5;"), LanguageVersion.V1_0) { statements ->
                 statements.forEach { called = true }
             }
         assertTrue(result is LintResult.Success)
@@ -255,7 +255,7 @@ class EndToEndTest {
     fun `lint returns failure on syntax error`() {
         val engine = Engine(BucketOutput())
         val result =
-            engine.lint(StringReader("let a: number =")) { statements ->
+            engine.lint(StringReader("let a: number ="), LanguageVersion.V1_0) { statements ->
                 statements.forEach { }
             }
         assertTrue(result is LintResult.Failure)
@@ -265,7 +265,7 @@ class EndToEndTest {
     private fun formatOnce(code: String): String {
         val writer = StringWriter()
         val rules = FormatterRules(spaceAfterColon = true, spacingAroundEquals = true, indentInsideIf = 2)
-        Engine(BucketOutput()).format({ StringReader(code) }) { tokens ->
+        Engine(BucketOutput()).format({ StringReader(code) }, LanguageVersion.V1_1) { tokens ->
             Formatter(rules).format(tokens, writer)
         }
         return writer.toString()

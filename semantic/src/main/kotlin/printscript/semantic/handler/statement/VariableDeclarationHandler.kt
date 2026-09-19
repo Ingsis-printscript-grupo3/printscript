@@ -34,6 +34,11 @@ class VariableDeclarationHandler : Handler<Statement, StatementValidator, Semant
         ctx: StatementValidator,
     ): SemanticResult.Failure? =
         when {
+            node.isConst && !ctx.rules.supportsConst ->
+                SemanticResult.Failure(
+                    "'const' declarations are not supported in PrintScript ${ctx.rules.version.label}.",
+                    node.position,
+                )
             node.isConst && node.value == null ->
                 SemanticResult.Failure(
                     "Constant '${node.name}' must be initialized.",

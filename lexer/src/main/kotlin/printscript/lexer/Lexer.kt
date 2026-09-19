@@ -3,26 +3,15 @@ package printscript.lexer
 import printscript.common.Token
 import printscript.common.TokenType
 import printscript.lexer.plugin.TokenReader
-import printscript.lexer.plugin.reader.IdentifierReader
-import printscript.lexer.plugin.reader.NumberReader
-import printscript.lexer.plugin.reader.StringLiteralReader
-import printscript.lexer.plugin.reader.SymbolReader
 
 class Lexer(
     private val charStream: CharStream,
     private val readers: List<TokenReader>,
 ) : LexerInterface {
     // constructor con los readers de PrintScript para q los tests y el CLI puedan
-    // seguir creando el Lexer con un solo argumento
-    constructor(charStream: CharStream) : this(
-        charStream,
-        listOf(
-            IdentifierReader(LexerRules.keywords),
-            NumberReader(),
-            StringLiteralReader(),
-            SymbolReader(LexerRules.symbols),
-        ),
-    )
+    // seguir creando el Lexer con un solo argumento. La lista vive en LexerFactory
+    // para no tener dos copias del mismo default
+    constructor(charStream: CharStream) : this(charStream, LexerFactory.defaultReaders())
 
     override fun tokenize(): Iterator<Token> =
         iterator {

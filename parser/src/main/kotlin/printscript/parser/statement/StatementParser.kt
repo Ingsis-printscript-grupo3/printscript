@@ -12,8 +12,8 @@ import printscript.parser.version.VersionFeatures
 class StatementParser(
     private val stream: TokenStream,
     private val expressionParser: ExpressionParser,
-    private val handlers: Map<TokenType, StatementHandler> = DefaultStatementHandlers.map(),
-    val version: LanguageVersion = LanguageVersion.V1_1,
+    internal val version: LanguageVersion,
+    private val handlers: Map<TokenType, StatementHandler> = DefaultStatementHandlers.map(version),
 ) {
     fun parseStatement(): ASTResult<Statement> {
         val token = stream.peek()

@@ -17,10 +17,13 @@ import printscript.ast.registry.Registry
 import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.TokenType
+import printscript.semantic.handler.statement.BlockHandler
+import printscript.semantic.handler.statement.IfStatementHandler
 import printscript.semantic.symbol.SymbolTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -527,5 +530,62 @@ class StatementValidatorTest {
         val result = validator().validate(decl)
         assertIs<SemanticResult.Failure>(result)
         assertEquals("Incompatible types.", result.message)
+    }
+
+    @Test
+    fun `default10Handlers does not include if statement or block handlers`() {
+        val handlers10 = StatementValidator.default10Handlers()
+        assertFalse(handlers10.any { it is IfStatementHandler })
+        assertFalse(handlers10.any { it is BlockHandler })
+        assertEquals(3, handlers10.size)
+    }
+
+    @Test
+    fun `default11Handlers includes all 10 handlers plus if statement and block handlers`() {
+        val handlers11 = StatementValidator.default11Handlers()
+        assertTrue(handlers11.any { it is IfStatementHandler })
+        assertTrue(handlers11.any { it is BlockHandler })
+        assertEquals(5, handlers11.size)
+    }
+
+    @Test
+    fun `validating if statement in 1_0 fails as unknown statement type`() {
+        val ifStmt =
+            IfStatement(
+                BooleanLiteral(true),
+                Block(emptyList()),
+                null,
+                Position(3, 1),
+            )
+        val result = validator(version = LanguageVersion.V1_0).validate(ifStmt)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Unknown statement type.", result.message)
+        assertEquals(Position(3, 1), result.position)
+    }
+
+    @Test
+    fun `validating block in 1_0 fails as unknown statement type`() {
+        val block = Block(emptyList(), Position(5, 1))
+        val result = validator(version = LanguageVersion.V1_0).validate(block)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Unknown statement type.", result.message)
+        assertEquals(Position(5, 1), result.position)
+    }
+
+    @Test
+    fun `defaultHandlers dispatches based on version`() {
+        val handlers10 = StatementValidator.defaultHandlers(LanguageVersion.V1_0)
+        val handlers11 = StatementValidator.defaultHandlers(LanguageVersion.V1_1)
+        assertEquals(3, handlers10.size)
+        assertEquals(5, handlers11.size)
+    }
+
+    @Test
+    fun `validating const declaration in 1_0 fails as unsupported`() {
+        val constDecl = VariableDeclaration("x", "number", NumberLiteral(10.0), Position(4, 1), isConst = true)
+        val result = validator(version = LanguageVersion.V1_0).validate(constDecl)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("'const' declarations are not supported in PrintScript 1.0.", result.message)
+        assertEquals(Position(4, 1), result.position)
     }
 }

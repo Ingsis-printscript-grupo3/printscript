@@ -4,6 +4,7 @@ import printscript.ast.BinaryExpression
 import printscript.ast.Expression
 import printscript.ast.Identifier
 import printscript.ast.NumberLiteral
+import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
@@ -84,7 +85,10 @@ fun assignToken(
     column: Int = 1,
 ): Token = token(TokenType.ASSIGN, "=", line, column)
 
-fun parseExpression(vararg tokens: Token): ASTResult<Expression> {
+fun parseExpression(
+    vararg tokens: Token,
+    version: LanguageVersion = LanguageVersion.V1_1,
+): ASTResult<Expression> {
     val tokenList =
         if (tokens.isNotEmpty() && tokens.last().type == TokenType.EOF) {
             tokens.toList()
@@ -92,7 +96,7 @@ fun parseExpression(vararg tokens: Token): ASTResult<Expression> {
             tokens.toList() + token(TokenType.EOF)
         }
     val stream = TokenStream(tokenList.iterator())
-    val expressionParser = ExpressionParser(stream)
+    val expressionParser = ExpressionParser(stream, version)
     return expressionParser.parseExpression()
 }
 
@@ -105,6 +109,7 @@ fun parseExpressionSuccess(vararg tokens: Token): Expression {
 fun parseExpressionWithInfix(
     infixParselets: Map<TokenType, InfixParselet>,
     vararg tokens: Token,
+    version: LanguageVersion = LanguageVersion.V1_1,
 ): ASTResult<Expression> {
     val tokenList =
         if (tokens.isNotEmpty() && tokens.last().type == TokenType.EOF) {
@@ -113,7 +118,7 @@ fun parseExpressionWithInfix(
             tokens.toList() + token(TokenType.EOF)
         }
     val stream = TokenStream(tokenList.iterator())
-    val expressionParser = ExpressionParser(stream, infixParselets = infixParselets)
+    val expressionParser = ExpressionParser(stream, version, infixParselets = infixParselets)
     return expressionParser.parseExpression()
 }
 

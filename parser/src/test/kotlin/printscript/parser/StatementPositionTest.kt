@@ -2,6 +2,7 @@ package printscript.parser
 
 import printscript.ast.Statement
 import printscript.ast.VariableDeclaration
+import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
@@ -20,7 +21,7 @@ class StatementPositionTest {
 
     private fun parse(vararg tokens: Token): List<Statement> {
         val tokenList = tokens.toList() + token(TokenType.EOF)
-        return Parser(tokenList.iterator()).parse().asSequence().map { result ->
+        return Parser(tokenList.iterator(), LanguageVersion.V1_1).parse().asSequence().map { result ->
             when (result) {
                 is ParseResult.Success -> result.statement
                 is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)

@@ -10,11 +10,17 @@ import printscript.ast.ReadInput
 import printscript.ast.StringLiteral
 import printscript.ast.registry.Registry
 import printscript.common.LanguageVersion
+import printscript.common.Position
 import printscript.common.TokenType
+import printscript.semantic.handler.expression.BooleanLiteralHandler
+import printscript.semantic.handler.expression.ReadEnvHandler
+import printscript.semantic.handler.expression.ReadInputHandler
 import printscript.semantic.symbol.SymbolTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class ExpressionResolverTest {
     private fun resolver(
@@ -235,6 +241,59 @@ class ExpressionResolverTest {
         val result = resolver().resolveType(ReadInput(StringLiteral("Prompt:")), "unknownType")
         assertIs<SemanticResult.Failure>(result)
         assertEquals("Type 'unknownType' is not supported in PrintScript 1.1.", result.message)
+    }
+
+    @Test
+    fun `default10Handlers does not include boolean literal or io handlers`() {
+        val handlers10 = ExpressionResolver.default10Handlers()
+        assertFalse(handlers10.any { it is BooleanLiteralHandler })
+        assertFalse(handlers10.any { it is ReadInputHandler })
+        assertFalse(handlers10.any { it is ReadEnvHandler })
+        assertEquals(4, handlers10.size)
+    }
+
+    @Test
+    fun `default11Handlers includes all 10 handlers plus boolean literal and io handlers`() {
+        val handlers11 = ExpressionResolver.default11Handlers()
+        assertTrue(handlers11.any { it is BooleanLiteralHandler })
+        assertTrue(handlers11.any { it is ReadInputHandler })
+        assertTrue(handlers11.any { it is ReadEnvHandler })
+        assertEquals(7, handlers11.size)
+    }
+
+    @Test
+    fun `resolving boolean literal in 1_0 fails as unknown expression type`() {
+        val node = BooleanLiteral(true, Position(2, 5))
+        val result = resolver(version = LanguageVersion.V1_0).resolveType(node)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Unknown expression type.", result.message)
+        assertEquals(Position(2, 5), result.position)
+    }
+
+    @Test
+    fun `resolving readInput in 1_0 fails as unknown expression type`() {
+        val node = ReadInput(StringLiteral("prompt"), Position(4, 1))
+        val result = resolver(version = LanguageVersion.V1_0).resolveType(node)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Unknown expression type.", result.message)
+        assertEquals(Position(4, 1), result.position)
+    }
+
+    @Test
+    fun `resolving readEnv in 1_0 fails as unknown expression type`() {
+        val node = ReadEnv(StringLiteral("VAR"), Position(6, 1))
+        val result = resolver(version = LanguageVersion.V1_0).resolveType(node)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Unknown expression type.", result.message)
+        assertEquals(Position(6, 1), result.position)
+    }
+
+    @Test
+    fun `defaultHandlers dispatches based on version`() {
+        val handlers10 = ExpressionResolver.defaultHandlers(LanguageVersion.V1_0)
+        val handlers11 = ExpressionResolver.defaultHandlers(LanguageVersion.V1_1)
+        assertEquals(4, handlers10.size)
+        assertEquals(7, handlers11.size)
     }
 
     @Test

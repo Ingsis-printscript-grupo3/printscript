@@ -1,6 +1,7 @@
 package printscript.cli
 
 import org.junit.jupiter.api.Tag
+import printscript.common.LanguageVersion
 import printscript.formatter.Formatter
 import printscript.formatter.FormatterRules
 import printscript.interpreter.output.Output
@@ -47,7 +48,7 @@ class LargeFileStreamingTest {
     fun `validates 32768 statements without running out of memory`() {
         val file = largeSource()
 
-        val result = Engine(DiscardingOutput).validate(file.reader())
+        val result = Engine(DiscardingOutput).validate(file.reader(), LanguageVersion.V1_0)
 
         assertTrue(result is ExecutionResult.Success)
     }
@@ -57,7 +58,7 @@ class LargeFileStreamingTest {
         val file = largeSource()
 
         val result =
-            Engine(DiscardingOutput).format({ file.reader() }) { tokens ->
+            Engine(DiscardingOutput).format({ file.reader() }, LanguageVersion.V1_0) { tokens ->
                 Formatter(FormatterRules()).format(tokens, discardingWriter())
             }
 
