@@ -14,9 +14,7 @@ import printscript.formatter.Formatter
 import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
 import printscript.interpreter.output.ConsoleOutput
-import printscript.linter.Linter
-import printscript.linter.LinterRules
-import printscript.linter.LinterRulesLoader
+import printscript.linter.LinterFactory
 import printscript.runner.Engine
 import printscript.runner.ExecutionResult
 import printscript.runner.FormatResult
@@ -94,14 +92,17 @@ class AnalyzeCommand : CliktCommand(
 
     override fun run() {
         val languageVersion = requireSupportedVersion(version)
-        val rules = config?.let { LinterRulesLoader.fromFile(it.path) } ?: LinterRules()
+        val linter =
+            config
+                ?.let { LinterFactory.fromFile(it.path, languageVersion) }
+                ?: LinterFactory.create(languageVersion)
         val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress(showProgress(quiet))
 
         var warningCount = 0
         val result =
             engine.lint(file.reader(), languageVersion, onProgress = progress::report) { statements ->
-                Linter(rules).analyze(statements) { warning ->
+                linter.analyze(statements) { warning ->
                     warningCount++
                     echo("Warning at [${warning.position.line}:${warning.position.column}]: ${warning.message}")
                 }

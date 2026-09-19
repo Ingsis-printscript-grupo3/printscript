@@ -6,8 +6,7 @@ import printscript.formatter.FormatterRulesLoader
 import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.input.InputProvider
 import printscript.interpreter.output.Output
-import printscript.linter.Linter
-import printscript.linter.LinterRulesLoader
+import printscript.linter.LinterFactory
 import java.io.BufferedReader
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -102,11 +101,11 @@ object PrintScriptRunner {
     ) {
         val version = parseVersion(versionStr, onError) ?: return
         handleExecution(onError) {
-            val rules = LinterRulesLoader.fromStream(config)
+            val linter = LinterFactory.fromStream(config, version)
             val reader = BufferedReader(InputStreamReader(src, StandardCharsets.UTF_8))
             val result =
                 Engine(NO_OP_OUTPUT).lint(reader, version) { statements ->
-                    Linter(rules).analyze(statements) { warning -> onError(warning.message) }
+                    linter.analyze(statements) { warning -> onError(warning.message) }
                 }
             if (result is LintResult.Failure) onError(result.message)
         }

@@ -11,10 +11,10 @@ import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.input.InputProvider
 import printscript.interpreter.output.Output
-import printscript.lexer.CharStream
-import printscript.lexer.Lexer
+import printscript.lexer.LexerFactory
 import printscript.lexer.LexicalError
-import printscript.parser.Parser
+import printscript.parser.ParserFactory
+import printscript.parser.ParserInterface
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
 import printscript.semantic.SemanticAnalyzer
@@ -104,7 +104,7 @@ class Engine(
     ): FormatResult =
         try {
             openReader().use { parseIntoAst(parserFor(it, languageVersion), onProgress).forEach { } }
-            openReader().use { format(Lexer(CharStream(it)).tokenize()) }
+            openReader().use { format(LexerFactory.create(it).tokenize()) }
             FormatResult.Success
         } catch (e: Exception) {
             val failure = describe(e)
@@ -147,10 +147,10 @@ class Engine(
 private fun parserFor(
     reader: Reader,
     languageVersion: LanguageVersion,
-): Parser = Parser(Lexer(CharStream(reader)).tokenize(), languageVersion)
+): ParserInterface = ParserFactory.create(LexerFactory.create(reader).tokenize(), languageVersion)
 
 private fun parseIntoAst(
-    parser: Parser,
+    parser: ParserInterface,
     onProgress: (Int) -> Unit,
 ): Iterator<Statement> {
     var parsedCount = 0
