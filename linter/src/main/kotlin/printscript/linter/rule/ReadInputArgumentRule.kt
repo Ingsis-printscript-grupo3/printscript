@@ -13,23 +13,24 @@ import printscript.linter.Warning
 
 class ReadInputArgumentRule : LinterRule {
     override fun check(statement: Statement): List<Warning> =
-        readInputsIn(rootExpressionOf(statement))
+        when (statement) {
+            is VariableDeclaration -> {
+                val value = statement.value
+                if (value != null) checkExpression(value) else emptyList()
+            }
+            is Assignment -> checkExpression(statement.value)
+            is PrintCall -> checkExpression(statement.value)
+            is IfStatement -> checkExpression(statement.condition)
+            else -> emptyList()
+        }
+
+    private fun checkExpression(expression: Expression): List<Warning> =
+        readInputsIn(expression)
             .filterNot { it.argument.isLiteralOrIdentifier() }
             .map { Warning(message = MESSAGE, position = it.position) }
 
-    // readInput es una Expression, asi que hay que ir a buscarla al valor del statement
-    private fun rootExpressionOf(statement: Statement): Expression? =
-        when (statement) {
-            is VariableDeclaration -> statement.value
-            is Assignment -> statement.value
-            is PrintCall -> statement.value
-            is IfStatement -> statement.condition
-            else -> null
-        }
-
-    private fun readInputsIn(expression: Expression?): List<ReadInput> =
+    private fun readInputsIn(expression: Expression): List<ReadInput> =
         when (expression) {
-            null -> emptyList()
             is ReadInput -> listOf(expression) + readInputsIn(expression.argument)
             is ReadEnv -> readInputsIn(expression.argument)
             is BinaryExpression -> readInputsIn(expression.left) + readInputsIn(expression.right)
