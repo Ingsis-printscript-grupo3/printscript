@@ -15,8 +15,19 @@ class IdentifierFormatRule(private val format: String) : LinterRule {
         }
     }
 
-    override fun check(statement: Statement): List<Warning> {
-        val (name, position) = declaredOrAssignedName(statement) ?: return emptyList()
+    override fun check(statement: Statement): List<Warning> =
+        when (statement) {
+            // VariableDeclaration cubre let y const, el parser no hace un nodo aparte para const.
+            // el warning va al nombre, no al let: en Assignment la posicion ya es la del nombre
+            is VariableDeclaration -> checkIdentifier(statement.name, statement.namePosition)
+            is Assignment -> checkIdentifier(statement.name, statement.position)
+            else -> emptyList()
+        }
+
+    private fun checkIdentifier(
+        name: String,
+        position: Position,
+    ): List<Warning> {
         if (isValidFormat(name)) return emptyList()
         return listOf(
             Warning(
@@ -25,15 +36,6 @@ class IdentifierFormatRule(private val format: String) : LinterRule {
             ),
         )
     }
-
-    // VariableDeclaration cubre let y const, el parser no hace un nodo aparte para const.
-    // el warning va al nombre, no al let: en Assignment la posicion ya es la del nombre
-    private fun declaredOrAssignedName(statement: Statement): Pair<String, Position>? =
-        when (statement) {
-            is VariableDeclaration -> statement.name to statement.namePosition
-            is Assignment -> statement.name to statement.position
-            else -> null
-        }
 
     private fun isValidFormat(name: String): Boolean =
         when (format) {
