@@ -5,7 +5,10 @@ import printscript.ast.BinaryExpression
 import printscript.ast.Identifier
 import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
+import printscript.ast.ReadInput
 import printscript.ast.Statement
+import printscript.ast.StringLiteral
+import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.common.TokenType
 import printscript.linter.Linter
@@ -24,6 +27,23 @@ class LinterRuleRegistryTest {
                 TokenType.PLUS,
                 NumberLiteral(2.0, Position(1, 13)),
                 Position(1, 9),
+            ),
+            Position(1, 1),
+        )
+
+    // readInput("a" + "b"): lo marca la regla de readInput y ninguna otra
+    private fun readInputWithExpression() =
+        VariableDeclaration(
+            "x",
+            "string",
+            ReadInput(
+                BinaryExpression(
+                    StringLiteral("a", Position(1, 10)),
+                    TokenType.PLUS,
+                    StringLiteral("b", Position(1, 14)),
+                    Position(1, 10),
+                ),
+                Position(1, 10),
             ),
             Position(1, 1),
         )
@@ -54,6 +74,27 @@ class LinterRuleRegistryTest {
         val config = LinterRules(printCallArgumentsMustBeLiteralOrIdentifier = false)
 
         assertTrue(warningsFor(config, printlnWithExpression()).isEmpty())
+    }
+
+    @Test
+    fun `turning off the readInput rule leaves it out`() {
+        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = false)
+
+        assertTrue(warningsFor(config, readInputWithExpression()).isEmpty())
+    }
+
+    @Test
+    fun `turning off the println rule still keeps the readInput rule active`() {
+        val config = LinterRules(printCallArgumentsMustBeLiteralOrIdentifier = false)
+
+        assertEquals(1, warningsFor(config, readInputWithExpression()).size)
+    }
+
+    @Test
+    fun `turning off the readInput rule still keeps the println rule active`() {
+        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = false)
+
+        assertEquals(1, warningsFor(config, printlnWithExpression()).size)
     }
 
     @Test
@@ -90,7 +131,7 @@ class LinterRuleRegistryTest {
 
     @Test
     fun `register adds a rule on top of the default ones`() {
-        val extra = LinterRuleFactory { NoOpRule() }
+        val extra = LinterRuleFactory { listOf(NoOpRule()) }
 
         val rules = LinterRuleRegistry().register(extra).rulesFor(LinterRules())
 
@@ -99,10 +140,21 @@ class LinterRuleRegistryTest {
     }
 
     @Test
+    fun `a factory can contribute multiple rules`() {
+        val extra = LinterRuleFactory { listOf(NoOpRule(), AlwaysWarnsRule()) }
+
+        val rules = LinterRuleRegistry().register(extra).rulesFor(LinterRules())
+
+        assertEquals(4, rules.size)
+        assertTrue(rules.any { it is NoOpRule })
+        assertTrue(rules.any { it is AlwaysWarnsRule })
+    }
+
+    @Test
     fun `register does not mutate the registry it was called on`() {
         val original = LinterRuleRegistry()
 
-        original.register(LinterRuleFactory { NoOpRule() })
+        original.register(LinterRuleFactory { listOf(NoOpRule()) })
 
         assertEquals(2, original.rulesFor(LinterRules()).size)
     }
@@ -116,15 +168,15 @@ class LinterRuleRegistryTest {
     }
 
     @Test
-    fun `a factory that returns null contributes no rule`() {
-        val rules = LinterRuleRegistry(listOf(LinterRuleFactory { null })).rulesFor(LinterRules())
+    fun `a factory that returns an empty list contributes no rule`() {
+        val rules = LinterRuleRegistry(listOf(LinterRuleFactory { emptyList() })).rulesFor(LinterRules())
 
         assertTrue(rules.isEmpty())
     }
 
     @Test
     fun `a rule registered by hand actually runs and emits its warning`() {
-        val registry = LinterRuleRegistry().register(LinterRuleFactory { AlwaysWarnsRule() })
+        val registry = LinterRuleRegistry().register(LinterRuleFactory { listOf(AlwaysWarnsRule()) })
         val statements = listOf<Statement>(Assignment("miVariable", Identifier("x"), Position(7, 2)))
 
         val warnings = mutableListOf<Warning>()
