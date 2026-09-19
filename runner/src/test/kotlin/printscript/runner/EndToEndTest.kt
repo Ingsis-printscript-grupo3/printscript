@@ -1,5 +1,6 @@
 package printscript.runner
 
+import printscript.common.LanguageVersion
 import printscript.formatter.Formatter
 import printscript.formatter.FormatterRules
 import printscript.interpreter.output.BucketOutput
@@ -11,10 +12,13 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class EndToEndTest {
-    private fun runEngine(code: String): Pair<ExecutionResult, List<String>> {
+    private fun runEngine(
+        code: String,
+        version: LanguageVersion = LanguageVersion.V1_1,
+    ): Pair<ExecutionResult, List<String>> {
         val bucket = BucketOutput()
         val engine = Engine(output = bucket)
-        val result = engine.execute(code)
+        val result = engine.execute(code, version)
         return Pair(result, bucket.lines())
     }
 
@@ -227,7 +231,7 @@ class EndToEndTest {
         val reported = mutableListOf<Int>()
         val code = "let a: number = 1;\nlet b: number = 2;\nprintln(a + b);"
 
-        Engine(BucketOutput(), onProgress = reported::add).validate(StringReader(code))
+        Engine(BucketOutput()).validate(StringReader(code), LanguageVersion.V1_0, onProgress = reported::add)
 
         assertEquals(listOf(1, 2, 3), reported)
     }
@@ -237,7 +241,7 @@ class EndToEndTest {
         val engine = Engine(BucketOutput())
         var called = false
         val result =
-            engine.format({ StringReader("let a:number=5;") }) { tokens ->
+            engine.format({ StringReader("let a:number=5;") }, LanguageVersion.V1_0) { tokens ->
                 tokens.forEach { called = true }
             }
         assertTrue(result is FormatResult.Success)
@@ -248,7 +252,7 @@ class EndToEndTest {
     fun `format returns failure on syntax error`() {
         val engine = Engine(BucketOutput())
         val result =
-            engine.format({ StringReader("let a:number =") }) { tokens ->
+            engine.format({ StringReader("let a:number =") }, LanguageVersion.V1_0) { tokens ->
                 tokens.forEach { }
             }
         assertTrue(result is FormatResult.Failure)
@@ -260,7 +264,7 @@ class EndToEndTest {
         val engine = Engine(BucketOutput())
         var called = false
         val result =
-            engine.lint(StringReader("let a: number = 5;")) { statements ->
+            engine.lint(StringReader("let a: number = 5;"), LanguageVersion.V1_0) { statements ->
                 statements.forEach { called = true }
             }
         assertTrue(result is LintResult.Success)
@@ -271,7 +275,7 @@ class EndToEndTest {
     fun `lint returns failure on syntax error`() {
         val engine = Engine(BucketOutput())
         val result =
-            engine.lint(StringReader("let a: number =")) { statements ->
+            engine.lint(StringReader("let a: number ="), LanguageVersion.V1_0) { statements ->
                 statements.forEach { }
             }
         assertTrue(result is LintResult.Failure)
@@ -281,7 +285,7 @@ class EndToEndTest {
     private fun formatOnce(code: String): String {
         val writer = StringWriter()
         val rules = FormatterRules(spaceAfterColon = true, spacingAroundEquals = true, indentInsideIf = 2)
-        Engine(BucketOutput()).format({ StringReader(code) }) { tokens ->
+        Engine(BucketOutput()).format({ StringReader(code) }, LanguageVersion.V1_1) { tokens ->
             Formatter(rules).format(tokens, writer)
         }
         return writer.toString()
@@ -296,20 +300,211 @@ class EndToEndTest {
         assertEquals(once, formatOnce(once))
     }
 
-    // el Engine defaulteaba a 1.1 mientras el CLI defaulteaba a 1.0: ahora los dos salen de
-    // LanguageVersion.DEFAULT, asi que sin version explicita corre el lenguaje mas chico
     @Test
-    fun `without an explicit version the engine runs the conservative one`() {
-        val code =
-            """
-            if (true) {
-                println(1);
-            }
-            """.trimIndent()
+    fun `executes negative numeric literals`() {
+        val (result, output) =
+            runEngine(
+                """
+                let x: number = -5;
+                let y: number = -3.14;
+                println(x);
+                println(y);
+                """.trimIndent(),
+            )
 
-        val (result, _) = runEngine(code)
+        assertTrue(result is ExecutionResult.Success)
+        assertEquals(listOf("-5", "-3.14"), output)
+    }
+
+    @Test
+    fun `executes unary minus on variable and parenthesized expression`() {
+        val (result, output) =
+            runEngine(
+                """
+                let a: number = 5;
+                let b: number = -a;
+                println(b);
+                let c: number = -(2 + 3);
+                println(c);
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Success)
+        assertEquals(listOf("-5", "-5"), output)
+    }
+
+    @Test
+    fun `executes chained minus and subtraction of negative number`() {
+        val (result, output) =
+            runEngine(
+                """
+                println(5 - -3);
+                println(- -5);
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Success)
+        assertEquals(listOf("8", "5"), output)
+    }
+
+    @Test
+    fun `executes operator precedence and left associativity correctly`() {
+        val (result, output) =
+            runEngine(
+                """
+                println(1 + 2 * 3);
+                println(10 - 4 - 2);
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Success)
+        assertEquals(listOf("7", "4"), output)
+    }
+
+    @Test
+    fun `execution fails on trailing unary minus`() {
+        val (result, _) =
+            runEngine(
+                """
+                let x: number = -;
+                """.trimIndent(),
+            )
 
         assertTrue(result is ExecutionResult.Failure)
-        assertTrue(result.message.contains("1.1"))
+        assertEquals("Syntax", result.type)
+    }
+
+    @Test
+    fun `executes negative numbers and unary minus under PrintScript 1_0`() {
+        val (result, output) =
+            runEngine(
+                """
+                let a: number = -10;
+                let b: number = -a;
+                println(a);
+                println(b);
+                println(5 - -3);
+                """.trimIndent(),
+                LanguageVersion.V1_0,
+            )
+
+        assertTrue(result is ExecutionResult.Success)
+        assertEquals(listOf("-10", "10", "8"), output)
+    }
+
+    @Test
+    fun `executes variable reassignment with negative numbers and expressions`() {
+        val (result, output) =
+            runEngine(
+                """
+                let x: number = 10;
+                x = -5;
+                println(x);
+                x = -x;
+                println(x);
+                x = 5 - -3;
+                println(x);
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Success)
+        assertEquals(listOf("-5", "5", "8"), output)
+    }
+
+    @Test
+    fun `executes const declaration with negative numbers`() {
+        val (result, output) =
+            runEngine(
+                """
+                const x: number = -42;
+                println(x);
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Success)
+        assertEquals(listOf("-42"), output)
+    }
+
+    @Test
+    fun `executes arithmetic operations with negative numbers`() {
+        val (result, output) =
+            runEngine(
+                """
+                println(5 + -3);
+                println(-5 * -3);
+                println(-10 / 2);
+                println(-10 / -2);
+                println(- - -5);
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Success)
+        assertEquals(listOf("2", "15", "-5", "5", "-5"), output)
+    }
+
+    @Test
+    fun `execution fails when unary minus is applied to a string`() {
+        val (result, _) =
+            runEngine(
+                """
+                let x: number = -"hello";
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Semantic", result.type)
+    }
+
+    @Test
+    fun `execution fails when unary minus is applied to a boolean`() {
+        val (result, _) =
+            runEngine(
+                """
+                let x: number = -true;
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Semantic", result.type)
+    }
+
+    @Test
+    fun `execution fails on assignment with trailing unary minus`() {
+        val (result, _) =
+            runEngine(
+                """
+                let x: number = 5;
+                x = -;
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Syntax", result.type)
+    }
+
+    @Test
+    fun `execution fails when expression has unary minus followed by multiply`() {
+        val (result, _) =
+            runEngine(
+                """
+                let x: number = - * 5;
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Syntax", result.type)
+    }
+
+    @Test
+    fun `execution fails on trailing unary minus inside binary expression`() {
+        val (result, _) =
+            runEngine(
+                """
+                let x: number = 5 + -;
+                """.trimIndent(),
+            )
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Syntax", result.type)
     }
 }

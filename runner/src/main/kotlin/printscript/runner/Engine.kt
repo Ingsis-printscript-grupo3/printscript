@@ -10,9 +10,9 @@ import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.input.InputProvider
 import printscript.interpreter.output.Output
-import printscript.lexer.CharStream
-import printscript.lexer.Lexer
-import printscript.parser.Parser
+import printscript.lexer.LexerFactory
+import printscript.parser.ParserFactory
+import printscript.parser.ParserInterface
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
 import printscript.semantic.SemanticAnalyzer
@@ -58,17 +58,17 @@ class Engine(
     private val output: Output,
     private val input: InputProvider = ConsoleInput(),
     private val env: EnvProvider = SystemEnvProvider(),
-    // por donde el Engine avisa cuantos statements lleva parseados, igual que output es por donde imprime
-    private val onProgress: (Int) -> Unit = {},
 ) {
     fun execute(
         code: String,
-        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
-    ): ExecutionResult = execute(StringReader(code), languageVersion)
+        languageVersion: LanguageVersion,
+        onProgress: (Int) -> Unit = {},
+    ): ExecutionResult = execute(StringReader(code), languageVersion, onProgress)
 
     fun execute(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
+        languageVersion: LanguageVersion,
+        onProgress: (Int) -> Unit = {},
     ): ExecutionResult =
         runCatchingErrors {
             val interpreter = InterpreterFactory.create(languageVersion, output, input, env)
@@ -77,13 +77,15 @@ class Engine(
 
     fun validate(
         code: String,
-        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
-    ): ExecutionResult = validate(StringReader(code), languageVersion)
+        languageVersion: LanguageVersion,
+        onProgress: (Int) -> Unit = {},
+    ): ExecutionResult = validate(StringReader(code), languageVersion, onProgress)
 
     // validar es correr el pipeline entero sin interpretar: alcanza con recorrer los statements
     fun validate(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
+        languageVersion: LanguageVersion,
+        onProgress: (Int) -> Unit = {},
     ): ExecutionResult =
         runCatchingErrors {
             consume(analyzedStatements(reader, languageVersion, onProgress))
@@ -95,18 +97,20 @@ class Engine(
      */
     fun format(
         openReader: () -> Reader,
-        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
+        languageVersion: LanguageVersion,
+        onProgress: (Int) -> Unit = {},
         format: (Iterator<Token>) -> Unit,
     ): FormatResult =
         runCatchingErrors {
             openReader().use { consume(parseIntoAst(parserFor(it, languageVersion), onProgress)) }
-            openReader().use { format(Lexer(CharStream(it)).tokenize()) }
+            openReader().use { format(LexerFactory.create(it).tokenize()) }
         }.asFormatResult()
 
     // el linter trabaja sobre el ast crudo: no necesita el chequeo semantico
     fun lint(
         reader: Reader,
-        languageVersion: LanguageVersion = LanguageVersion.DEFAULT,
+        languageVersion: LanguageVersion,
+        onProgress: (Int) -> Unit = {},
         lint: (Iterator<Statement>) -> Unit,
     ): LintResult =
         runCatchingErrors {
@@ -118,11 +122,11 @@ class Engine(
 private fun parserFor(
     reader: Reader,
     languageVersion: LanguageVersion,
-): Parser = Parser(Lexer(CharStream(reader)).tokenize(), languageVersion)
+): ParserInterface = ParserFactory.create(LexerFactory.create(reader).tokenize(), languageVersion)
 
 // segundo paso: de resultados del parser a statements, cortando con SyntaxError en el primer fallo
 private fun parseIntoAst(
-    parser: Parser,
+    parser: ParserInterface,
     onProgress: (Int) -> Unit,
 ): Iterator<Statement> {
     var parsedCount = 0

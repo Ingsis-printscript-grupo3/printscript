@@ -12,10 +12,15 @@ import printscript.ast.registry.Registry
 import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.TokenType
+import printscript.semantic.handler.expression.BooleanLiteralHandler
+import printscript.semantic.handler.expression.ReadEnvHandler
+import printscript.semantic.handler.expression.ReadInputHandler
 import printscript.semantic.symbol.SymbolTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 // posicion de mentira: estos tests miran el resultado, no donde ocurrio
 private val AT = Position(1, 1)
@@ -244,5 +249,90 @@ class ExpressionResolverTest {
         val result = resolver().resolveType(ReadInput(StringLiteral("Prompt:")), "unknownType")
         assertIs<SemanticResult.Failure>(result)
         assertEquals("Type 'unknownType' is not supported in PrintScript 1.1.", result.message)
+    }
+
+    @Test
+    fun `default10Handlers does not include boolean literal or io handlers`() {
+        val handlers10 = ExpressionResolver.default10Handlers()
+        assertFalse(handlers10.any { it is BooleanLiteralHandler })
+        assertFalse(handlers10.any { it is ReadInputHandler })
+        assertFalse(handlers10.any { it is ReadEnvHandler })
+        assertEquals(4, handlers10.size)
+    }
+
+    @Test
+    fun `default11Handlers includes all 10 handlers plus boolean literal and io handlers`() {
+        val handlers11 = ExpressionResolver.default11Handlers()
+        assertTrue(handlers11.any { it is BooleanLiteralHandler })
+        assertTrue(handlers11.any { it is ReadInputHandler })
+        assertTrue(handlers11.any { it is ReadEnvHandler })
+        assertEquals(7, handlers11.size)
+    }
+
+    @Test
+    fun `resolving boolean literal in 1_0 fails as unknown expression type`() {
+        val node = BooleanLiteral(true, Position(2, 5))
+        val result = resolver(version = LanguageVersion.V1_0).resolveType(node)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Unknown expression type.", result.message)
+        assertEquals(Position(2, 5), result.position)
+    }
+
+    @Test
+    fun `resolving readInput in 1_0 fails as unknown expression type`() {
+        val node = ReadInput(StringLiteral("prompt"), Position(4, 1))
+        val result = resolver(version = LanguageVersion.V1_0).resolveType(node)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Unknown expression type.", result.message)
+        assertEquals(Position(4, 1), result.position)
+    }
+
+    @Test
+    fun `resolving readEnv in 1_0 fails as unknown expression type`() {
+        val node = ReadEnv(StringLiteral("VAR"), Position(6, 1))
+        val result = resolver(version = LanguageVersion.V1_0).resolveType(node)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Unknown expression type.", result.message)
+        assertEquals(Position(6, 1), result.position)
+    }
+
+    @Test
+    fun `defaultHandlers dispatches based on version`() {
+        val handlers10 = ExpressionResolver.defaultHandlers(LanguageVersion.V1_0)
+        val handlers11 = ExpressionResolver.defaultHandlers(LanguageVersion.V1_1)
+        assertEquals(4, handlers10.size)
+        assertEquals(7, handlers11.size)
+    }
+
+    @Test
+    fun `desugared unary minus with number literal resolves to number`() {
+        val minusExpr = BinaryExpression(NumberLiteral(0.0), TokenType.MINUS, NumberLiteral(5.0))
+        val result = resolver().resolveType(minusExpr)
+        assertEquals(SemanticResult.Success("number"), result)
+    }
+
+    @Test
+    fun `desugared unary minus with number identifier resolves to number`() {
+        val table = SymbolTable()
+        table.define("x", "number", at = AT)
+        val minusExpr = BinaryExpression(NumberLiteral(0.0), TokenType.MINUS, Identifier("x"))
+        val result = resolver(table).resolveType(minusExpr)
+        assertEquals(SemanticResult.Success("number"), result)
+    }
+
+    @Test
+    fun `desugared unary minus with string literal fails with incompatible types`() {
+        val minusExpr = BinaryExpression(NumberLiteral(0.0), TokenType.MINUS, StringLiteral("hello"))
+        val result = resolver().resolveType(minusExpr)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Incompatible types in operation.", result.message)
+    }
+
+    @Test
+    fun `desugared unary minus with boolean literal fails`() {
+        val minusExpr = BinaryExpression(NumberLiteral(0.0), TokenType.MINUS, BooleanLiteral(true))
+        val result = resolver().resolveType(minusExpr)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Operator 'MINUS' cannot be applied to boolean types.", result.message)
     }
 }

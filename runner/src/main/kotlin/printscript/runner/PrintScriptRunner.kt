@@ -6,8 +6,7 @@ import printscript.formatter.FormatterRulesLoader
 import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.input.InputProvider
 import printscript.interpreter.output.Output
-import printscript.linter.Linter
-import printscript.linter.LinterRulesLoader
+import printscript.linter.LinterFactory
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStream
@@ -65,10 +64,10 @@ object PrintScriptRunner {
     ) {
         val version = parseVersion(versionStr, onError) ?: return
         handleExecution(onError) {
-            val rules = LinterRulesLoader.fromStream(config)
+            val linter = LinterFactory.fromStream(config, version)
             val result =
                 Engine(NO_OP_OUTPUT).lint(utf8Reader(src), version) { statements ->
-                    Linter(rules).analyze(statements) { warning -> onError(warning.message) }
+                    linter.analyze(statements) { warning -> onError(warning.message) }
                 }
             if (result is LintResult.Failure) onError(result.message)
         }
@@ -113,7 +112,7 @@ object PrintScriptRunner {
         src: InputStream,
         block: (() -> Reader) -> T,
     ): T {
-        val source = File.createTempFile("printscript-format", ".ps").apply { deleteOnExit() }
+        val source = File.createTempFile("printscript-format", ".ps")
         return try {
             source.outputStream().use { src.copyTo(it) }
             block { source.bufferedReader(StandardCharsets.UTF_8) }

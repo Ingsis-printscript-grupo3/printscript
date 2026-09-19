@@ -14,9 +14,7 @@ import printscript.formatter.Formatter
 import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
 import printscript.interpreter.output.ConsoleOutput
-import printscript.linter.Linter
-import printscript.linter.LinterRules
-import printscript.linter.LinterRulesLoader
+import printscript.linter.LinterFactory
 import printscript.runner.Engine
 import printscript.runner.ExecutionResult
 import printscript.runner.FormatResult
@@ -48,8 +46,8 @@ class ExecuteCommand : CliktCommand(name = "execute", help = "Run a .prs file") 
     override fun run() {
         val languageVersion = requireSupportedVersion(version)
         val progress = ParsingProgress(showProgress(quiet))
-        val engine = Engine(ConsoleOutput(), onProgress = progress::report)
-        val result = engine.execute(file.reader(), languageVersion)
+        val engine = Engine(ConsoleOutput())
+        val result = engine.execute(file.reader(), languageVersion, onProgress = progress::report)
         progress.finish()
         when (result) {
             is ExecutionResult.Success -> Unit
@@ -70,8 +68,8 @@ class ValidateCommand : CliktCommand(
     override fun run() {
         val languageVersion = requireSupportedVersion(version)
         val progress = ParsingProgress(showProgress(quiet))
-        val engine = Engine(ConsoleOutput(), onProgress = progress::report)
-        val result = engine.validate(file.reader(), languageVersion)
+        val engine = Engine(ConsoleOutput())
+        val result = engine.validate(file.reader(), languageVersion, onProgress = progress::report)
         progress.finish()
         when (result) {
             is ExecutionResult.Success -> echo("${file.path}: no errors found")
@@ -93,14 +91,17 @@ class AnalyzeCommand : CliktCommand(
 
     override fun run() {
         val languageVersion = requireSupportedVersion(version)
-        val rules = config?.let { LinterRulesLoader.fromFile(it.path) } ?: LinterRules()
+        val linter =
+            config
+                ?.let { LinterFactory.fromFile(it.path, languageVersion) }
+                ?: LinterFactory.create(languageVersion)
         val progress = ParsingProgress(showProgress(quiet))
-        val engine = Engine(ConsoleOutput(), onProgress = progress::report)
+        val engine = Engine(ConsoleOutput())
 
         var warningCount = 0
         val result =
-            engine.lint(file.reader(), languageVersion) { statements ->
-                Linter(rules).analyze(statements) { warning ->
+            engine.lint(file.reader(), languageVersion, onProgress = progress::report) { statements ->
+                linter.analyze(statements) { warning ->
                     warningCount++
                     echo("Warning at [${warning.position.line}:${warning.position.column}]: ${warning.message}")
                 }
@@ -126,10 +127,10 @@ class FormatCommand : CliktCommand(name = "format", help = "Format a .prs file a
         val languageVersion = requireSupportedVersion(version)
         val rules = config?.let { FormatterRulesLoader.fromFile(it.path) } ?: DEFAULT_FORMATTER_RULES
         val progress = ParsingProgress(showProgress(quiet))
-        val engine = Engine(ConsoleOutput(), onProgress = progress::report)
+        val engine = Engine(ConsoleOutput())
 
         val result =
-            engine.format({ file.reader() }, languageVersion) { tokens ->
+            engine.format({ file.reader() }, languageVersion, onProgress = progress::report) { tokens ->
                 Formatter(rules).format(tokens, echoWriter())
             }
         progress.finish()

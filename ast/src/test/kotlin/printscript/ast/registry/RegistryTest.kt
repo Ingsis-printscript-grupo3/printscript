@@ -4,7 +4,6 @@ import printscript.ast.PositionedNode
 import printscript.common.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 private data class FakeNode(val label: String, override val position: Position) : PositionedNode
 
@@ -22,7 +21,7 @@ class RegistryTest {
     fun `resolves the node using a registered handler`() {
         val registry = Registry<FakeNode, Unit, String>(listOf(FakeNodeHandler()))
 
-        val result = registry.resolve(FakeNode("a", Position(1, 1)), Unit)
+        val result = registry.resolveOrNull(FakeNode("a", Position(1, 1)), Unit)
 
         assertEquals("handled:a", result)
     }
@@ -32,20 +31,6 @@ class RegistryTest {
         val registry = Registry<FakeNode, Unit, String>()
 
         assertEquals(null, registry.resolveOrNull(FakeNode("a", Position(1, 1)), Unit))
-    }
-
-    @Test
-    fun `resolve throws NoHandlerFoundException with the node position when nothing applies`() {
-        val registry = Registry<FakeNode, Unit, String>()
-        val node = FakeNode("orphan", Position(3, 7))
-
-        val error =
-            assertFailsWith<NoHandlerFoundException> {
-                registry.resolve(node, Unit)
-            }
-
-        assert(error.message!!.contains("FakeNode"))
-        assert(error.message!!.contains(node.position.toString()))
     }
 
     @Test

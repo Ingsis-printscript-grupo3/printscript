@@ -21,7 +21,7 @@ class StatementPositionTest {
 
     private fun parse(
         vararg tokens: Token,
-        version: LanguageVersion = LanguageVersion.DEFAULT,
+        version: LanguageVersion = LanguageVersion.V1_1,
     ): List<Statement> {
         val tokenList = tokens.toList() + token(TokenType.EOF)
         return Parser(tokenList.iterator(), version).parse().asSequence().map { result ->

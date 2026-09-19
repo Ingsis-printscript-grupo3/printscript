@@ -36,14 +36,17 @@ object InterpreterFactory {
             LanguageVersion.V1_1 -> create11(output, input, env)
         }
 
+    fun create(
+        version: String,
+        output: Output = ConsoleOutput(),
+        input: InputProvider = ConsoleInput(),
+        env: EnvProvider = SystemEnvProvider(),
+    ): Interpreter = create(LanguageVersion.parse(version), output, input, env)
+
     // el interprete decide por version QUE handlers registra: si le llega un nodo que su version
     // no conoce, corta con UnknownStatementError. Es al reves del semantico, que registra siempre los
     // mismos y pone la diferencia en los datos (ver SemanticRules)
-    fun create10(output: Output = ConsoleOutput()): Interpreter =
-        Interpreter(
-            statementInterpreters = default10StatementInterpreters(output),
-            expressionEvaluators = default10ExpressionEvaluators(),
-        )
+    fun create10(output: Output = ConsoleOutput()): Interpreter = Interpreter(LanguageVersion.V1_0, output)
 
     fun create11(
         output: Output = ConsoleOutput(),

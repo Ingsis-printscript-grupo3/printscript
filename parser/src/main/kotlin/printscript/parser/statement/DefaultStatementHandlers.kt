@@ -8,7 +8,7 @@ import printscript.parser.statement.handlers.PrintCallHandler
 import printscript.parser.statement.handlers.VariableDeclarationHandler
 
 object DefaultStatementHandlers {
-    fun map(version: LanguageVersion = LanguageVersion.DEFAULT): Map<TokenType, StatementHandler> =
+    fun map(version: LanguageVersion): Map<TokenType, StatementHandler> =
         when (version) {
             LanguageVersion.V1_0 -> handlers10
             LanguageVersion.V1_1 -> handlers10 + handlers11

@@ -3,6 +3,7 @@ package printscript.semantic
 import printscript.ast.Expression
 import printscript.ast.registry.Handler
 import printscript.ast.registry.Registry
+import printscript.common.LanguageVersion
 import printscript.semantic.handler.expression.BinaryExpressionHandler
 import printscript.semantic.handler.expression.BooleanLiteralHandler
 import printscript.semantic.handler.expression.IdentifierHandler
@@ -17,19 +18,41 @@ class ExpressionResolver(
     val rules: SemanticRules,
     val expectedType: String? = null,
     private val registry: Registry<Expression, ExpressionResolver, SemanticResult<String>> =
-        Registry(defaultHandlers()),
+        Registry(defaultHandlers(rules.version)),
 ) {
+    val version: LanguageVersion get() = rules.version
+
+    constructor(
+        symbolTable: SymbolTable,
+        version: LanguageVersion,
+        registry: Registry<Expression, ExpressionResolver, SemanticResult<String>> =
+            Registry(defaultHandlers(version)),
+    ) : this(symbolTable, SemanticRules.from(version), null, registry)
+
     companion object {
-        fun defaultHandlers(): List<Handler<Expression, ExpressionResolver, SemanticResult<String>>> =
+        fun defaultHandlers(
+            version: LanguageVersion,
+        ): List<Handler<Expression, ExpressionResolver, SemanticResult<String>>> =
+            when (version) {
+                LanguageVersion.V1_0 -> default10Handlers()
+                LanguageVersion.V1_1 -> default11Handlers()
+            }
+
+        fun default10Handlers(): List<Handler<Expression, ExpressionResolver, SemanticResult<String>>> =
             listOf(
                 NumberLiteralHandler(),
                 StringLiteralHandler(),
-                BooleanLiteralHandler(),
                 IdentifierHandler(),
                 BinaryExpressionHandler(),
-                ReadInputHandler(),
-                ReadEnvHandler(),
             )
+
+        fun default11Handlers(): List<Handler<Expression, ExpressionResolver, SemanticResult<String>>> =
+            default10Handlers() +
+                listOf(
+                    BooleanLiteralHandler(),
+                    ReadInputHandler(),
+                    ReadEnvHandler(),
+                )
     }
 
     fun withExpectedType(expectedType: String?): ExpressionResolver =

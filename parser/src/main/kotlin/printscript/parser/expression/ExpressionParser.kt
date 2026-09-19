@@ -10,9 +10,9 @@ import printscript.parser.version.VersionFeatures
 
 class ExpressionParser(
     private val stream: TokenStream,
-    private val prefixParselets: Map<TokenType, PrefixParselet> = DefaultExpressionParselets.prefix(),
+    private val version: LanguageVersion,
+    private val prefixParselets: Map<TokenType, PrefixParselet> = DefaultExpressionParselets.prefix(version),
     private val infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix,
-    private val version: LanguageVersion = LanguageVersion.DEFAULT,
 ) {
     fun parseExpression(minPrecedence: Int = 0): ASTResult<Expression> {
         var left =
