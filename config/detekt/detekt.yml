@@ -1,13 +1,16 @@
 complexity:
-  # mas corto que el default, asi las funciones no crecen. Se mantiene en 40 si nadie tiene anotado otro numero mas bajo.
   LongMethod:
     active: true
-    threshold: 40
+    threshold: 21
+    excludes: ['**/test/**']
 
 style:
   # el parser corta con return apenas falla algo
   ReturnCount:
-    max: 8
+    max: 4
+
+  MagicNumber:
+    active: true
 
   # el while de precedencia sale por 4 break
   LoopWithTooManyJumpStatements:

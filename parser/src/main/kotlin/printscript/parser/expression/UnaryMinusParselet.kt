@@ -16,13 +16,7 @@ class UnaryMinusParselet(
         stream: TokenStream,
         expressionParser: ExpressionParser,
     ): ASTResult<Expression> {
-        val nextToken = stream.peek()
-        if (nextToken != null && nextToken.type == TokenType.NUMBERLITERAL) {
-            stream.advance()
-            val value = nextToken.value.toDouble()
-            val folded = if (value == 0.0) 0.0 else -value
-            return ASTResult.Success(NumberLiteral(folded, token.start))
-        }
+        negatedLiteral(token, stream)?.let { return ASTResult.Success(it) }
 
         val operand =
             when (val result = expressionParser.parseExpression(precedence)) {
@@ -38,5 +32,16 @@ class UnaryMinusParselet(
                 position = token.start,
             ),
         )
+    }
+
+    private fun negatedLiteral(
+        minus: Token,
+        stream: TokenStream,
+    ): NumberLiteral? {
+        val nextToken = stream.peek()
+        if (nextToken == null || nextToken.type != TokenType.NUMBERLITERAL) return null
+        stream.advance()
+        val value = nextToken.value.toDouble()
+        return NumberLiteral(if (value == 0.0) 0.0 else -value, minus.start)
     }
 }
