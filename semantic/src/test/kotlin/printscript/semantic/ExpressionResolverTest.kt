@@ -295,4 +295,36 @@ class ExpressionResolverTest {
         assertEquals(4, handlers10.size)
         assertEquals(7, handlers11.size)
     }
+
+    @Test
+    fun `desugared unary minus with number literal resolves to number`() {
+        val minusExpr = BinaryExpression(NumberLiteral(0.0), TokenType.MINUS, NumberLiteral(5.0))
+        val result = resolver().resolveType(minusExpr)
+        assertEquals(SemanticResult.Success("number"), result)
+    }
+
+    @Test
+    fun `desugared unary minus with number identifier resolves to number`() {
+        val table = SymbolTable()
+        table.define("x", "number")
+        val minusExpr = BinaryExpression(NumberLiteral(0.0), TokenType.MINUS, Identifier("x"))
+        val result = resolver(table).resolveType(minusExpr)
+        assertEquals(SemanticResult.Success("number"), result)
+    }
+
+    @Test
+    fun `desugared unary minus with string literal fails with incompatible types`() {
+        val minusExpr = BinaryExpression(NumberLiteral(0.0), TokenType.MINUS, StringLiteral("hello"))
+        val result = resolver().resolveType(minusExpr)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Incompatible types in operation.", result.message)
+    }
+
+    @Test
+    fun `desugared unary minus with boolean literal fails`() {
+        val minusExpr = BinaryExpression(NumberLiteral(0.0), TokenType.MINUS, BooleanLiteral(true))
+        val result = resolver().resolveType(minusExpr)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("Operator 'MINUS' cannot be applied to boolean types.", result.message)
+    }
 }

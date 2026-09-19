@@ -4,17 +4,10 @@ import printscript.ast.Assignment
 import printscript.ast.Statement
 import printscript.ast.VariableDeclaration
 import printscript.common.Position
-import printscript.linter.CAMEL_CASE
-import printscript.linter.VALID_IDENTIFIER_FORMATS
+import printscript.linter.IdentifierFormat
 import printscript.linter.Warning
 
-class IdentifierFormatRule(private val format: String) : LinterRule {
-    init {
-        require(format in VALID_IDENTIFIER_FORMATS) {
-            "identifierFormat must be one of $VALID_IDENTIFIER_FORMATS, was '$format'"
-        }
-    }
-
+class IdentifierFormatRule(private val format: IdentifierFormat) : LinterRule {
     override fun check(statement: Statement): List<Warning> =
         when (statement) {
             // VariableDeclaration cubre let y const, el parser no hace un nodo aparte para const.
@@ -37,10 +30,11 @@ class IdentifierFormatRule(private val format: String) : LinterRule {
         )
     }
 
+    // sin else: un formato nuevo en IdentifierFormat rompe la compilacion aca
     private fun isValidFormat(name: String): Boolean =
         when (format) {
-            CAMEL_CASE -> name.matches(CAMEL_CASE_PATTERN)
-            else -> name.matches(SNAKE_CASE_PATTERN)
+            IdentifierFormat.CAMEL_CASE -> name.matches(CAMEL_CASE_PATTERN)
+            IdentifierFormat.SNAKE_CASE -> name.matches(SNAKE_CASE_PATTERN)
         }
 
     // compiladas una sola vez y no en cada identificador que se chequea

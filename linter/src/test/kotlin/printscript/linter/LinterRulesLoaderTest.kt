@@ -40,7 +40,7 @@ class LinterRulesLoaderTest {
             }
             """.trimIndent()
         val rules = LinterRulesLoader.fromJson(json)
-        assertEquals("snake case", rules.identifierFormat)
+        assertEquals(IdentifierFormat.SNAKE_CASE, rules.identifierFormat)
         assertEquals(false, rules.printCallArgumentsMustBeLiteralOrIdentifier)
     }
 
@@ -52,7 +52,7 @@ class LinterRulesLoaderTest {
             mandatory-variable-or-literal-in-println: false
             """.trimIndent()
         val rules = LinterRulesLoader.fromYaml(yaml)
-        assertEquals("snake case", rules.identifierFormat)
+        assertEquals(IdentifierFormat.SNAKE_CASE, rules.identifierFormat)
         assertEquals(false, rules.printCallArgumentsMustBeLiteralOrIdentifier)
     }
 
@@ -62,7 +62,7 @@ class LinterRulesLoaderTest {
 
         val rules = LinterRulesLoader.fromFile(file.path)
 
-        assertEquals(LinterRules(SNAKE_CASE, null, null), rules)
+        assertEquals(LinterRules(IdentifierFormat.SNAKE_CASE, null, null), rules)
     }
 
     @Test
@@ -80,7 +80,7 @@ class LinterRulesLoaderTest {
 
         val rules = LinterRulesLoader.fromFile(file.path)
 
-        assertEquals(LinterRules(SNAKE_CASE, null, null), rules)
+        assertEquals(LinterRules(IdentifierFormat.SNAKE_CASE, null, null), rules)
     }
 
     @Test
@@ -89,7 +89,7 @@ class LinterRulesLoaderTest {
 
         val rules = LinterRulesLoader.fromFile(file.path)
 
-        assertEquals(LinterRules(SNAKE_CASE, null, null), rules)
+        assertEquals(LinterRules(IdentifierFormat.SNAKE_CASE, null, null), rules)
     }
 
     @Test
@@ -146,25 +146,25 @@ class LinterRulesLoaderTest {
     fun `reads a JSON config from a stream, like the TCK hands it over`() {
         val stream = """{"identifier_format": "snake case"}""".byteInputStream()
 
-        assertEquals(SNAKE_CASE, LinterRulesLoader.fromStream(stream).identifierFormat)
+        assertEquals(IdentifierFormat.SNAKE_CASE, LinterRulesLoader.fromStream(stream).identifierFormat)
     }
 
     @Test
     fun `reads a YAML config from a stream, like the TCK hands it over`() {
         val stream = "identifier_format: snake case".byteInputStream()
 
-        assertEquals(SNAKE_CASE, LinterRulesLoader.fromStream(stream).identifierFormat)
+        assertEquals(IdentifierFormat.SNAKE_CASE, LinterRulesLoader.fromStream(stream).identifierFormat)
     }
 
     @Test
     fun `handles escaped quotes and yaml comments`() {
         val yaml = "identifier_format: 'snake case' # comment"
         val rulesYaml = LinterRulesLoader.fromYaml(yaml)
-        assertEquals(SNAKE_CASE, rulesYaml.identifierFormat)
+        assertEquals(IdentifierFormat.SNAKE_CASE, rulesYaml.identifierFormat)
 
         val json = """{"identifier_format": "snake case", "unknown": "hello \"world\""}"""
         val rulesJson = LinterRulesLoader.fromJson(json)
-        assertEquals(SNAKE_CASE, rulesJson.identifierFormat)
+        assertEquals(IdentifierFormat.SNAKE_CASE, rulesJson.identifierFormat)
     }
 
     @Test
@@ -181,6 +181,6 @@ class LinterRulesLoaderTest {
     @Test
     fun `handles UTF-8 BOM at beginning of stream`() {
         val stream = "\uFEFF{\"identifier_format\": \"snake case\"}".byteInputStream()
-        assertEquals(SNAKE_CASE, LinterRulesLoader.fromStream(stream).identifierFormat)
+        assertEquals(IdentifierFormat.SNAKE_CASE, LinterRulesLoader.fromStream(stream).identifierFormat)
     }
 }

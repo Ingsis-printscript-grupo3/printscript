@@ -27,21 +27,20 @@ class LinterRuleRegistry(
                     val format = config.identifierFormat
                     if (format != null) listOf(IdentifierFormatRule(format)) else emptyList()
                 },
-                // println y readInput piden lo mismo, asi que van juntas en un grupo
+                // println y readInput piden lo mismo, pero se devuelven sueltas: agruparlas aca
+                // en un CompositeRule solo duplicaria el que ya arma ruleFor, y haria que
+                // rulesFor() reporte menos reglas de las que realmente estan activas
                 LinterRuleFactory { config -> argumentRules(config) },
             )
 
-        private fun argumentRules(config: LinterRules): List<LinterRule> {
-            val rules =
-                buildList {
-                    if (config.printCallArgumentsMustBeLiteralOrIdentifier == true) {
-                        add(PrintCallArgumentRule())
-                    }
-                    if (config.readInputArgumentsMustBeLiteralOrIdentifier == true) {
-                        add(ReadInputArgumentRule())
-                    }
+        private fun argumentRules(config: LinterRules): List<LinterRule> =
+            buildList {
+                if (config.printCallArgumentsMustBeLiteralOrIdentifier == true) {
+                    add(PrintCallArgumentRule())
                 }
-            return if (rules.isEmpty()) emptyList() else listOf(CompositeRule(rules))
-        }
+                if (config.readInputArgumentsMustBeLiteralOrIdentifier == true) {
+                    add(ReadInputArgumentRule())
+                }
+            }
     }
 }

@@ -424,4 +424,136 @@ class ParserTest {
 
         assert(exception.message.contains("Expected ')' closing 'readInput'"))
     }
+
+    @Test
+    fun `parses a variable declaration with a negative number`() {
+        // let x: number = -5;
+        val statements =
+            parse(
+                createToken(TokenType.LET),
+                createToken(TokenType.IDENTIFIER, "x"),
+                createToken(TokenType.COLON),
+                createToken(TokenType.NUMBERTYPE, "number"),
+                createToken(TokenType.ASSIGN),
+                createToken(TokenType.MINUS, "-"),
+                createToken(TokenType.NUMBERLITERAL, "5"),
+                createToken(TokenType.SEMICOLON),
+            )
+
+        assertEquals(1, statements.size)
+        val stmt = statements[0] as VariableDeclaration
+        assertEquals("x", stmt.name)
+        val value = stmt.value as NumberLiteral
+        assertEquals(-5.0, value.value)
+    }
+
+    @Test
+    fun `parses a variable declaration with a negative float`() {
+        // let x: number = -3.14;
+        val statements =
+            parse(
+                createToken(TokenType.LET),
+                createToken(TokenType.IDENTIFIER, "x"),
+                createToken(TokenType.COLON),
+                createToken(TokenType.NUMBERTYPE, "number"),
+                createToken(TokenType.ASSIGN),
+                createToken(TokenType.MINUS, "-"),
+                createToken(TokenType.NUMBERLITERAL, "3.14"),
+                createToken(TokenType.SEMICOLON),
+            )
+
+        assertEquals(1, statements.size)
+        val stmt = statements[0] as VariableDeclaration
+        val value = stmt.value as NumberLiteral
+        assertEquals(-3.14, value.value)
+    }
+
+    @Test
+    fun `parses a variable declaration with a negative identifier`() {
+        // let y: number = -x;
+        val statements =
+            parse(
+                createToken(TokenType.LET),
+                createToken(TokenType.IDENTIFIER, "y"),
+                createToken(TokenType.COLON),
+                createToken(TokenType.NUMBERTYPE, "number"),
+                createToken(TokenType.ASSIGN),
+                createToken(TokenType.MINUS, "-"),
+                createToken(TokenType.IDENTIFIER, "x"),
+                createToken(TokenType.SEMICOLON),
+            )
+
+        assertEquals(1, statements.size)
+        val stmt = statements[0] as VariableDeclaration
+        val binary = stmt.value as BinaryExpression
+        assertEquals(TokenType.MINUS, binary.operator)
+        assertEquals(0.0, (binary.left as NumberLiteral).value)
+        assertEquals("x", (binary.right as Identifier).name)
+    }
+
+    @Test
+    fun `parses an expression with subtraction of negative number`() {
+        // let y: number = 5 - -3;
+        val statements =
+            parse(
+                createToken(TokenType.LET),
+                createToken(TokenType.IDENTIFIER, "y"),
+                createToken(TokenType.COLON),
+                createToken(TokenType.NUMBERTYPE, "number"),
+                createToken(TokenType.ASSIGN),
+                createToken(TokenType.NUMBERLITERAL, "5"),
+                createToken(TokenType.MINUS, "-"),
+                createToken(TokenType.MINUS, "-"),
+                createToken(TokenType.NUMBERLITERAL, "3"),
+                createToken(TokenType.SEMICOLON),
+            )
+
+        assertEquals(1, statements.size)
+        val stmt = statements[0] as VariableDeclaration
+        val binary = stmt.value as BinaryExpression
+        assertEquals(TokenType.MINUS, binary.operator)
+        assertEquals(5.0, (binary.left as NumberLiteral).value)
+        val right = binary.right as NumberLiteral
+        assertEquals(-3.0, right.value)
+    }
+
+    @Test
+    fun `fails when statement ends with trailing unary minus`() {
+        // let x: number = -;
+        val exception =
+            assertThrows<SyntaxError> {
+                parse(
+                    createToken(TokenType.LET),
+                    createToken(TokenType.IDENTIFIER, "x"),
+                    createToken(TokenType.COLON),
+                    createToken(TokenType.NUMBERTYPE, "number"),
+                    createToken(TokenType.ASSIGN),
+                    createToken(TokenType.MINUS, "-"),
+                    createToken(TokenType.SEMICOLON),
+                )
+            }
+
+        assert(exception.message.contains("Expected a value or expression"))
+    }
+
+    @Test
+    fun `fails when binary operation ends with trailing unary minus`() {
+        // let x: number = 5 + -;
+        val exception =
+            assertThrows<SyntaxError> {
+                parse(
+                    createToken(TokenType.LET),
+                    createToken(TokenType.IDENTIFIER, "x"),
+                    createToken(TokenType.COLON),
+                    createToken(TokenType.NUMBERTYPE, "number"),
+                    createToken(TokenType.ASSIGN),
+                    createToken(TokenType.NUMBERLITERAL, "5"),
+                    createToken(TokenType.PLUS, "+"),
+                    createToken(TokenType.MINUS, "-"),
+                    createToken(TokenType.SEMICOLON),
+                )
+            }
+
+        assert(exception.message.contains("Expected a value or expression"))
+    }
 }

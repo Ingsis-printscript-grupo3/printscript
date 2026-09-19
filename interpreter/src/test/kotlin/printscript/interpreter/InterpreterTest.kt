@@ -240,4 +240,30 @@ class InterpreterTest {
             )
         }
     }
+
+    @Test
+    fun `evaluates negative number literals and desugared unary minus`() {
+        val output =
+            run(
+                VariableDeclaration("negLit", "number", num(-5.0)),
+                VariableDeclaration("desugared", "number", bin(num(0.0), TokenType.MINUS, id("negLit"))),
+                PrintCall(id("negLit")),
+                PrintCall(id("desugared")),
+            )
+
+        assertEquals(listOf("-5", "5"), output)
+    }
+
+    @Test
+    fun `evaluates chained minus and subtraction of negative values`() {
+        val output =
+            run(
+                // 5 - (-3)
+                PrintCall(bin(num(5.0), TokenType.MINUS, num(-3.0))),
+                // 0 - (-5)
+                PrintCall(bin(num(0.0), TokenType.MINUS, num(-5.0))),
+            )
+
+        assertEquals(listOf("8", "5"), output)
+    }
 }

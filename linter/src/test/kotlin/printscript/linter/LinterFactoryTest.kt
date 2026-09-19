@@ -84,7 +84,11 @@ class LinterFactoryTest {
 
     @Test
     fun `create honours the config it is given`() {
-        val config = LinterRules(identifierFormat = SNAKE_CASE, printCallArgumentsMustBeLiteralOrIdentifier = false)
+        val config =
+            LinterRules(
+                identifierFormat = IdentifierFormat.SNAKE_CASE,
+                printCallArgumentsMustBeLiteralOrIdentifier = false,
+            )
 
         val warnings = warningsOf(LinterFactory.create(config), snakeCaseDeclaration(), printlnWithExpression())
 

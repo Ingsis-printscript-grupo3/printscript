@@ -11,9 +11,4 @@ class Registry<N : PositionedNode, C, R>(
         node: N,
         ctx: C,
     ): R? = handlers.firstOrNull { it.applies(node) }?.handle(node, ctx)
-
-    fun resolve(
-        node: N,
-        ctx: C,
-    ): R = resolveOrNull(node, ctx) ?: throw NoHandlerFoundException(node)
 }
