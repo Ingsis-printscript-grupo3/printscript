@@ -11,6 +11,7 @@ import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.common.TokenType
+import printscript.linter.IdentifierFormat
 import printscript.linter.Linter
 import printscript.linter.LinterRules
 import printscript.linter.Warning
@@ -54,19 +55,22 @@ class LinterRuleRegistryTest {
     ): List<Warning> = LinterRuleRegistry().ruleFor(config).check(statement)
 
     @Test
-    fun `the default config registers the identifier rule and the argument group`() {
+    fun `the default config registers one rule per active check`() {
         val rules = LinterRuleRegistry().rulesFor(LinterRules())
 
-        assertEquals(2, rules.size)
+        assertEquals(3, rules.size)
         assertTrue(rules.any { it is IdentifierFormatRule })
-        assertTrue(rules.any { it is CompositeRule })
+        assertTrue(rules.any { it is PrintCallArgumentRule })
+        assertTrue(rules.any { it is ReadInputArgumentRule })
     }
 
+    // rulesFor cuenta reglas reales: si las de argumentos volvieran envueltas en un grupo,
+    // el tamano de la lista mentiria sobre cuantas estan activas
     @Test
-    fun `the println and readInput rules come grouped in one composite`() {
-        val group = LinterRuleRegistry().rulesFor(LinterRules()).filterIsInstance<CompositeRule>().single()
+    fun `the println and readInput rules come back loose and not wrapped in a group`() {
+        val rules = LinterRuleRegistry().rulesFor(LinterRules())
 
-        assertEquals(1, group.check(printlnWithExpression()).size)
+        assertTrue(rules.none { it is CompositeRule })
     }
 
     @Test
@@ -98,6 +102,15 @@ class LinterRuleRegistryTest {
     }
 
     @Test
+    fun `turning off the println rule drops only that rule from the list`() {
+        val rules = LinterRuleRegistry().rulesFor(LinterRules(printCallArgumentsMustBeLiteralOrIdentifier = false))
+
+        assertEquals(2, rules.size)
+        assertTrue(rules.none { it is PrintCallArgumentRule })
+        assertTrue(rules.any { it is ReadInputArgumentRule })
+    }
+
+    @Test
     fun `a config that names no rule at all builds nothing`() {
         val rules =
             LinterRuleRegistry().rulesFor(
@@ -120,7 +133,7 @@ class LinterRuleRegistryTest {
 
     @Test
     fun `the registered identifier format rule honours the configured format`() {
-        val rules = LinterRuleRegistry().rulesFor(LinterRules(identifierFormat = "snake case"))
+        val rules = LinterRuleRegistry().rulesFor(LinterRules(identifierFormat = IdentifierFormat.SNAKE_CASE))
         val rule = rules.filterIsInstance<IdentifierFormatRule>().single()
 
         val warnings = rule.check(Assignment("myVar", Identifier("x"), Position(1, 1)))
@@ -135,7 +148,7 @@ class LinterRuleRegistryTest {
 
         val rules = LinterRuleRegistry().register(extra).rulesFor(LinterRules())
 
-        assertEquals(3, rules.size)
+        assertEquals(4, rules.size)
         assertTrue(rules.any { it is NoOpRule })
     }
 
@@ -145,7 +158,7 @@ class LinterRuleRegistryTest {
 
         val rules = LinterRuleRegistry().register(extra).rulesFor(LinterRules())
 
-        assertEquals(4, rules.size)
+        assertEquals(5, rules.size)
         assertTrue(rules.any { it is NoOpRule })
         assertTrue(rules.any { it is AlwaysWarnsRule })
     }
@@ -156,7 +169,7 @@ class LinterRuleRegistryTest {
 
         original.register(LinterRuleFactory { listOf(NoOpRule()) })
 
-        assertEquals(2, original.rulesFor(LinterRules()).size)
+        assertEquals(3, original.rulesFor(LinterRules()).size)
     }
 
     @Test
