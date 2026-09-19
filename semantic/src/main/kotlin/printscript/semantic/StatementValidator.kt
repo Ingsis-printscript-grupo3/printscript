@@ -16,7 +16,7 @@ class StatementValidator(
     val expressionResolver: ExpressionResolver,
     val rules: SemanticRules,
     private val registry: Registry<Statement, StatementValidator, SemanticResult<Unit>> =
-        Registry(defaultHandlers()),
+        Registry(defaultHandlers(rules.version)),
 ) {
     val version: LanguageVersion get() = rules.version
 
@@ -25,18 +25,31 @@ class StatementValidator(
         expressionResolver: ExpressionResolver,
         version: LanguageVersion,
         registry: Registry<Statement, StatementValidator, SemanticResult<Unit>> =
-            Registry(defaultHandlers()),
+            Registry(defaultHandlers(version)),
     ) : this(symbolTable, expressionResolver, SemanticRules.from(version), registry)
 
     companion object {
-        fun defaultHandlers(): List<Handler<Statement, StatementValidator, SemanticResult<Unit>>> =
+        fun defaultHandlers(
+            version: LanguageVersion = LanguageVersion.V1_1,
+        ): List<Handler<Statement, StatementValidator, SemanticResult<Unit>>> =
+            when (version) {
+                LanguageVersion.V1_0 -> default10Handlers()
+                LanguageVersion.V1_1 -> default11Handlers()
+            }
+
+        fun default10Handlers(): List<Handler<Statement, StatementValidator, SemanticResult<Unit>>> =
             listOf(
                 VariableDeclarationHandler(),
                 AssignmentHandler(),
                 PrintCallHandler(),
-                IfStatementHandler(),
-                BlockHandler(),
             )
+
+        fun default11Handlers(): List<Handler<Statement, StatementValidator, SemanticResult<Unit>>> =
+            default10Handlers() +
+                listOf(
+                    IfStatementHandler(),
+                    BlockHandler(),
+                )
     }
 
     fun validate(statement: Statement): SemanticResult<Unit> =

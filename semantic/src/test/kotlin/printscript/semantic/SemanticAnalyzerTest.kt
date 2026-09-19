@@ -243,4 +243,46 @@ class SemanticAnalyzerTest {
         assertIs<SemanticResult.Failure>(failure)
         assertEquals(Position(15, 8), failure.position)
     }
+
+    @Test
+    fun `semantic analyzer in 1_0 rejects if statement with unknown statement type`() {
+        val statements =
+            listOf(
+                IfStatement(
+                    NumberLiteral(1.0),
+                    Block(emptyList()),
+                    null,
+                    Position(3, 1),
+                ),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(1, results.size)
+        val failure = results.single()
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals("Unknown statement type.", failure.message)
+        assertEquals(Position(3, 1), failure.position)
+    }
+
+    @Test
+    fun `semantic analyzer in 1_0 rejects readInput with unknown expression type`() {
+        val statements =
+            listOf(
+                VariableDeclaration(
+                    "x",
+                    "string",
+                    ReadInput(StringLiteral("prompt:"), Position(2, 20)),
+                    Position(2, 1),
+                ),
+            )
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
+
+        assertEquals(1, results.size)
+        val failure = results.single()
+        assertIs<SemanticResult.Failure>(failure)
+        assertEquals("Unknown expression type.", failure.message)
+        assertEquals(Position(2, 20), failure.position)
+    }
 }
