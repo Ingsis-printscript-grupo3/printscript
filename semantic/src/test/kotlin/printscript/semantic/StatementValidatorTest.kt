@@ -571,4 +571,21 @@ class StatementValidatorTest {
         assertEquals("Unknown statement type.", result.message)
         assertEquals(Position(5, 1), result.position)
     }
+
+    @Test
+    fun `defaultHandlers dispatches based on version`() {
+        val handlers10 = StatementValidator.defaultHandlers(LanguageVersion.V1_0)
+        val handlers11 = StatementValidator.defaultHandlers(LanguageVersion.V1_1)
+        assertEquals(3, handlers10.size)
+        assertEquals(5, handlers11.size)
+    }
+
+    @Test
+    fun `validating const declaration in 1_0 fails as unsupported`() {
+        val constDecl = VariableDeclaration("x", "number", NumberLiteral(10.0), Position(4, 1), isConst = true)
+        val result = validator(version = LanguageVersion.V1_0).validate(constDecl)
+        assertIs<SemanticResult.Failure>(result)
+        assertEquals("'const' declarations are not supported in PrintScript 1.0.", result.message)
+        assertEquals(Position(4, 1), result.position)
+    }
 }

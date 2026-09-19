@@ -30,7 +30,7 @@ class StatementValidator(
 
     companion object {
         fun defaultHandlers(
-            version: LanguageVersion = LanguageVersion.V1_1,
+            version: LanguageVersion,
         ): List<Handler<Statement, StatementValidator, SemanticResult<Unit>>> =
             when (version) {
                 LanguageVersion.V1_0 -> default10Handlers()

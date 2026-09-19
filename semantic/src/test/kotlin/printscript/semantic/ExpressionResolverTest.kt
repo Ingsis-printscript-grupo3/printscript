@@ -287,4 +287,12 @@ class ExpressionResolverTest {
         assertEquals("Unknown expression type.", result.message)
         assertEquals(Position(6, 1), result.position)
     }
+
+    @Test
+    fun `defaultHandlers dispatches based on version`() {
+        val handlers10 = ExpressionResolver.defaultHandlers(LanguageVersion.V1_0)
+        val handlers11 = ExpressionResolver.defaultHandlers(LanguageVersion.V1_1)
+        assertEquals(4, handlers10.size)
+        assertEquals(7, handlers11.size)
+    }
 }

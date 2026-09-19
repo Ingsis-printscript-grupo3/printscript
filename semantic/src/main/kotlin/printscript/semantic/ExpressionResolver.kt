@@ -31,7 +31,7 @@ class ExpressionResolver(
 
     companion object {
         fun defaultHandlers(
-            version: LanguageVersion = LanguageVersion.V1_1,
+            version: LanguageVersion,
         ): List<Handler<Expression, ExpressionResolver, SemanticResult<String>>> =
             when (version) {
                 LanguageVersion.V1_0 -> default10Handlers()
