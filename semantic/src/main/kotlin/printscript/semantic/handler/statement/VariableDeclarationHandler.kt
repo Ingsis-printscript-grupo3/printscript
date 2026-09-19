@@ -23,10 +23,7 @@ class VariableDeclarationHandler : Handler<Statement, StatementValidator, Semant
         validateRules(node, ctx)?.let { return it }
         validateValueType(node, ctx)?.let { return it }
 
-        return when (val defineResult = ctx.symbolTable.define(node.name, node.type, node.isConst)) {
-            is SemanticResult.Failure -> SemanticResult.Failure(defineResult.message, node.position)
-            is SemanticResult.Success -> defineResult
-        }
+        return ctx.symbolTable.define(node.name, node.type, node.isConst, at = node.namePosition)
     }
 
     private fun validateRules(

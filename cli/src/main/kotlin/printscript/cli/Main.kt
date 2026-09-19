@@ -22,7 +22,6 @@ import printscript.runner.LintResult
 import java.io.Writer
 
 private val SUPPORTED_VERSIONS = LanguageVersion.entries.joinToString(", ") { it.label }
-private const val DEFAULT_VERSION = "1.0"
 
 // sin --config se aplican las reglas que la consigna pide siempre
 private val DEFAULT_FORMATTER_RULES =
@@ -46,8 +45,8 @@ class ExecuteCommand : CliktCommand(name = "execute", help = "Run a .prs file") 
 
     override fun run() {
         val languageVersion = requireSupportedVersion(version)
-        val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress(showProgress(quiet))
+        val engine = Engine(ConsoleOutput())
         val result = engine.execute(file.reader(), languageVersion, onProgress = progress::report)
         progress.finish()
         when (result) {
@@ -68,8 +67,8 @@ class ValidateCommand : CliktCommand(
 
     override fun run() {
         val languageVersion = requireSupportedVersion(version)
-        val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress(showProgress(quiet))
+        val engine = Engine(ConsoleOutput())
         val result = engine.validate(file.reader(), languageVersion, onProgress = progress::report)
         progress.finish()
         when (result) {
@@ -96,8 +95,8 @@ class AnalyzeCommand : CliktCommand(
             config
                 ?.let { LinterFactory.fromFile(it.path, languageVersion) }
                 ?: LinterFactory.create(languageVersion)
-        val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress(showProgress(quiet))
+        val engine = Engine(ConsoleOutput())
 
         var warningCount = 0
         val result =
@@ -127,8 +126,8 @@ class FormatCommand : CliktCommand(name = "format", help = "Format a .prs file a
     override fun run() {
         val languageVersion = requireSupportedVersion(version)
         val rules = config?.let { FormatterRulesLoader.fromFile(it.path) } ?: DEFAULT_FORMATTER_RULES
-        val engine = Engine(output = ConsoleOutput())
         val progress = ParsingProgress(showProgress(quiet))
+        val engine = Engine(ConsoleOutput())
 
         val result =
             engine.format({ file.reader() }, languageVersion, onProgress = progress::report) { tokens ->
@@ -181,7 +180,7 @@ private fun CliktCommand.versionOption() =
     option(
         "--version",
         help = "Version of the PrintScript language to use. Supported: $SUPPORTED_VERSIONS.",
-    ).default(DEFAULT_VERSION)
+    ).default(LanguageVersion.DEFAULT.label)
 
 private fun CliktCommand.requireSupportedVersion(version: String): LanguageVersion =
     runCatching { LanguageVersion.parse(version) }
@@ -209,10 +208,11 @@ private fun formatError(
     start: Position?,
     end: Position?,
 ): String =
-    if (start == null || end == null) {
-        "Error $type: $message"
-    } else {
-        "[${start.line}:${start.column}-${end.line}:${end.column}] $type: $message"
+    when {
+        start == null || end == null -> "Error $type: $message"
+        // un error de un solo punto no repite la posicion dos veces
+        start == end -> "[${start.line}:${start.column}] $type: $message"
+        else -> "[${start.line}:${start.column}-${end.line}:${end.column}] $type: $message"
     }
 
 fun main(args: Array<String>) =

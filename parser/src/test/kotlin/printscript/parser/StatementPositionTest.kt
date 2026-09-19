@@ -19,9 +19,12 @@ class StatementPositionTest {
         column: Int = 1,
     ) = Token(type, Position(line, column), Position(line, column + value.length), value)
 
-    private fun parse(vararg tokens: Token): List<Statement> {
+    private fun parse(
+        vararg tokens: Token,
+        version: LanguageVersion = LanguageVersion.V1_1,
+    ): List<Statement> {
         val tokenList = tokens.toList() + token(TokenType.EOF)
-        return Parser(tokenList.iterator(), LanguageVersion.V1_1).parse().asSequence().map { result ->
+        return Parser(tokenList.iterator(), version).parse().asSequence().map { result ->
             when (result) {
                 is ParseResult.Success -> result.statement
                 is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)
@@ -73,6 +76,7 @@ class StatementPositionTest {
                 token(TokenType.ASSIGN, "=", line = 1, column = 27),
                 token(TokenType.NUMBERLITERAL, "3", line = 1, column = 29),
                 token(TokenType.SEMICOLON, ";", line = 1, column = 30),
+                version = LanguageVersion.V1_1,
             )
 
         val declaration = statements[0]

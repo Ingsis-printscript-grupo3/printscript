@@ -182,10 +182,14 @@ por defecto es la de `gradle.properties` (`0.0.1-SNAPSHOT`) y se pisa con `-Pver
 > En bash no hacen falta, pero tampoco molestan, así que quedan puestas en todos los
 > ejemplos de este documento.
 
-El `-Pversion` no es opcional acá: el fork del TCK pide `org.printscript:runner:1.0.0`, y sin
-esa opción se publicaría `0.0.1-SNAPSHOT` y no resolvería la dependencia. Los `.jar` quedan
-en `~/.m2/repository/org/printscript/`, donde cualquier proyecto Gradle o Maven de la misma
-máquina los encuentra sin credenciales.
+> **Para probar contra el TCK, publicá sin `-Pversion`.** El `build.gradle` del fork
+> (rama `group-3-validation`) pide `org.printscript:runner:0.0.1-SNAPSHOT`, que es la versión
+> por defecto de `gradle.properties`. Si publicás con `-Pversion=1.0.0`, el TCK no usa lo que
+> acabás de publicar: sigue resolviendo el `0.0.1-SNAPSHOT` viejo que haya en `~/.m2` y
+> testea código antiguo sin avisar.
+
+Los `.jar` quedan en `~/.m2/repository/org/printscript/`, donde cualquier proyecto Gradle o
+Maven de la misma máquina los encuentra sin credenciales.
 
 **A GitHub Packages**, que es la publicación real. La hace sola el workflow
 [`.github/workflows/publish.yml`](.github/workflows/publish.yml) cuando se crea un release en
@@ -208,8 +212,9 @@ El TCK de la cátedra vive en un repo aparte y se engancha a esta implementació
 `CustomImplementationFactory`, que adapta `PrintScriptRunner` a sus interfaces.
 
 ```bash
-# 1. publicar esta implementación en el repositorio local
-./gradlew publishToMavenLocal "-Pversion=1.0.0"
+# 1. publicar esta implementación en el repositorio local, con la version por defecto
+#    (0.0.1-SNAPSHOT), que es la que pide el build.gradle del fork
+./gradlew publishToMavenLocal
 
 # 2. clonar el fork del grupo, en la rama de validación
 git clone -b group-3-validation https://github.com/Ingsis-printscript-grupo3/printscript-tck.git
@@ -220,3 +225,7 @@ cd printscript-tck && ./gradlew build
 
 El `build.gradle` del TCK declara `mavenLocal()` antes que GitHub Packages, así que resuelve
 el artefacto recién publicado sin pedir credenciales.
+
+> Si el TCK falla de forma rara —tests que fallan con código que local pasa— lo primero a
+> revisar es la fecha de los `.jar` en `~/.m2/repository/org/printscript/0.0.1-SNAPSHOT/`.
+> Si no son de recién, el TCK está probando otra cosa.

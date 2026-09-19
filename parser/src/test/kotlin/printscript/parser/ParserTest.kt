@@ -409,6 +409,7 @@ class ParserTest {
         val exception =
             assertThrows<SyntaxError> {
                 parse(
+                    LanguageVersion.V1_1,
                     createToken(TokenType.LET),
                     createToken(TokenType.IDENTIFIER, "name"),
                     createToken(TokenType.COLON),

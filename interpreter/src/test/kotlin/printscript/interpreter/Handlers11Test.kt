@@ -12,6 +12,7 @@ import printscript.ast.ReadInput
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.LanguageVersion
+import printscript.common.Position
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.BucketOutput
@@ -30,6 +31,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+
+// posicion de mentira: estos tests miran el error, no donde ocurrio
+private val AT = Position(1, 1)
 
 class Handlers11Test {
     private fun createTestInterpreter(
@@ -248,7 +252,7 @@ class Handlers11Test {
                         is BooleanLiteral -> BooleanValue(expression.value)
                         is ReadInput -> StringValue("99")
                         is ReadEnv -> StringValue("true")
-                        is Identifier -> env.lookup(expression.name)
+                        is Identifier -> env.lookup(expression.name, at = AT)
                         else -> throw IllegalArgumentException()
                     }
             }
@@ -260,19 +264,19 @@ class Handlers11Test {
             VariableDeclaration("inputNum", "number", ReadInput(StringLiteral("p"))),
             ctx,
         )
-        assertEquals(NumberValue(99.0), env.lookup("inputNum"))
+        assertEquals(NumberValue(99.0), env.lookup("inputNum", at = AT))
 
         varDecl.handle(
             VariableDeclaration("envBool", "boolean", ReadEnv(StringLiteral("B"))),
             ctx,
         )
-        assertEquals(BooleanValue(true), env.lookup("envBool"))
+        assertEquals(BooleanValue(true), env.lookup("envBool", at = AT))
 
         varDecl.handle(
             VariableDeclaration("c", "number", NumberLiteral(10.0), isConst = true),
             ctx,
         )
-        assertEquals(NumberValue(10.0), env.lookup("c"))
+        assertEquals(NumberValue(10.0), env.lookup("c", at = AT))
 
         assertFailsWith<CannotAssignToConstError> {
             assign.handle(Assignment("c", NumberLiteral(20.0)), ctx)
@@ -283,7 +287,7 @@ class Handlers11Test {
             ctx,
         )
         assign.handle(Assignment("mutableNum", ReadInput(StringLiteral("p"))), ctx)
-        assertEquals(NumberValue(99.0), env.lookup("mutableNum"))
+        assertEquals(NumberValue(99.0), env.lookup("mutableNum", at = AT))
     }
 
     @Test

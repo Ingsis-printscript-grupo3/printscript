@@ -165,6 +165,26 @@ class EndToEndTest {
         assertEquals("Runtime", result.type)
     }
 
+    // hasta que el interprete no implemento ScriptError, un error de runtime llegaba sin posicion.
+    // una variable sin declarar la caza el semantico, asi que para llegar al interprete hace falta
+    // una que este declarada pero sin inicializar
+    @Test
+    fun `a runtime error reports the position of the identifier that failed`() {
+        val code =
+            """
+            let x: number;
+            println(x);
+            """.trimIndent()
+
+        val (result, _) = runEngine(code)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Runtime", result.type)
+        assertEquals(2, result.start?.line)
+        assertEquals(9, result.start?.column)
+        assertEquals(result.start, result.end)
+    }
+
     @Test
     fun `the semantic error reports the line of the failing statement`() {
         val code =

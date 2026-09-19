@@ -1,5 +1,6 @@
 package printscript.semantic.symbol
 
+import printscript.common.Position
 import printscript.semantic.SemanticResult
 
 data class VariableSymbol(
@@ -23,10 +24,14 @@ class SymbolTable {
         scopes.removeLast()
     }
 
-    fun define(symbol: VariableSymbol): SemanticResult<Unit> {
+    // la posicion es la del nodo que pidio la operacion: la tabla solo la usa para que el error sepa donde ocurrio
+    fun define(
+        symbol: VariableSymbol,
+        at: Position,
+    ): SemanticResult<Unit> {
         val currentScope = scopes.last()
         if (currentScope.containsKey(symbol.name)) {
-            return SemanticResult.Failure("Variable '${symbol.name}' already exists.")
+            return SemanticResult.Failure("Variable '${symbol.name}' already exists.", at)
         }
         currentScope[symbol.name] = symbol
         return SemanticResult.Success(Unit)
@@ -36,9 +41,13 @@ class SymbolTable {
         name: String,
         type: String,
         isConst: Boolean = false,
-    ): SemanticResult<Unit> = define(VariableSymbol(name, type, isConst))
+        at: Position,
+    ): SemanticResult<Unit> = define(VariableSymbol(name, type, isConst), at)
 
-    fun lookup(name: String): SemanticResult<VariableSymbol> {
+    fun lookup(
+        name: String,
+        at: Position,
+    ): SemanticResult<VariableSymbol> {
         for (i in scopes.indices.reversed()) {
             val scope = scopes[i]
             val symbol = scope[name]
@@ -46,11 +55,14 @@ class SymbolTable {
                 return SemanticResult.Success(symbol)
             }
         }
-        return SemanticResult.Failure("Variable '$name' not declared.")
+        return SemanticResult.Failure("Variable '$name' not declared.", at)
     }
 
-    fun lookupType(name: String): SemanticResult<String> {
-        return when (val res = lookup(name)) {
+    fun lookupType(
+        name: String,
+        at: Position,
+    ): SemanticResult<String> {
+        return when (val res = lookup(name, at)) {
             is SemanticResult.Success -> SemanticResult.Success(res.value.type)
             is SemanticResult.Failure -> res
         }

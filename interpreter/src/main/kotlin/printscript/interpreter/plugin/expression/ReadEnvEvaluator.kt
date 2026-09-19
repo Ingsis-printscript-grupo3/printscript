@@ -24,7 +24,7 @@ class ReadEnvEvaluator(
 
         val varNameValue = ctx.interpreter.evaluate(node.argument)
         val varName = varNameValue.textOf()
-        val value = envProvider.getEnv(varName) ?: throw EnvVariableNotFoundError(varName)
+        val value = envProvider.getEnv(varName) ?: throw EnvVariableNotFoundError(varName, node.position)
         return StringValue(value)
     }
 }

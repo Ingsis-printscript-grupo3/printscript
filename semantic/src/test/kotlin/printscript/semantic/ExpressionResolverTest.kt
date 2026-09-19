@@ -22,11 +22,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
+// posicion de mentira: estos tests miran el resultado, no donde ocurrio
+private val AT = Position(1, 1)
+
 class ExpressionResolverTest {
     private fun resolver(
         symbolTable: SymbolTable = SymbolTable(),
         version: LanguageVersion = LanguageVersion.V1_1,
-    ) = ExpressionResolver(symbolTable, version)
+    ) = ExpressionResolver(symbolTable, SemanticRules.from(version))
 
     @Test
     fun `resolves number literals`() {
@@ -45,7 +48,7 @@ class ExpressionResolverTest {
     @Test
     fun `resolves a declared identifier to its declared type`() {
         val symbolTable = SymbolTable()
-        symbolTable.define("a", "number")
+        symbolTable.define("a", "number", at = AT)
 
         val result = resolver(symbolTable).resolveType(Identifier("a"))
 
@@ -100,7 +103,12 @@ class ExpressionResolverTest {
     @Test
     fun `an expression with no handler registered fails explicitly with the node position`() {
         val emptyRegistry = Registry<Expression, ExpressionResolver, SemanticResult<String>>()
-        val resolver = ExpressionResolver(SymbolTable(), LanguageVersion.V1_1, emptyRegistry)
+        val resolver =
+            ExpressionResolver(
+                SymbolTable(),
+                SemanticRules.from(LanguageVersion.V1_1),
+                registry = emptyRegistry,
+            )
         val node = NumberLiteral(1.0, printscript.common.Position(4, 2))
 
         val result = resolver.resolveType(node)
@@ -223,7 +231,7 @@ class ExpressionResolverTest {
     @Test
     fun `resolves readInput when argument is a string variable from symbol table`() {
         val table = SymbolTable()
-        table.define("prompt", "string")
+        table.define("prompt", "string", at = AT)
         val result = resolver(table).resolveType(ReadInput(Identifier("prompt")))
         assertEquals(SemanticResult.Success("string"), result)
     }
@@ -306,7 +314,7 @@ class ExpressionResolverTest {
     @Test
     fun `desugared unary minus with number identifier resolves to number`() {
         val table = SymbolTable()
-        table.define("x", "number")
+        table.define("x", "number", at = AT)
         val minusExpr = BinaryExpression(NumberLiteral(0.0), TokenType.MINUS, Identifier("x"))
         val result = resolver(table).resolveType(minusExpr)
         assertEquals(SemanticResult.Success("number"), result)

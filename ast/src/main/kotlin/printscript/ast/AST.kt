@@ -15,20 +15,20 @@ data class BinaryExpression(
     val left: Expression,
     val operator: TokenType,
     val right: Expression,
-    override val position: Position = Position(0, 0),
+    override val position: Position = Position.UNKNOWN,
 ) : Expression
 
-data class NumberLiteral(val value: Double, override val position: Position = Position(0, 0)) : Expression
+data class NumberLiteral(val value: Double, override val position: Position = Position.UNKNOWN) : Expression
 
-data class StringLiteral(val value: String, override val position: Position = Position(0, 0)) : Expression
+data class StringLiteral(val value: String, override val position: Position = Position.UNKNOWN) : Expression
 
-data class Identifier(val name: String, override val position: Position = Position(0, 0)) : Expression
+data class Identifier(val name: String, override val position: Position = Position.UNKNOWN) : Expression
 
-data class BooleanLiteral(val value: Boolean, override val position: Position = Position(0, 0)) : Expression
+data class BooleanLiteral(val value: Boolean, override val position: Position = Position.UNKNOWN) : Expression
 
-data class ReadInput(val argument: Expression, override val position: Position = Position(0, 0)) : Expression
+data class ReadInput(val argument: Expression, override val position: Position = Position.UNKNOWN) : Expression
 
-data class ReadEnv(val argument: Expression, override val position: Position = Position(0, 0)) : Expression
+data class ReadEnv(val argument: Expression, override val position: Position = Position.UNKNOWN) : Expression
 
 sealed interface Statement : PositionedNode {
     override val position: Position
@@ -40,7 +40,7 @@ data class VariableDeclaration(
     val name: String,
     val type: String,
     val value: Expression?,
-    override val position: Position = Position(0, 0),
+    override val position: Position = Position.UNKNOWN,
     val isConst: Boolean = false,
     val namePosition: Position = position,
 ) : Statement
@@ -48,22 +48,22 @@ data class VariableDeclaration(
 data class Assignment(
     val name: String,
     val value: Expression,
-    override val position: Position = Position(0, 0),
+    override val position: Position = Position.UNKNOWN,
 ) : Statement
 
 data class PrintCall(
     val value: Expression,
-    override val position: Position = Position(0, 0),
+    override val position: Position = Position.UNKNOWN,
 ) : Statement
 
 data class Block(
     val statements: List<Statement>,
-    override val position: Position = Position(0, 0),
+    override val position: Position = Position.UNKNOWN,
 ) : Statement
 
 data class IfStatement(
     val condition: Expression,
     val thenBranch: Block,
     val elseBranch: Block?,
-    override val position: Position = Position(0, 0),
+    override val position: Position = Position.UNKNOWN,
 ) : Statement
