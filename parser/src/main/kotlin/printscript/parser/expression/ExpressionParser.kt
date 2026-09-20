@@ -10,9 +10,9 @@ import printscript.parser.version.VersionFeatures
 
 class ExpressionParser(
     private val stream: TokenStream,
-    private val prefixParselets: Map<TokenType, PrefixParselet> = DefaultExpressionParselets.prefix(),
+    private val version: LanguageVersion,
+    private val prefixParselets: Map<TokenType, PrefixParselet> = DefaultExpressionParselets.prefix(version),
     private val infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix,
-    private val version: LanguageVersion = LanguageVersion.V1_1,
 ) {
     fun parseExpression(minPrecedence: Int = 0): ASTResult<Expression> {
         var left =
@@ -40,7 +40,8 @@ class ExpressionParser(
     private fun parsePrimary(): ASTResult<Expression> {
         val token = stream.peek()
         if (token == null) {
-            val pos = stream.previous()?.end ?: Position(0, 0)
+            // sin token previo estamos al principio del archivo
+            val pos = stream.previous()?.end ?: Position(1, 1)
             return ASTResult.Failure("Expected a value or expression.", pos, pos)
         }
 

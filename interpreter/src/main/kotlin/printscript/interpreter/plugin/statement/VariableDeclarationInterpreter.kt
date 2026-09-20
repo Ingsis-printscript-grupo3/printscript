@@ -20,10 +20,10 @@ class VariableDeclarationInterpreter : Handler<Statement, InterpreterContext, Un
         val value =
             if (expression != null) {
                 val rawValue = ctx.interpreter.evaluate(expression)
-                ValueConverter.convert(rawValue, node.type)
+                ValueConverter.convert(rawValue, node.type, at = node.namePosition)
             } else {
                 null
             }
-        ctx.env.declare(node.name, value, node.type, isConst = node.isConst)
+        ctx.env.declare(node.name, value, node.type, isConst = node.isConst, at = node.namePosition)
     }
 }

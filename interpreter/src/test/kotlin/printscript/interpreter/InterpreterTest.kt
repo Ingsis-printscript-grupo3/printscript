@@ -9,6 +9,7 @@ import printscript.ast.PrintCall
 import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
+import printscript.common.LanguageVersion
 import printscript.common.TokenType
 import printscript.interpreter.output.BucketOutput
 import printscript.interpreter.output.MultiOutput
@@ -27,7 +28,7 @@ import kotlin.test.assertFailsWith
 class InterpreterTest {
     private fun run(vararg statements: Statement): List<String> {
         val bucket = BucketOutput()
-        Interpreter(bucket).interpret(statements.iterator())
+        Interpreter(LanguageVersion.V1_0, bucket).interpret(statements.iterator())
         return bucket.lines()
     }
 
@@ -139,7 +140,7 @@ class InterpreterTest {
         val first = BucketOutput()
         val second = BucketOutput()
 
-        Interpreter(MultiOutput(first, second)).interpret(
+        Interpreter(LanguageVersion.V1_0, MultiOutput(first, second)).interpret(
             listOf(PrintCall(bin(num(5.0), TokenType.MULTIPLY, num(3.0)))).iterator(),
         )
 
@@ -186,7 +187,7 @@ class InterpreterTest {
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownStatementError> {
-                plugin.handle(foreignNode, InterpreterContext(Environment(), Interpreter()))
+                plugin.handle(foreignNode, InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_0)))
             }
         }
     }
@@ -206,7 +207,7 @@ class InterpreterTest {
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownExpressionError> {
-                plugin.handle(foreignNode, InterpreterContext(Environment(), Interpreter()))
+                plugin.handle(foreignNode, InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_0)))
             }
         }
     }
@@ -238,5 +239,31 @@ class InterpreterTest {
                 Assignment("x", text("invalid")),
             )
         }
+    }
+
+    @Test
+    fun `evaluates negative number literals and desugared unary minus`() {
+        val output =
+            run(
+                VariableDeclaration("negLit", "number", num(-5.0)),
+                VariableDeclaration("desugared", "number", bin(num(0.0), TokenType.MINUS, id("negLit"))),
+                PrintCall(id("negLit")),
+                PrintCall(id("desugared")),
+            )
+
+        assertEquals(listOf("-5", "5"), output)
+    }
+
+    @Test
+    fun `evaluates chained minus and subtraction of negative values`() {
+        val output =
+            run(
+                // 5 - (-3)
+                PrintCall(bin(num(5.0), TokenType.MINUS, num(-3.0))),
+                // 0 - (-5)
+                PrintCall(bin(num(0.0), TokenType.MINUS, num(-5.0))),
+            )
+
+        assertEquals(listOf("8", "5"), output)
     }
 }

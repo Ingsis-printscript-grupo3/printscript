@@ -35,10 +35,16 @@ object LinterRulesLoader {
         }
     }
 
-    private fun identifierFormat(map: Map<String, String>): String? {
+    // unico borde por el que un String se convierte en IdentifierFormat: si el texto no
+    // corresponde a ningun formato, falla aca y no mas adentro del linter
+    private fun identifierFormat(map: Map<String, String>): IdentifierFormat? {
         if (!map.containsKey("identifier_format")) return null
         val raw = map["identifier_format"]
-        return if (raw.isNullOrEmpty() || raw == "null") CAMEL_CASE else raw
+        return if (raw.isNullOrEmpty() || raw == "null") {
+            IdentifierFormat.CAMEL_CASE
+        } else {
+            IdentifierFormat.fromConfigValue(raw)
+        }
     }
 
     private fun buildRules(map: Map<String, String>): LinterRules {

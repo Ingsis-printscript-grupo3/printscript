@@ -1,0 +1,3 @@
+# la llave del if en la linea de abajo y sangria de 2
+if-brace-below-line: true
+indent-inside-if: 2

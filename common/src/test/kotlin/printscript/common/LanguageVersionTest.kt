@@ -27,4 +27,11 @@ class LanguageVersionTest {
             assertEquals(version, LanguageVersion.parse(version.label))
         }
     }
+
+    // el default es el conservador a proposito: si nadie elige, una feature de 1.1 falla
+    // con un mensaje claro en vez de colarse sin que nadie la haya pedido
+    @Test
+    fun `the default version is the conservative one`() {
+        assertEquals(LanguageVersion.V1_0, LanguageVersion.DEFAULT)
+    }
 }

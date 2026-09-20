@@ -16,6 +16,6 @@ class IdentifierEvaluator : Handler<Expression, InterpreterContext, Value> {
     ): Value {
         if (node !is Identifier) throw UnknownExpressionError(node)
 
-        return ctx.env.lookup(node.name)
+        return ctx.env.lookup(node.name, at = node.position)
     }
 }

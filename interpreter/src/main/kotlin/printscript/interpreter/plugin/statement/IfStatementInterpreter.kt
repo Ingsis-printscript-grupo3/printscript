@@ -21,7 +21,7 @@ class IfStatementInterpreter : Handler<Statement, InterpreterContext, Unit> {
 
         val conditionValue = ctx.interpreter.evaluate(node.condition)
         if (conditionValue !is BooleanValue) {
-            throw ConditionTypeError(conditionValue.typeName())
+            throw ConditionTypeError(conditionValue.typeName(), node.condition.position)
         }
 
         val elseBranch = node.elseBranch

@@ -1,5 +1,9 @@
 package printscript.interpreter
 
+import printscript.common.Position
+
+// solo guarda variables por scope. La posicion que recibe es la del nodo que pidio la operacion,
+// y la usa unicamente para que el error sepa donde ocurrio
 class Environment {
     private data class Binding(
         var value: Value?,
@@ -27,10 +31,11 @@ class Environment {
         value: Value?,
         type: String? = null,
         isConst: Boolean = false,
+        at: Position,
     ) {
         val currentScope = scopes.last()
         if (currentScope.containsKey(name)) {
-            throw VariableAlreadyDeclaredError(name)
+            throw VariableAlreadyDeclaredError(name, at)
         }
         currentScope[name] = Binding(value, type, isConst)
     }
@@ -38,17 +43,21 @@ class Environment {
     fun assign(
         name: String,
         value: Value,
+        at: Position,
     ) {
-        val binding = find(name) ?: throw UndeclaredVariableError(name)
+        val binding = find(name) ?: throw UndeclaredVariableError(name, at)
         if (binding.isConst) {
-            throw CannotAssignToConstError(name)
+            throw CannotAssignToConstError(name, at)
         }
         binding.value = value
     }
 
-    fun lookup(name: String): Value {
-        val binding = find(name) ?: throw UndeclaredVariableError(name)
-        return binding.value ?: throw UninitializedVariableError(name)
+    fun lookup(
+        name: String,
+        at: Position,
+    ): Value {
+        val binding = find(name) ?: throw UndeclaredVariableError(name, at)
+        return binding.value ?: throw UninitializedVariableError(name, at)
     }
 
     fun typeOf(name: String): String? = find(name)?.type

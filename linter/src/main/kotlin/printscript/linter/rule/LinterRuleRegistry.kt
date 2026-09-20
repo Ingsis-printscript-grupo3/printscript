@@ -2,9 +2,9 @@ package printscript.linter.rule
 
 import printscript.linter.LinterRules
 
-// devuelve null cuando la config no pide la regla
+// devuelve lista vacia cuando la config no pide la regla
 fun interface LinterRuleFactory {
-    fun create(config: LinterRules): LinterRule?
+    fun create(config: LinterRules): List<LinterRule>
 }
 
 // aca se registra cada regla nueva, asi Linter.kt no se toca mas.
@@ -15,7 +15,7 @@ class LinterRuleRegistry(
 ) {
     fun register(factory: LinterRuleFactory): LinterRuleRegistry = LinterRuleRegistry(factories + factory)
 
-    fun rulesFor(config: LinterRules): List<LinterRule> = factories.mapNotNull { it.create(config) }
+    fun rulesFor(config: LinterRules): List<LinterRule> = factories.flatMap { it.create(config) }
 
     // el Linter recorre una sola regla: las que pidio la config vienen agrupadas
     fun ruleFor(config: LinterRules): LinterRule = CompositeRule(rulesFor(config))
@@ -24,19 +24,23 @@ class LinterRuleRegistry(
         val DEFAULT_FACTORIES: List<LinterRuleFactory> =
             listOf(
                 LinterRuleFactory { config ->
-                    config.identifierFormat?.let { IdentifierFormatRule(it) }
+                    val format = config.identifierFormat
+                    if (format != null) listOf(IdentifierFormatRule(format)) else emptyList()
                 },
-                // println y readInput piden lo mismo, asi que van juntas en un grupo
+                // println y readInput piden lo mismo, pero se devuelven sueltas: agruparlas aca
+                // en un CompositeRule solo duplicaria el que ya arma ruleFor, y haria que
+                // rulesFor() reporte menos reglas de las que realmente estan activas
                 LinterRuleFactory { config -> argumentRules(config) },
             )
 
-        private fun argumentRules(config: LinterRules): LinterRule? {
-            val rules =
-                listOfNotNull(
-                    PrintCallArgumentRule().takeIf { config.printCallArgumentsMustBeLiteralOrIdentifier == true },
-                    ReadInputArgumentRule().takeIf { config.readInputArgumentsMustBeLiteralOrIdentifier == true },
-                )
-            return if (rules.isEmpty()) null else CompositeRule(rules)
-        }
+        private fun argumentRules(config: LinterRules): List<LinterRule> =
+            buildList {
+                if (config.printCallArgumentsMustBeLiteralOrIdentifier == true) {
+                    add(PrintCallArgumentRule())
+                }
+                if (config.readInputArgumentsMustBeLiteralOrIdentifier == true) {
+                    add(ReadInputArgumentRule())
+                }
+            }
     }
 }

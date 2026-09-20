@@ -3,12 +3,14 @@ plugins {
 }
 
 dependencies {
-    api(project(":lexer"))
-    api(project(":parser"))
-    api(project(":semantic"))
-    api(project(":interpreter"))
-    api(project(":ast"))
+    // aparecen en la API publica de Engine y PrintScriptRunner
     api(project(":common"))
-    api(project(":formatter"))
-    api(project(":linter"))
+    api(project(":ast"))
+    api(project(":interpreter"))
+    // se usan solo por dentro
+    implementation(project(":lexer"))
+    implementation(project(":parser"))
+    implementation(project(":semantic"))
+    implementation(project(":formatter"))
+    implementation(project(":linter"))
 }

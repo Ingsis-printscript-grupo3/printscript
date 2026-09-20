@@ -43,8 +43,6 @@ object ConfigParser {
             )
         }
     }
-
-    fun unquote(raw: String): String = printscript.common.unquote(raw)
 }
 
 private class JsonScanner(private val text: String) {

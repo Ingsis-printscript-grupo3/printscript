@@ -1,5 +1,6 @@
 package printscript.semantic.symbol
 
+import printscript.common.Position
 import printscript.semantic.SemanticResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -8,19 +9,22 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
+// posicion de mentira: estos tests miran el resultado, no donde ocurrio
+private val AT = Position(1, 1)
+
 class SymbolTableTest {
     @Test
     fun `defines and looks up a variable in root scope`() {
         val table = SymbolTable()
-        val defineResult = table.define("x", "number")
+        val defineResult = table.define("x", "number", at = AT)
         assertIs<SemanticResult.Success<*>>(defineResult)
 
-        val lookupResult = table.lookup("x")
+        val lookupResult = table.lookup("x", at = AT)
         assertIs<SemanticResult.Success<VariableSymbol>>(lookupResult)
         assertEquals("number", lookupResult.value.type)
         assertFalse(lookupResult.value.isConst)
 
-        val typeResult = table.lookupType("x")
+        val typeResult = table.lookupType("x", at = AT)
         assertIs<SemanticResult.Success<String>>(typeResult)
         assertEquals("number", typeResult.value)
     }
@@ -28,9 +32,9 @@ class SymbolTableTest {
     @Test
     fun `defines variable with isConst flag set to true`() {
         val table = SymbolTable()
-        table.define("PI", "number", isConst = true)
+        table.define("PI", "number", isConst = true, at = AT)
 
-        val lookupResult = table.lookup("PI")
+        val lookupResult = table.lookup("PI", at = AT)
         assertIs<SemanticResult.Success<VariableSymbol>>(lookupResult)
         assertEquals("number", lookupResult.value.type)
         assertTrue(lookupResult.value.isConst)
@@ -39,9 +43,9 @@ class SymbolTableTest {
     @Test
     fun `rejects duplicate variable declaration in the same scope`() {
         val table = SymbolTable()
-        table.define("x", "number")
+        table.define("x", "number", at = AT)
 
-        val duplicate = table.define("x", "string")
+        val duplicate = table.define("x", "string", at = AT)
         assertIs<SemanticResult.Failure>(duplicate)
         assertTrue(duplicate.message.contains("already exists"))
     }
@@ -49,11 +53,11 @@ class SymbolTableTest {
     @Test
     fun `returns failure when looking up an undeclared variable`() {
         val table = SymbolTable()
-        val result = table.lookup("unknown")
+        val result = table.lookup("unknown", at = AT)
         assertIs<SemanticResult.Failure>(result)
         assertTrue(result.message.contains("not declared"))
 
-        val typeResult = table.lookupType("unknown")
+        val typeResult = table.lookupType("unknown", at = AT)
         assertIs<SemanticResult.Failure>(typeResult)
         assertTrue(typeResult.message.contains("not declared"))
     }
@@ -61,10 +65,10 @@ class SymbolTableTest {
     @Test
     fun `child scope can access variables defined in parent scope`() {
         val table = SymbolTable()
-        table.define("globalVar", "string")
+        table.define("globalVar", "string", at = AT)
 
         table.enterScope()
-        val lookupResult = table.lookup("globalVar")
+        val lookupResult = table.lookup("globalVar", at = AT)
         assertIs<SemanticResult.Success<VariableSymbol>>(lookupResult)
         assertEquals("string", lookupResult.value.type)
         table.exitScope()
@@ -73,14 +77,14 @@ class SymbolTableTest {
     @Test
     fun `child scope can shadow variable with same name without altering parent`() {
         val table = SymbolTable()
-        table.define("x", "number", isConst = false)
+        table.define("x", "number", isConst = false, at = AT)
 
         table.enterScope()
         // Shadowing in inner scope
-        val innerDefine = table.define("x", "string", isConst = true)
+        val innerDefine = table.define("x", "string", isConst = true, at = AT)
         assertIs<SemanticResult.Success<*>>(innerDefine)
 
-        val innerLookup = table.lookup("x")
+        val innerLookup = table.lookup("x", at = AT)
         assertIs<SemanticResult.Success<VariableSymbol>>(innerLookup)
         assertEquals("string", innerLookup.value.type)
         assertTrue(innerLookup.value.isConst)
@@ -88,7 +92,7 @@ class SymbolTableTest {
         table.exitScope()
 
         // Outer scope is restored
-        val outerLookup = table.lookup("x")
+        val outerLookup = table.lookup("x", at = AT)
         assertIs<SemanticResult.Success<VariableSymbol>>(outerLookup)
         assertEquals("number", outerLookup.value.type)
         assertFalse(outerLookup.value.isConst)
@@ -98,10 +102,10 @@ class SymbolTableTest {
     fun `variables defined in child scope are discarded upon exitScope`() {
         val table = SymbolTable()
         table.enterScope()
-        table.define("temp", "boolean")
+        table.define("temp", "boolean", at = AT)
         table.exitScope()
 
-        val lookup = table.lookup("temp")
+        val lookup = table.lookup("temp", at = AT)
         assertIs<SemanticResult.Failure>(lookup)
     }
 
@@ -116,33 +120,33 @@ class SymbolTableTest {
     @Test
     fun `supports multiple nested scopes`() {
         val table = SymbolTable()
-        table.define("a", "number")
+        table.define("a", "number", at = AT)
 
         table.enterScope() // Scope 1
-        table.define("b", "string")
+        table.define("b", "string", at = AT)
 
         table.enterScope() // Scope 2
-        table.define("c", "boolean")
+        table.define("c", "boolean", at = AT)
 
-        val aType = table.lookupType("a")
+        val aType = table.lookupType("a", at = AT)
         assertIs<SemanticResult.Success<String>>(aType)
         assertEquals("number", aType.value)
 
-        val bType = table.lookupType("b")
+        val bType = table.lookupType("b", at = AT)
         assertIs<SemanticResult.Success<String>>(bType)
         assertEquals("string", bType.value)
 
-        val cType = table.lookupType("c")
+        val cType = table.lookupType("c", at = AT)
         assertIs<SemanticResult.Success<String>>(cType)
         assertEquals("boolean", cType.value)
 
         table.exitScope() // Exit Scope 2
-        assertIs<SemanticResult.Failure>(table.lookup("c"))
-        assertIs<SemanticResult.Success<*>>(table.lookup("b"))
-        assertIs<SemanticResult.Success<*>>(table.lookup("a"))
+        assertIs<SemanticResult.Failure>(table.lookup("c", at = AT))
+        assertIs<SemanticResult.Success<*>>(table.lookup("b", at = AT))
+        assertIs<SemanticResult.Success<*>>(table.lookup("a", at = AT))
 
         table.exitScope() // Exit Scope 1
-        assertIs<SemanticResult.Failure>(table.lookup("b"))
-        assertIs<SemanticResult.Success<*>>(table.lookup("a"))
+        assertIs<SemanticResult.Failure>(table.lookup("b", at = AT))
+        assertIs<SemanticResult.Success<*>>(table.lookup("a", at = AT))
     }
 }

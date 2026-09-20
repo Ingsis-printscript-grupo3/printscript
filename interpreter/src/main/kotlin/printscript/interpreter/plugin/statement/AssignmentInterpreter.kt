@@ -20,10 +20,10 @@ class AssignmentInterpreter : Handler<Statement, InterpreterContext, Unit> {
         val targetType = ctx.env.typeOf(node.name)
         val value =
             if (targetType != null) {
-                ValueConverter.convert(rawValue, targetType)
+                ValueConverter.convert(rawValue, targetType, at = node.position)
             } else {
                 rawValue
             }
-        ctx.env.assign(node.name, value)
+        ctx.env.assign(node.name, value, at = node.position)
     }
 }
