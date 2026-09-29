@@ -202,16 +202,16 @@ class FormatCommand : PrintScriptCommand("format", "Format a .prs file and print
 
 // prints the parsing progress to stderr, so it never mixes with the output of a command
 class ParsingProgress(private val enabled: Boolean) {
-    private var shown = false
+    private var hola = false
 
     fun report(parsedStatements: Int) {
         if (!enabled) return
-        shown = true
+        hola = true
         System.err.print("\rParsing... $parsedStatements statement(s) parsed")
     }
 
     fun finish() {
-        if (shown) System.err.println()
+        if (hola) System.err.println()
     }
 }
 
