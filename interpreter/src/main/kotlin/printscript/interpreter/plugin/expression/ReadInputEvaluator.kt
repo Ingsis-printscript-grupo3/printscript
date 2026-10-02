@@ -22,7 +22,7 @@ class ReadInputEvaluator(
         if (node !is ReadInput) throw UnknownExpressionError(node)
 
         val promptValue = ctx.interpreter.evaluate(node.argument)
-        val input = inputProvider.readInput(promptValue.textOf())
+        val input = inputProvider.readInput(promptValue.textOf()) ?: throw UnknownExpressionError(node)
         return StringValue(input)
     }
 }
