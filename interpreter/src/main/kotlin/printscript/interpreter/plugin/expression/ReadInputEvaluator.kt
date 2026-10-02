@@ -3,6 +3,7 @@ package printscript.interpreter.plugin.expression
 import printscript.ast.Expression
 import printscript.ast.ReadInput
 import printscript.ast.registry.Handler
+import printscript.interpreter.MissingInputError
 import printscript.interpreter.StringValue
 import printscript.interpreter.UnknownExpressionError
 import printscript.interpreter.Value
@@ -22,7 +23,7 @@ class ReadInputEvaluator(
         if (node !is ReadInput) throw UnknownExpressionError(node)
 
         val promptValue = ctx.interpreter.evaluate(node.argument)
-        val input = inputProvider.readInput(promptValue.textOf()) ?: throw UnknownExpressionError(node)
+        val input = inputProvider.readInput(promptValue.textOf()) ?: throw MissingInputError(node.position)
         return StringValue(input)
     }
 }

@@ -93,6 +93,15 @@ class Version11EndToEndTest {
     }
 
     @Test
+    fun `readInput without inputs left fails at runtime with MissingInputError`() {
+        val result = runEngine("println(readInput(\"name:\"));", LanguageVersion.V1_1)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Runtime", result.type)
+        assertEquals("Missing input value", result.message)
+    }
+
+    @Test
     fun `valid if else conditional passes semantic validation in 1_1`() {
         val code =
             """
