@@ -5,7 +5,7 @@ import printscript.ast.Statement
 import printscript.ast.registry.Handler
 import printscript.common.LanguageVersion
 import printscript.interpreter.env.EnvProvider
-import printscript.interpreter.env.SystemEnvProvider
+import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.input.InputProvider
 import printscript.interpreter.output.ConsoleOutput
@@ -29,7 +29,7 @@ object InterpreterFactory {
         version: LanguageVersion,
         output: Output = ConsoleOutput(),
         input: InputProvider = ConsoleInput(),
-        env: EnvProvider = SystemEnvProvider(),
+        env: EnvProvider = MapEnvProvider(),
     ): Interpreter =
         when (version) {
             LanguageVersion.V1_0 -> create10(output)
@@ -40,7 +40,7 @@ object InterpreterFactory {
         version: String,
         output: Output = ConsoleOutput(),
         input: InputProvider = ConsoleInput(),
-        env: EnvProvider = SystemEnvProvider(),
+        env: EnvProvider = MapEnvProvider(),
     ): Interpreter = create(LanguageVersion.parse(version), output, input, env)
 
     // el interprete decide por version QUE handlers registra: si le llega un nodo que su version
@@ -51,7 +51,7 @@ object InterpreterFactory {
     fun create11(
         output: Output = ConsoleOutput(),
         input: InputProvider = ConsoleInput(),
-        env: EnvProvider = SystemEnvProvider(),
+        env: EnvProvider = MapEnvProvider(),
     ): Interpreter =
         Interpreter(
             statementInterpreters = default11StatementInterpreters(output),

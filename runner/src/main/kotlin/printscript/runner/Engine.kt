@@ -6,7 +6,7 @@ import printscript.common.Position
 import printscript.common.Token
 import printscript.interpreter.InterpreterFactory
 import printscript.interpreter.env.EnvProvider
-import printscript.interpreter.env.SystemEnvProvider
+import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.input.InputProvider
 import printscript.interpreter.output.Output
@@ -57,7 +57,7 @@ sealed interface LintResult {
 class Engine(
     private val output: Output,
     private val input: InputProvider = ConsoleInput(),
-    private val env: EnvProvider = SystemEnvProvider(),
+    private val env: EnvProvider = MapEnvProvider(),
 ) {
     fun execute(
         code: String,

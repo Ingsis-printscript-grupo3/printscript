@@ -6,7 +6,7 @@ import printscript.ast.registry.Handler
 import printscript.ast.registry.Registry
 import printscript.common.LanguageVersion
 import printscript.interpreter.env.EnvProvider
-import printscript.interpreter.env.SystemEnvProvider
+import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.input.InputProvider
 import printscript.interpreter.output.ConsoleOutput
@@ -26,7 +26,7 @@ class Interpreter(
         version: LanguageVersion,
         output: Output = ConsoleOutput(),
         input: InputProvider = ConsoleInput(),
-        env: EnvProvider = SystemEnvProvider(),
+        env: EnvProvider = MapEnvProvider(),
     ) : this(
         statementInterpreters =
             when (version) {
