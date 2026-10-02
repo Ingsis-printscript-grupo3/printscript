@@ -7,8 +7,9 @@ import printscript.common.Token
 import printscript.interpreter.InterpreterFactory
 import printscript.interpreter.env.EnvProvider
 import printscript.interpreter.env.MapEnvProvider
-import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.input.InputProvider
+import printscript.interpreter.input.QueueInput
+import printscript.interpreter.output.ConsoleOutput
 import printscript.interpreter.output.Output
 import printscript.lexer.LexerFactory
 import printscript.parser.ParserFactory
@@ -55,8 +56,8 @@ sealed interface LintResult {
 }
 
 class Engine(
-    private val output: Output,
-    private val input: InputProvider = ConsoleInput(),
+    private val output: Output = ConsoleOutput(),
+    private val input: InputProvider = QueueInput(),
     private val env: EnvProvider = MapEnvProvider(),
 ) {
     fun execute(
