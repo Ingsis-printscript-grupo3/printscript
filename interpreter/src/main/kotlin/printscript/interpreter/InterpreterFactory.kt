@@ -6,8 +6,8 @@ import printscript.ast.registry.Handler
 import printscript.common.LanguageVersion
 import printscript.interpreter.env.EnvProvider
 import printscript.interpreter.env.MapEnvProvider
-import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.input.InputProvider
+import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.ConsoleOutput
 import printscript.interpreter.output.Output
 import printscript.interpreter.plugin.InterpreterContext
@@ -28,7 +28,7 @@ object InterpreterFactory {
     fun create(
         version: LanguageVersion,
         output: Output = ConsoleOutput(),
-        input: InputProvider = ConsoleInput(),
+        input: InputProvider = QueueInput(),
         env: EnvProvider = MapEnvProvider(),
     ): Interpreter =
         when (version) {
@@ -40,7 +40,7 @@ object InterpreterFactory {
     fun create(
         version: String,
         output: Output = ConsoleOutput(),
-        input: InputProvider = ConsoleInput(),
+        input: InputProvider = QueueInput(),
         env: EnvProvider = MapEnvProvider(),
     ): Interpreter = create(LanguageVersion.parse(version), output, input, env)
 
@@ -51,7 +51,7 @@ object InterpreterFactory {
 
     fun create11(
         output: Output = ConsoleOutput(),
-        input: InputProvider = ConsoleInput(),
+        input: InputProvider = QueueInput(),
         env: EnvProvider = MapEnvProvider(),
     ): Interpreter =
         Interpreter(

@@ -1,6 +1,7 @@
 package printscript.runner
 
 import printscript.common.LanguageVersion
+import printscript.common.Position
 import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
@@ -101,6 +102,8 @@ class Version11EndToEndTest {
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Runtime", result.type)
         assertEquals("Missing input value", result.message)
+        // el error apunta al readInput, no al println que lo contiene
+        assertEquals(Position(1, 9), result.start)
     }
 
     @Test
@@ -111,6 +114,7 @@ class Version11EndToEndTest {
 
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Runtime", result.type)
+        assertEquals("Environment variable 'PATH' is not defined", result.message)
     }
 
     @Test

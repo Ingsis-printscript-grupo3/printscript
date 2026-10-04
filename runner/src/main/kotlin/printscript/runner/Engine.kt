@@ -54,6 +54,8 @@ sealed interface LintResult {
     ) : LintResult
 }
 
+// un Engine por ejecucion: input (una cola que se va vaciando) y env son de esa ejecucion,
+// asi que compartir la instancia entre requests mezcla los inputs de un usuario con los de otro
 class Engine(
     private val output: Output,
     private val input: InputProvider = QueueInput(),

@@ -15,6 +15,8 @@ import java.io.Reader
 import java.io.Writer
 import java.nio.charset.StandardCharsets
 
+// fachada para el TCK: execute lee las variables de entorno REALES (el TCK tiene un test de readEnv).
+// un servidor no tiene que usarla: tiene que usar Engine y pasarle un MapEnvProvider con las variables del snippet
 object PrintScriptRunner {
     private val NO_OP_OUTPUT = CallbackOutput {}
 

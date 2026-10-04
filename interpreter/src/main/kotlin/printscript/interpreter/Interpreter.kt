@@ -7,8 +7,8 @@ import printscript.ast.registry.Registry
 import printscript.common.LanguageVersion
 import printscript.interpreter.env.EnvProvider
 import printscript.interpreter.env.MapEnvProvider
-import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.input.InputProvider
+import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.ConsoleOutput
 import printscript.interpreter.output.Output
 import printscript.interpreter.plugin.InterpreterContext
@@ -25,7 +25,7 @@ class Interpreter(
     constructor(
         version: LanguageVersion,
         output: Output = ConsoleOutput(),
-        input: InputProvider = ConsoleInput(),
+        input: InputProvider = QueueInput(),
         env: EnvProvider = MapEnvProvider(),
     ) : this(
         statementInterpreters =
