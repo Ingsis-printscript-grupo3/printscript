@@ -12,7 +12,6 @@ import printscript.parser.result.unwrap
 import printscript.parser.statement.StatementHandler
 import printscript.parser.statement.StatementParser
 import printscript.parser.stream.TokenStream
-import printscript.parser.version.VersionFeatures
 
 object VariableDeclarationHandler : StatementHandler {
     private data class VarHeader(val nameToken: Token, val typeToken: Token)
@@ -61,7 +60,13 @@ object VariableDeclarationHandler : StatementHandler {
         stream: TokenStream,
         version: LanguageVersion,
     ): ASTResult<Token> {
-        if (!stream.match(TokenType.NUMBERTYPE, TokenType.STRINGTYPE, TokenType.BOOLEANTYPE)) {
+        val allowed =
+            when (version) {
+                LanguageVersion.V1_0 -> setOf(TokenType.NUMBERTYPE, TokenType.STRINGTYPE)
+                LanguageVersion.V1_1 ->
+                    setOf(TokenType.NUMBERTYPE, TokenType.STRINGTYPE, TokenType.BOOLEANTYPE)
+            }
+        if (!stream.match(allowed)) {
             val message =
                 if (version == LanguageVersion.V1_0) {
                     "Expected 'number' or 'string'."
@@ -70,9 +75,7 @@ object VariableDeclarationHandler : StatementHandler {
                 }
             return typeError(stream, message)
         }
-        val typeToken = checkNotNull(stream.previous()) { "match consumed the type token" }
-        VersionFeatures.unavailable(typeToken, version)?.let { return it }
-        return ASTResult.Success(typeToken)
+        return ASTResult.Success(checkNotNull(stream.previous()) { "match consumed the type token" })
     }
 
     private fun typeError(

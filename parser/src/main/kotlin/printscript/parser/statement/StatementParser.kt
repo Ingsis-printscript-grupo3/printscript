@@ -7,7 +7,6 @@ import printscript.common.TokenType
 import printscript.parser.expression.ExpressionParser
 import printscript.parser.result.ASTResult
 import printscript.parser.stream.TokenStream
-import printscript.parser.version.VersionFeatures
 
 class StatementParser(
     private val stream: TokenStream,
@@ -23,13 +22,9 @@ class StatementParser(
             return ASTResult.Failure("Unexpected end of input.", pos, pos)
         }
 
-        val handler = handlers[token.type]
-        if (handler == null) {
-            // sin handler puede ser una feature de otra version o un token que no abre
-            // ninguna sentencia: quien distingue los dos casos es VersionFeatures
-            return VersionFeatures.unavailable(token, version)
-                ?: ASTResult.Failure("Unexpected token '${token.value}'.", token.start, token.end)
-        }
+        val handler =
+            handlers[token.type]
+                ?: return ASTResult.Failure("Unexpected token '${token.value}'.", token.start, token.end)
         stream.advance()
         return handler.parse(stream, expressionParser, this)
     }

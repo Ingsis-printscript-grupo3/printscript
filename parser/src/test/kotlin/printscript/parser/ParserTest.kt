@@ -298,7 +298,7 @@ class ParserTest {
                     createToken(TokenType.SEMICOLON),
                 )
             }
-        assert(exception.message.contains("'boolean type' requires PrintScript 1.1, but version 1.0 was requested."))
+        assert(exception.message.contains("Expected 'number' or 'string'."))
     }
 
     @Test

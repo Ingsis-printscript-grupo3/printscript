@@ -22,8 +22,7 @@ object DefaultStatementHandlers {
             TokenType.IDENTIFIER to AssignmentHandler,
         )
 
-    // 1.1 se monta sobre 1.0 y le suma const y el if. En 1.0 esas claves no estan,
-    // asi que el StatementParser no encuentra handler y VersionFeatures da el error
+    // 1.1 se monta sobre 1.0 y le suma const y el if
     private val handlers11: Map<TokenType, StatementHandler> =
         mapOf(
             TokenType.CONST to VariableDeclarationHandler,

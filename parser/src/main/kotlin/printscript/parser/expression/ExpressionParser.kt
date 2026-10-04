@@ -6,11 +6,10 @@ import printscript.common.Position
 import printscript.common.TokenType
 import printscript.parser.result.ASTResult
 import printscript.parser.stream.TokenStream
-import printscript.parser.version.VersionFeatures
 
 class ExpressionParser(
     private val stream: TokenStream,
-    private val version: LanguageVersion,
+    version: LanguageVersion,
     private val prefixParselets: Map<TokenType, PrefixParselet> = DefaultExpressionParselets.prefix(version),
     private val infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix,
 ) {
@@ -45,12 +44,13 @@ class ExpressionParser(
             return ASTResult.Failure("Expected a value or expression.", pos, pos)
         }
 
-        val parselet = prefixParselets[token.type]
-        if (parselet == null) {
-            // igual que en el StatementParser: la feature puede existir en otra version
-            return VersionFeatures.unavailable(token, version)
-                ?: ASTResult.Failure("Expected a value or expression.", token.start, token.end)
-        }
+        val parselet =
+            prefixParselets[token.type]
+                ?: return ASTResult.Failure(
+                    "Expected a value or expression, found '${token.value}'.",
+                    token.start,
+                    token.end,
+                )
         stream.advance()
         return parselet.parse(token, stream, this)
     }
