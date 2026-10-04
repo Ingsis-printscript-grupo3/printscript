@@ -1,9 +1,12 @@
 package printscript.runner
 
 import printscript.common.LanguageVersion
+import printscript.common.Position
+import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class Version11EndToEndTest {
@@ -90,6 +93,28 @@ class Version11EndToEndTest {
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Semantic", result.type)
         assertTrue(result.message.contains("must be a boolean expression"))
+    }
+
+    @Test
+    fun `readInput without inputs left fails at runtime with MissingInputError`() {
+        val result = runEngine("println(readInput(\"name:\"));", LanguageVersion.V1_1)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Runtime", result.type)
+        assertEquals("Missing input value", result.message)
+        // el error apunta al readInput, no al println que lo contiene
+        assertEquals(Position(1, 9), result.start)
+    }
+
+    @Test
+    fun `default engine does not see the real environment variables`() {
+        assertNotNull(SystemEnvProvider().getEnv("PATH"))
+
+        val result = runEngine("println(readEnv(\"PATH\"));", LanguageVersion.V1_1)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Runtime", result.type)
+        assertEquals("Environment variable 'PATH' is not defined", result.message)
     }
 
     @Test

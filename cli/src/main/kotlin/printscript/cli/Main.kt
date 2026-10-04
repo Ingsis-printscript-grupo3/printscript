@@ -16,6 +16,8 @@ import printscript.common.Token
 import printscript.formatter.Formatter
 import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
+import printscript.interpreter.env.SystemEnvProvider
+import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.output.ConsoleOutput
 import printscript.linter.IdentifierFormat
 import printscript.linter.LinterFactory
@@ -65,7 +67,7 @@ abstract class PrintScriptCommand(name: String, help: String) : CliktCommand(nam
         .default(LanguageVersion.DEFAULT)
     private val quiet by option("--quiet", help = "Do not print parsing progress").flag()
 
-    protected val engine = Engine(output = ConsoleOutput())
+    protected val engine = Engine(output = ConsoleOutput(), input = ConsoleInput(), env = SystemEnvProvider())
     protected lateinit var progress: ParsingProgress
 
     protected abstract fun runOn(version: LanguageVersion)

@@ -5,10 +5,5 @@ class QueueInput(inputs: List<String> = emptyList()) : InputProvider {
 
     constructor(vararg inputs: String) : this(inputs.toList())
 
-    override fun readInput(prompt: String): String {
-        if (queue.isEmpty()) {
-            throw NoSuchElementException("No more inputs available in QueueInput")
-        }
-        return queue.removeFirst()
-    }
+    override fun readInput(prompt: String): String? = queue.removeFirstOrNull()
 }

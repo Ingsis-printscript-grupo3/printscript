@@ -6,7 +6,6 @@ import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.input.QueueInput
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -28,12 +27,10 @@ class InputEnvTest {
     }
 
     @Test
-    fun `QueueInput throws NoSuchElementException when empty`() {
+    fun `QueueInput returns null when empty`() {
         val input = QueueInput()
 
-        assertFailsWith<NoSuchElementException> {
-            input.readInput("prompt")
-        }
+        assertNull(input.readInput("prompt"))
     }
 
     @Test

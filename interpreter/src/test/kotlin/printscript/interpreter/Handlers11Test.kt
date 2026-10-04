@@ -93,6 +93,27 @@ class Handlers11Test {
     }
 
     @Test
+    fun `ReadInputEvaluator throws MissingInputError at the readInput position when provider has no data`() {
+        val evaluator = ReadInputEvaluator(QueueInput())
+        val ctx = InterpreterContext(Environment(), createTestInterpreter())
+        val position = Position(3, 7)
+
+        val error =
+            assertFailsWith<MissingInputError> {
+                evaluator.handle(ReadInput(StringLiteral("name:"), position), ctx)
+            }
+        assertEquals(position, error.start)
+    }
+
+    @Test
+    fun `ReadInputEvaluator accepts an empty string as a valid input`() {
+        val evaluator = ReadInputEvaluator(QueueInput(""))
+        val ctx = InterpreterContext(Environment(), createTestInterpreter())
+
+        assertEquals(StringValue(""), evaluator.handle(ReadInput(StringLiteral("name:")), ctx))
+    }
+
+    @Test
     fun `ReadEnvEvaluator reads existing environment variables`() {
         val env = MapEnvProvider("MY_VAR" to "my_value")
         val evaluator = ReadEnvEvaluator(env)
