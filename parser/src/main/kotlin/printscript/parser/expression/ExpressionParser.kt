@@ -46,7 +46,7 @@ class ExpressionParser(
         if (token == null) {
             // sin token previo estamos al principio del archivo
             val pos = stream.previous()?.end ?: Position(1, 1)
-            return ASTResult.Failure("Expected a value or expression.", pos, pos)
+            return ASTResult.Failure("Expected a value or expression, found end of input.", pos, pos)
         }
 
         val parselet =

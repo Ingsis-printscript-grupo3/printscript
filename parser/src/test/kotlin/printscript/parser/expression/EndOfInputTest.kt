@@ -7,6 +7,7 @@ import printscript.common.TokenType
 import printscript.parser.result.ASTResult
 import printscript.parser.stream.TokenStream
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -30,6 +31,6 @@ class EndOfInputTest {
 
         val failure = assertIs<ASTResult.Failure>(result)
         assertTrue(failure.message.contains("found end of input"), failure.message)
-        assertTrue(!failure.message.contains("found ''"), failure.message)
+        assertFalse(failure.message.contains("found ''"), failure.message)
     }
 }

@@ -12,6 +12,13 @@ import printscript.parser.statement.StatementHandler
 import printscript.parser.statement.StatementParser
 import printscript.parser.stream.TokenStream
 
+private val TYPE_NAMES =
+    mapOf(
+        TokenType.NUMBERTYPE to "number",
+        TokenType.STRINGTYPE to "string",
+        TokenType.BOOLEANTYPE to "boolean",
+    )
+
 class VariableDeclarationHandler(
     private val allowedTypes: Set<TokenType>,
 ) : StatementHandler {
@@ -61,9 +68,8 @@ class VariableDeclarationHandler(
         return ASTResult.Success(checkNotNull(stream.previous()) { "match consumed the type token" })
     }
 
-    // NUMBERTYPE -> 'number'
     private fun expectedTypesMessage(): String {
-        val names = allowedTypes.map { "'" + it.name.lowercase().removeSuffix("type") + "'" }
+        val names = allowedTypes.map { "'" + TYPE_NAMES.getValue(it) + "'" }
         val head = names.dropLast(1).joinToString(", ")
         return "Expected " + (if (head.isEmpty()) "" else "$head or ") + names.last() + "."
     }
