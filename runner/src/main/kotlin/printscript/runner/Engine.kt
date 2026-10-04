@@ -9,7 +9,6 @@ import printscript.interpreter.env.EnvProvider
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.InputProvider
 import printscript.interpreter.input.QueueInput
-import printscript.interpreter.output.ConsoleOutput
 import printscript.interpreter.output.Output
 import printscript.lexer.LexerFactory
 import printscript.parser.ParserFactory
@@ -56,7 +55,7 @@ sealed interface LintResult {
 }
 
 class Engine(
-    private val output: Output = ConsoleOutput(),
+    private val output: Output,
     private val input: InputProvider = QueueInput(),
     private val env: EnvProvider = MapEnvProvider(),
 ) {

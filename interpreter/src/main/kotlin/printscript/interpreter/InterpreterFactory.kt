@@ -32,6 +32,7 @@ object InterpreterFactory {
         env: EnvProvider = MapEnvProvider(),
     ): Interpreter =
         when (version) {
+            // input y env se descartan a proposito: 1.0 no tiene readInput ni readEnv
             LanguageVersion.V1_0 -> create10(output)
             LanguageVersion.V1_1 -> create11(output, input, env)
         }

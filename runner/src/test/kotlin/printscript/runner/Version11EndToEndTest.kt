@@ -1,9 +1,11 @@
 package printscript.runner
 
 import printscript.common.LanguageVersion
+import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class Version11EndToEndTest {
@@ -99,6 +101,16 @@ class Version11EndToEndTest {
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Runtime", result.type)
         assertEquals("Missing input value", result.message)
+    }
+
+    @Test
+    fun `default engine does not see the real environment variables`() {
+        assertNotNull(SystemEnvProvider().getEnv("PATH"))
+
+        val result = runEngine("println(readEnv(\"PATH\"));", LanguageVersion.V1_1)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Runtime", result.type)
     }
 
     @Test
