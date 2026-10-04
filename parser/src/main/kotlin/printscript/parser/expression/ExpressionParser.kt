@@ -3,6 +3,7 @@ package printscript.parser.expression
 import printscript.ast.Expression
 import printscript.common.LanguageVersion
 import printscript.common.Position
+import printscript.common.Token
 import printscript.common.TokenType
 import printscript.parser.result.ASTResult
 import printscript.parser.stream.TokenStream
@@ -36,6 +37,10 @@ class ExpressionParser(
         return ASTResult.Success(left)
     }
 
+    // el token de fin de archivo tiene value vacio: sin esto el mensaje sale "found ''"
+    private fun describe(token: Token): String =
+        if (token.type == TokenType.EOF) "end of input" else "'" + token.value + "'"
+
     private fun parsePrimary(): ASTResult<Expression> {
         val token = stream.peek()
         if (token == null) {
@@ -47,7 +52,7 @@ class ExpressionParser(
         val parselet =
             prefixParselets[token.type]
                 ?: return ASTResult.Failure(
-                    "Expected a value or expression, found '${token.value}'.",
+                    "Expected a value or expression, found ${describe(token)}.",
                     token.start,
                     token.end,
                 )

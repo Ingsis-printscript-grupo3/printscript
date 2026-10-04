@@ -11,7 +11,7 @@ import printscript.parser.stream.TokenStream
 class StatementParser(
     private val stream: TokenStream,
     private val expressionParser: ExpressionParser,
-    internal val version: LanguageVersion,
+    version: LanguageVersion,
     private val handlers: Map<TokenType, StatementHandler> = DefaultStatementHandlers.map(version),
 ) {
     fun parseStatement(): ASTResult<Statement> {

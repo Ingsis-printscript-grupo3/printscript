@@ -65,7 +65,6 @@ class Engine(
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult = execute(StringReader(code), languageVersion, onProgress)
 
-    // lexer -> parser -> semantic -> interpreter
     fun execute(
         reader: Reader,
         languageVersion: LanguageVersion,
@@ -82,7 +81,7 @@ class Engine(
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult = validate(StringReader(code), languageVersion, onProgress)
 
-    // lexer -> parser -> semantic
+    // validar es correr el pipeline entero sin interpretar: alcanza con recorrer los statements
     fun validate(
         reader: Reader,
         languageVersion: LanguageVersion,
@@ -93,7 +92,6 @@ class Engine(
         }.asExecutionResult()
 
     /**
-     * lexer -> parser para validar, y despues lexer -> formatter sobre los tokens.
      * Lee el fuente dos veces: primero para avisar si no parsea, despues para formatear los tokens.
      * Por eso recibe [openReader] y no un Reader ya abierto.
      */
