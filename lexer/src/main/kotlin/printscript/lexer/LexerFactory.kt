@@ -14,9 +14,8 @@ import java.nio.charset.StandardCharsets
 
 // A diferencia de las otras fabricas esta no recibe LanguageVersion, y es a proposito:
 // LexerRules.keywords es un superconjunto de las dos versiones y quien decide que token
-// vale en cada una es el parser (VersionFeatures). Si el lexer recortara las keywords en
-// 1.0, un `const` saldria como IDENTIFIER y el error dejaria de decir que la feature
-// pertenece a 1.1.
+// vale en cada una es el parser. Si el lexer recortara las keywords en 1.0, un `const`
+// saldria como IDENTIFIER y el error seria peor.
 object LexerFactory {
     fun create(
         charStream: CharStream,

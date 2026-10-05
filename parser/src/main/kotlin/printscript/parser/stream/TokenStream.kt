@@ -38,7 +38,7 @@ class TokenStream(private val tokens: Iterator<Token>) {
         return peek()?.type == type
     }
 
-    fun match(vararg types: TokenType): Boolean {
+    fun match(types: Collection<TokenType>): Boolean {
         for (type in types) {
             if (check(type)) {
                 advance()
@@ -47,6 +47,8 @@ class TokenStream(private val tokens: Iterator<Token>) {
         }
         return false
     }
+
+    fun match(vararg types: TokenType): Boolean = match(types.asList())
 
     fun consume(
         type: TokenType,

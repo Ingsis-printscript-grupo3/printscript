@@ -122,7 +122,7 @@ class ConstDeclarationTest {
     }
 
     @Test
-    fun `const under version 1_0 fails naming the feature and the version`() {
+    fun `const is not a valid statement under version 1_0`() {
         val results =
             parse(
                 LanguageVersion.V1_0,
@@ -135,12 +135,11 @@ class ConstDeclarationTest {
                 token(TokenType.SEMICOLON, ";"),
             )
         val failure = results[0] as ParseResult.Failure
-        assert(failure.message.contains("const declarations"))
-        assert(failure.message.contains("1.0"))
+        assert(failure.message.contains("Unexpected token 'const'"))
     }
 
     @Test
-    fun `the boolean type under version 1_0 fails naming the feature and the version`() {
+    fun `the boolean type is not accepted under version 1_0`() {
         val results =
             parse(
                 LanguageVersion.V1_0,
@@ -151,7 +150,6 @@ class ConstDeclarationTest {
                 token(TokenType.SEMICOLON, ";"),
             )
         val failure = results[0] as ParseResult.Failure
-        assert(failure.message.contains("boolean type"))
-        assert(failure.message.contains("1.0"))
+        assert(failure.message.contains("Expected 'number' or 'string'"))
     }
 }

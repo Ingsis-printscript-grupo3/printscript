@@ -3,14 +3,14 @@ package printscript.parser.expression
 import printscript.ast.Expression
 import printscript.common.LanguageVersion
 import printscript.common.Position
+import printscript.common.Token
 import printscript.common.TokenType
 import printscript.parser.result.ASTResult
 import printscript.parser.stream.TokenStream
-import printscript.parser.version.VersionFeatures
 
 class ExpressionParser(
     private val stream: TokenStream,
-    private val version: LanguageVersion,
+    version: LanguageVersion,
     private val prefixParselets: Map<TokenType, PrefixParselet> = DefaultExpressionParselets.prefix(version),
     private val infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix,
 ) {
@@ -37,20 +37,25 @@ class ExpressionParser(
         return ASTResult.Success(left)
     }
 
+    // el token de fin de archivo tiene value vacio: sin esto el mensaje sale "found ''"
+    private fun describe(token: Token): String =
+        if (token.type == TokenType.EOF) "end of input" else "'" + token.value + "'"
+
     private fun parsePrimary(): ASTResult<Expression> {
         val token = stream.peek()
         if (token == null) {
             // sin token previo estamos al principio del archivo
             val pos = stream.previous()?.end ?: Position(1, 1)
-            return ASTResult.Failure("Expected a value or expression.", pos, pos)
+            return ASTResult.Failure("Expected a value or expression, found end of input.", pos, pos)
         }
 
-        val parselet = prefixParselets[token.type]
-        if (parselet == null) {
-            // igual que en el StatementParser: la feature puede existir en otra version
-            return VersionFeatures.unavailable(token, version)
-                ?: ASTResult.Failure("Expected a value or expression.", token.start, token.end)
-        }
+        val parselet =
+            prefixParselets[token.type]
+                ?: return ASTResult.Failure(
+                    "Expected a value or expression, found ${describe(token)}.",
+                    token.start,
+                    token.end,
+                )
         stream.advance()
         return parselet.parse(token, stream, this)
     }

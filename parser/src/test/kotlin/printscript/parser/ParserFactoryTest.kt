@@ -62,11 +62,14 @@ class ParserFactoryTest {
     }
 
     @Test
-    fun `create10 rejects a 1_1 feature naming the version that has it`() {
+    fun `create10 rejects a token that 1_0 does not know`() {
         val results = parse(ParserFactory.create10(constDeclaration()))
 
         val failure = assertIs<ParseResult.Failure>(results[0])
-        assertTrue(failure.message.contains("1.1"), "expected the failure to name 1.1, was: ${failure.message}")
+        assertTrue(
+            failure.message.contains("Unexpected token 'const'"),
+            "expected an unknown-token failure, was: ${failure.message}",
+        )
     }
 
     @Test

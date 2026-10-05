@@ -193,7 +193,7 @@ class IfStatementHandlerTest {
     }
 
     @Test
-    fun `an if under version 1_0 fails naming the feature and the version`() {
+    fun `an if is not a valid statement under version 1_0`() {
         val results =
             parse(
                 LanguageVersion.V1_0,
@@ -205,7 +205,6 @@ class IfStatementHandlerTest {
                 token(TokenType.RIGHTBRACE, "}"),
             )
         val failure = results[0] as ParseResult.Failure
-        assert(failure.message.contains("if statements"))
-        assert(failure.message.contains("1.0"))
+        assert(failure.message.contains("Unexpected token 'if'"))
     }
 }

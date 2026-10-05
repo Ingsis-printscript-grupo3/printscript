@@ -37,17 +37,16 @@ class Version11EndToEndTest {
     }
 
     @Test
-    fun `the same program under version 1_0 fails in parser naming the feature`() {
+    fun `the same program under version 1_0 fails in parser because const is not a 1_0 token`() {
         val result = runEngine(program, LanguageVersion.V1_0)
 
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Syntax", result.type)
-        assertTrue(result.message.contains("const declarations"))
-        assertTrue(result.message.contains("1.0"))
+        assertTrue(result.message.contains("Unexpected token 'const'"))
     }
 
     @Test
-    fun `if statement under version 1_0 fails in parser naming the feature`() {
+    fun `if statement under version 1_0 fails in parser because if is not a 1_0 token`() {
         val code =
             """
             if (true) {
@@ -59,8 +58,7 @@ class Version11EndToEndTest {
 
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Syntax", result.type)
-        assertTrue(result.message.contains("if statements"))
-        assertTrue(result.message.contains("1.0"))
+        assertTrue(result.message.contains("Unexpected token 'if'"))
     }
 
     @Test
