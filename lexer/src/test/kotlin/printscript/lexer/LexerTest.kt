@@ -1,5 +1,6 @@
 package printscript.lexer
 
+import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.TokenType
 import java.io.StringReader
@@ -9,7 +10,7 @@ import kotlin.test.assertFailsWith
 
 class LexerTest {
     private fun tokenize(source: String): List<printscript.common.Token> =
-        Lexer(CharStream(StringReader(source))).tokenize().asSequence().toList()
+        LexerFactory.create(CharStream(StringReader(source)), LanguageVersion.V1_1).tokenize().asSequence().toList()
 
     private fun types(source: String): List<TokenType> = tokenize(source).map { it.type }
 
