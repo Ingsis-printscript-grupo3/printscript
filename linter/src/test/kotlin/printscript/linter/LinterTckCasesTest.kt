@@ -20,7 +20,7 @@ class LinterTckCasesTest {
         configJson: String,
         version: LanguageVersion = LanguageVersion.V1_1,
     ): List<Warning> {
-        val tokens = LexerFactory.create(CharStream(StringReader(source))).tokenize()
+        val tokens = LexerFactory.create(CharStream(StringReader(source)), version).tokenize()
         val statements = mutableListOf<Statement>()
         ParserFactory.create(tokens, version).parse().forEach { result ->
             when (result) {
