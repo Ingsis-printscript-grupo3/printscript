@@ -67,7 +67,11 @@ tasks.jacocoTestReport {
     dependsOn(tasks.test)
 }
 
+// sin esto la verificacion no corre los tests: mide el .exec que haya quedado de la ultima
+// corrida, que puede ser de antes de los cambios (o no existir, y entonces se saltea y da verde).
+// Paso en la demo y hacia falta un clean check. Si los tests estan al dia, Gradle no los repite.
 tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
     violationRules {
         rule {
             limit { minimum = "0.80".toBigDecimal() }
