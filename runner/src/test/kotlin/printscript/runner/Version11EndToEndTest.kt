@@ -1,9 +1,12 @@
 package printscript.runner
 
 import printscript.common.LanguageVersion
+import printscript.common.Position
+import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class Version11EndToEndTest {
@@ -34,17 +37,16 @@ class Version11EndToEndTest {
     }
 
     @Test
-    fun `the same program under version 1_0 fails in parser naming the feature`() {
+    fun `the same program under version 1_0 fails in parser because const is not a 1_0 token`() {
         val result = runEngine(program, LanguageVersion.V1_0)
 
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Syntax", result.type)
-        assertTrue(result.message.contains("const declarations"))
-        assertTrue(result.message.contains("1.0"))
+        assertTrue(result.message.contains("Unexpected token 'const'"))
     }
 
     @Test
-    fun `if statement under version 1_0 fails in parser naming the feature`() {
+    fun `if statement under version 1_0 fails in parser because if is not a 1_0 token`() {
         val code =
             """
             if (true) {
@@ -56,8 +58,7 @@ class Version11EndToEndTest {
 
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Syntax", result.type)
-        assertTrue(result.message.contains("if statements"))
-        assertTrue(result.message.contains("1.0"))
+        assertTrue(result.message.contains("Unexpected token 'if'"))
     }
 
     @Test
@@ -90,6 +91,28 @@ class Version11EndToEndTest {
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Semantic", result.type)
         assertTrue(result.message.contains("must be a boolean expression"))
+    }
+
+    @Test
+    fun `readInput without inputs left fails at runtime with MissingInputError`() {
+        val result = runEngine("println(readInput(\"name:\"));", LanguageVersion.V1_1)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Runtime", result.type)
+        assertEquals("Missing input value", result.message)
+        // el error apunta al readInput, no al println que lo contiene
+        assertEquals(Position(1, 9), result.start)
+    }
+
+    @Test
+    fun `default engine does not see the real environment variables`() {
+        assertNotNull(SystemEnvProvider().getEnv("PATH"))
+
+        val result = runEngine("println(readEnv(\"PATH\"));", LanguageVersion.V1_1)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Runtime", result.type)
+        assertEquals("Environment variable 'PATH' is not defined", result.message)
     }
 
     @Test

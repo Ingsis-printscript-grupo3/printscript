@@ -43,3 +43,6 @@ class EnvVariableNotFoundError(val name: String, position: Position) :
 
 class ConditionTypeError(val actualType: String, position: Position) :
     InterpreterError("Expected boolean condition, got $actualType", position)
+
+class MissingInputError(position: Position) :
+    InterpreterError("Missing input value", position)

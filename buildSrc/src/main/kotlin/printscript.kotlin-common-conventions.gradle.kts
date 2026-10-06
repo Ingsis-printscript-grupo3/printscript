@@ -67,7 +67,9 @@ tasks.jacocoTestReport {
     dependsOn(tasks.test)
 }
 
+// sin esto la verificacion no corre los tests: mide el .exec que haya quedado de la ultima corrida
 tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
     violationRules {
         rule {
             limit { minimum = "0.80".toBigDecimal() }

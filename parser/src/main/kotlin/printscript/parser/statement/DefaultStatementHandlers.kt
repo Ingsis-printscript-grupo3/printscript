@@ -15,18 +15,21 @@ object DefaultStatementHandlers {
         }
 
     // lo que ya parseaba 1.0
+    private val types10 = setOf(TokenType.NUMBERTYPE, TokenType.STRINGTYPE)
+    private val types11 = types10 + TokenType.BOOLEANTYPE
+
     private val handlers10: Map<TokenType, StatementHandler> =
         mapOf(
-            TokenType.LET to VariableDeclarationHandler,
+            TokenType.LET to VariableDeclarationHandler(types10),
             TokenType.PRINTLN to PrintCallHandler,
             TokenType.IDENTIFIER to AssignmentHandler,
         )
 
-    // 1.1 se monta sobre 1.0 y le suma const y el if. En 1.0 esas claves no estan,
-    // asi que el StatementParser no encuentra handler y VersionFeatures da el error
+    // 1.1 se monta sobre 1.0 y le suma const y el if
     private val handlers11: Map<TokenType, StatementHandler> =
         mapOf(
-            TokenType.CONST to VariableDeclarationHandler,
+            TokenType.LET to VariableDeclarationHandler(types11),
+            TokenType.CONST to VariableDeclarationHandler(types11),
             TokenType.IF to IfStatementHandler,
         )
 }

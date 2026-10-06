@@ -32,8 +32,7 @@ object DefaultExpressionParselets {
             TokenType.MINUS to UnaryMinusParselet(),
         )
 
-    // 1.1 se monta sobre 1.0. En 1.0 estas claves no estan, asi que el ExpressionParser
-    // no encuentra parselet y VersionFeatures da el error
+    // 1.1 se monta sobre 1.0
     private val prefix11: Map<TokenType, PrefixParselet> =
         mapOf(
             TokenType.BOOLEANLITERAL to BooleanLiteralParselet,

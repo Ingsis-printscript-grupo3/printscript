@@ -5,9 +5,9 @@ import printscript.ast.Statement
 import printscript.ast.registry.Handler
 import printscript.common.LanguageVersion
 import printscript.interpreter.env.EnvProvider
-import printscript.interpreter.env.SystemEnvProvider
-import printscript.interpreter.input.ConsoleInput
+import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.InputProvider
+import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.ConsoleOutput
 import printscript.interpreter.output.Output
 import printscript.interpreter.plugin.InterpreterContext
@@ -28,10 +28,11 @@ object InterpreterFactory {
     fun create(
         version: LanguageVersion,
         output: Output = ConsoleOutput(),
-        input: InputProvider = ConsoleInput(),
-        env: EnvProvider = SystemEnvProvider(),
+        input: InputProvider = QueueInput(),
+        env: EnvProvider = MapEnvProvider(),
     ): Interpreter =
         when (version) {
+            // input y env se descartan a proposito: 1.0 no tiene readInput ni readEnv
             LanguageVersion.V1_0 -> create10(output)
             LanguageVersion.V1_1 -> create11(output, input, env)
         }
@@ -39,19 +40,23 @@ object InterpreterFactory {
     fun create(
         version: String,
         output: Output = ConsoleOutput(),
-        input: InputProvider = ConsoleInput(),
-        env: EnvProvider = SystemEnvProvider(),
+        input: InputProvider = QueueInput(),
+        env: EnvProvider = MapEnvProvider(),
     ): Interpreter = create(LanguageVersion.parse(version), output, input, env)
 
     // el interprete decide por version QUE handlers registra: si le llega un nodo que su version
-    // no conoce, corta con UnknownStatementError. Es al reves del semantico, que registra siempre los
-    // mismos y pone la diferencia en los datos (ver SemanticRules)
-    fun create10(output: Output = ConsoleOutput()): Interpreter = Interpreter(LanguageVersion.V1_0, output)
+    // no conoce, corta con UnknownStatementError. El semantico hace lo mismo y ademas guarda en datos
+    // lo que cambia dentro de un mismo nodo (ver SemanticRules)
+    fun create10(output: Output = ConsoleOutput()): Interpreter =
+        Interpreter(
+            statementInterpreters = default10StatementInterpreters(output),
+            expressionEvaluators = default10ExpressionEvaluators(),
+        )
 
     fun create11(
         output: Output = ConsoleOutput(),
-        input: InputProvider = ConsoleInput(),
-        env: EnvProvider = SystemEnvProvider(),
+        input: InputProvider = QueueInput(),
+        env: EnvProvider = MapEnvProvider(),
     ): Interpreter =
         Interpreter(
             statementInterpreters = default11StatementInterpreters(output),
