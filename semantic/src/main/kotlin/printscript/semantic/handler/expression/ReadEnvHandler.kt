@@ -46,7 +46,7 @@ class ReadEnvHandler : Handler<Expression, ExpressionResolver, SemanticResult<St
         val resolvedType = ctx.expectedType ?: "string"
         if (resolvedType !in ctx.rules.supportedTypes) {
             return SemanticResult.Failure(
-                "Type '$resolvedType' is not supported in PrintScript ${ctx.rules.version.label}.",
+                "Unknown type '$resolvedType'.",
                 node.position,
             )
         }

@@ -1,7 +1,8 @@
 package printscript.formatter
 
+import printscript.common.LanguageVersion
 import printscript.lexer.CharStream
-import printscript.lexer.Lexer
+import printscript.lexer.LexerFactory
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.Test
@@ -15,7 +16,7 @@ class TckGoldenTest {
 
     private fun format(case: Case): String {
         val writer = StringWriter()
-        val tokens = Lexer(CharStream(StringReader(case.input))).tokenize()
+        val tokens = LexerFactory.create(CharStream(StringReader(case.input)), LanguageVersion.V1_1).tokenize()
         Formatter(FormatterRulesLoader.fromJson(case.config)).format(tokens, writer)
         return writer.toString()
     }

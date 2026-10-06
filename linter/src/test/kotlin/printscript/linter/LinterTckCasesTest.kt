@@ -4,7 +4,7 @@ import printscript.ast.Statement
 import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.lexer.CharStream
-import printscript.lexer.Lexer
+import printscript.lexer.LexerFactory
 import printscript.parser.Parser
 import printscript.parser.result.ParseResult
 import java.io.StringReader
@@ -20,7 +20,7 @@ class LinterTckCasesTest {
         configJson: String,
         version: LanguageVersion = LanguageVersion.V1_1,
     ): List<Warning> {
-        val tokens = Lexer(CharStream(StringReader(source))).tokenize()
+        val tokens = LexerFactory.create(CharStream(StringReader(source)), version).tokenize()
         val statements = mutableListOf<Statement>()
         Parser(tokens, version).parse().forEach { result ->
             when (result) {

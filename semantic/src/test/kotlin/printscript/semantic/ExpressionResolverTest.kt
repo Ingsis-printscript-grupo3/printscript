@@ -248,7 +248,7 @@ class ExpressionResolverTest {
     fun `fails resolving readInput when expectedType is not supported`() {
         val result = resolver().resolveType(ReadInput(StringLiteral("Prompt:")), "unknownType")
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Type 'unknownType' is not supported in PrintScript 1.1.", result.message)
+        assertEquals("Unknown type 'unknownType'.", result.message)
     }
 
     @Test
