@@ -2,9 +2,9 @@ package printscript.semantic
 
 import printscript.common.LanguageVersion
 
-// el semantico registra siempre los mismos handlers y la version cambia solo los datos: que tipos acepta.
-// Asi puede decir "boolean no existe en 1.0" en vez de "nodo desconocido". Es al reves del interprete,
-// que arma una lista de handlers distinta por version (ver InterpreterFactory)
+// lo que cambia por version dentro de un mismo nodo: const y boolean viajan en VariableDeclaration,
+// que existe en 1.0 y en 1.1. Los nodos que son solo de 1.1 se filtran por lista de handlers
+// (ver defaultHandlers en StatementValidator y ExpressionResolver)
 data class SemanticRules(
     val version: LanguageVersion,
     val supportedTypes: Set<String>,
