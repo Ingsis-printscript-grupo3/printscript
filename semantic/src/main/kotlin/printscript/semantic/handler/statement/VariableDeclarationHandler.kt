@@ -20,33 +20,20 @@ class VariableDeclarationHandler : Handler<Statement, StatementValidator, Semant
             )
         }
 
-        validateRules(node, ctx)?.let { return it }
+        validateRules(node)?.let { return it }
         validateValueType(node, ctx)?.let { return it }
 
         return ctx.symbolTable.define(node.name, node.type, node.isConst, at = node.namePosition)
     }
 
-    private fun validateRules(
-        node: VariableDeclaration,
-        ctx: StatementValidator,
-    ): SemanticResult.Failure? =
-        when {
-            node.isConst && !ctx.rules.supportsConst ->
-                SemanticResult.Failure(
-                    "'const' declarations are not supported in PrintScript ${ctx.rules.version.label}.",
-                    node.position,
-                )
-            node.isConst && node.value == null ->
-                SemanticResult.Failure(
-                    "Constant '${node.name}' must be initialized.",
-                    node.position,
-                )
-            node.type !in ctx.rules.supportedTypes ->
-                SemanticResult.Failure(
-                    "Type '${node.type}' is not supported in PrintScript ${ctx.rules.version.label}.",
-                    node.position,
-                )
-            else -> null
+    private fun validateRules(node: VariableDeclaration): SemanticResult.Failure? =
+        if (node.isConst && node.value == null) {
+            SemanticResult.Failure(
+                "Constant '${node.name}' must be initialized.",
+                node.position,
+            )
+        } else {
+            null
         }
 
     private fun validateValueType(

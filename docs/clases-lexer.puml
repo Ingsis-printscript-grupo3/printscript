@@ -66,7 +66,6 @@ package "lexer" {
     -charStream: CharStream
     -readers: List<TokenReader>
     +Lexer(charStream, readers)
-    +Lexer(charStream)
     +tokenize(): Iterator<Token>
     -nextToken(): Token
     -skipWhitespace()
@@ -101,8 +100,10 @@ package "lexer" {
   }
 
   class LexerRules <<object>> {
-    +keywords: Map<String, TokenType>
+    +keywords10: Map<String, TokenType>
+    +keywords11: Map<String, TokenType>
     +symbols: Map<Char, TokenType>
+    +keywordsFor(version): Map<String, TokenType>
     +isQuote(c: Char): Boolean
     +isIdentifierStart(c: Char): Boolean
     +isIdentifierPart(c: Char): Boolean

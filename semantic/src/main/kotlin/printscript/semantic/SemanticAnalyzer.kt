@@ -9,10 +9,9 @@ class SemanticAnalyzer(
 ) {
     fun analyze(ast: Iterator<Statement>): Iterator<SemanticResult<Statement>> =
         iterator {
-            val rules = SemanticRules.from(version)
             val symbolTable = SymbolTable()
-            val expressionResolver = ExpressionResolver(symbolTable, rules)
-            val statementValidator = StatementValidator(symbolTable, expressionResolver, rules)
+            val expressionResolver = ExpressionResolver(symbolTable, version)
+            val statementValidator = StatementValidator(symbolTable, expressionResolver, version)
 
             for (statement in ast) {
                 val result = statementValidator.validate(statement)

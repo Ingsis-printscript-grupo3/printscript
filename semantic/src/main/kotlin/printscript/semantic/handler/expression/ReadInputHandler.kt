@@ -19,7 +19,7 @@ class ReadInputHandler : Handler<Expression, ExpressionResolver, SemanticResult<
         val argRes = validateArgument(node.argument, ctx)
         if (argRes is SemanticResult.Failure) return argRes
 
-        return validateResolvedType(ctx, node)
+        return SemanticResult.Success(ctx.expectedType ?: "string")
     }
 
     private fun validateArgument(
@@ -38,18 +38,4 @@ class ReadInputHandler : Handler<Expression, ExpressionResolver, SemanticResult<
                     SemanticResult.Success(Unit)
                 }
         }
-
-    private fun validateResolvedType(
-        ctx: ExpressionResolver,
-        node: ReadInput,
-    ): SemanticResult<String> {
-        val resolvedType = ctx.expectedType ?: "string"
-        if (resolvedType !in ctx.rules.supportedTypes) {
-            return SemanticResult.Failure(
-                "Type '$resolvedType' is not supported in PrintScript ${ctx.rules.version.label}.",
-                node.position,
-            )
-        }
-        return SemanticResult.Success(resolvedType)
-    }
 }
