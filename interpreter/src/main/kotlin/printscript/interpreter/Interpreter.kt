@@ -4,15 +4,9 @@ import printscript.ast.Expression
 import printscript.ast.Statement
 import printscript.ast.registry.Handler
 import printscript.ast.registry.Registry
-import printscript.common.LanguageVersion
-import printscript.interpreter.env.EnvProvider
-import printscript.interpreter.env.MapEnvProvider
-import printscript.interpreter.input.InputProvider
-import printscript.interpreter.input.QueueInput
-import printscript.interpreter.output.ConsoleOutput
-import printscript.interpreter.output.Output
 import printscript.interpreter.plugin.InterpreterContext
 
+// no sabe de versiones: recibe las dos listas ya armadas. Quien elige cuales van es InterpreterFactory
 class Interpreter(
     private val statementInterpreters: List<Handler<Statement, InterpreterContext, Unit>>,
     private val expressionEvaluators: List<Handler<Expression, InterpreterContext, Value>>,
@@ -21,24 +15,6 @@ class Interpreter(
 
     private val statementRegistry = Registry(statementInterpreters)
     private val expressionRegistry = Registry(expressionEvaluators)
-
-    constructor(
-        version: LanguageVersion,
-        output: Output = ConsoleOutput(),
-        input: InputProvider = QueueInput(),
-        env: EnvProvider = MapEnvProvider(),
-    ) : this(
-        statementInterpreters =
-            when (version) {
-                LanguageVersion.V1_0 -> InterpreterFactory.default10StatementInterpreters(output)
-                LanguageVersion.V1_1 -> InterpreterFactory.default11StatementInterpreters(output)
-            },
-        expressionEvaluators =
-            when (version) {
-                LanguageVersion.V1_0 -> InterpreterFactory.default10ExpressionEvaluators()
-                LanguageVersion.V1_1 -> InterpreterFactory.default11ExpressionEvaluators(input, env)
-            },
-    )
 
     override fun interpret(statements: Iterator<Statement>) {
         while (statements.hasNext()) {

@@ -6,8 +6,6 @@ enum class LanguageVersion(val label: String) {
     ;
 
     companion object {
-        // la version conservadora: si nadie elige, corremos el lenguaje mas chico. Asi una feature
-        // de 1.1 falla con un mensaje claro en vez de colarse sin que nadie la haya pedido
         val DEFAULT = V1_0
 
         fun parse(value: String): LanguageVersion =

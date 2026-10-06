@@ -9,7 +9,6 @@ import printscript.ast.PrintCall
 import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
-import printscript.common.LanguageVersion
 import printscript.common.TokenType
 import printscript.interpreter.output.BucketOutput
 import printscript.interpreter.output.MultiOutput
@@ -28,7 +27,7 @@ import kotlin.test.assertFailsWith
 class InterpreterTest {
     private fun run(vararg statements: Statement): List<String> {
         val bucket = BucketOutput()
-        Interpreter(LanguageVersion.V1_0, bucket).interpret(statements.iterator())
+        InterpreterFactory.create10(bucket).interpret(statements.iterator())
         return bucket.lines()
     }
 
@@ -140,7 +139,7 @@ class InterpreterTest {
         val first = BucketOutput()
         val second = BucketOutput()
 
-        Interpreter(LanguageVersion.V1_0, MultiOutput(first, second)).interpret(
+        InterpreterFactory.create10(MultiOutput(first, second)).interpret(
             listOf(PrintCall(bin(num(5.0), TokenType.MULTIPLY, num(3.0)))).iterator(),
         )
 
@@ -187,7 +186,7 @@ class InterpreterTest {
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownStatementError> {
-                plugin.handle(foreignNode, InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_0)))
+                plugin.handle(foreignNode, InterpreterContext(Environment(), InterpreterFactory.create10()))
             }
         }
     }
@@ -207,7 +206,7 @@ class InterpreterTest {
 
         for ((plugin, foreignNode) in cases) {
             assertFailsWith<UnknownExpressionError> {
-                plugin.handle(foreignNode, InterpreterContext(Environment(), Interpreter(LanguageVersion.V1_0)))
+                plugin.handle(foreignNode, InterpreterContext(Environment(), InterpreterFactory.create10()))
             }
         }
     }
