@@ -7,6 +7,7 @@ import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
+import printscript.parser.expression.DefaultExpressionParselets
 import printscript.parser.expression.ExpressionParser
 import printscript.parser.result.ASTResult
 import printscript.parser.stream.TokenStream
@@ -30,13 +31,17 @@ class StatementParserExtensibilityTest {
 
         val tokens = listOf(token(TokenType.LET), token(TokenType.EOF)).iterator()
         val stream = TokenStream(tokens)
-        val expressionParser = ExpressionParser(stream, LanguageVersion.V1_1)
+        val expressionParser =
+            ExpressionParser(
+                stream,
+                DefaultExpressionParselets.prefix(LanguageVersion.V1_1),
+                DefaultExpressionParselets.infix,
+            )
 
         val statementParser =
             StatementParser(
                 stream,
                 expressionParser,
-                version = LanguageVersion.V1_1,
                 handlers = mapOf(TokenType.LET to fakeHandler),
             )
         val result = statementParser.parseStatement()

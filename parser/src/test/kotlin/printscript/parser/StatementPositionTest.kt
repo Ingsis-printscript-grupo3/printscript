@@ -24,7 +24,7 @@ class StatementPositionTest {
         version: LanguageVersion = LanguageVersion.V1_1,
     ): List<Statement> {
         val tokenList = tokens.toList() + token(TokenType.EOF)
-        return Parser(tokenList.iterator(), version).parse().asSequence().map { result ->
+        return ParserFactory.create(tokenList.iterator(), version).parse().asSequence().map { result ->
             when (result) {
                 is ParseResult.Success -> result.statement
                 is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)

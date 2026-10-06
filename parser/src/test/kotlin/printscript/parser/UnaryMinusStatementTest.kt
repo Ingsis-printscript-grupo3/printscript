@@ -28,7 +28,7 @@ class UnaryMinusStatementTest {
         version: LanguageVersion = LanguageVersion.V1_1,
     ): List<Statement> {
         val tokenList = tokens.toList() + createToken(TokenType.EOF)
-        val parser = Parser(tokenList.iterator(), version)
+        val parser = ParserFactory.create(tokenList.iterator(), version)
         return parser.parse().asSequence().map { result ->
             when (result) {
                 is ParseResult.Success -> result.statement

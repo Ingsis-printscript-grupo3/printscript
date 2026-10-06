@@ -1,5 +1,6 @@
 package printscript.lexer
 
+import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
@@ -17,7 +18,7 @@ class LexerFactoryTest {
 
     @Test
     fun `tokenizes a program from a String source`() {
-        val types = typesOf(LexerFactory.create("let total: number = 10 + 20;"))
+        val types = typesOf(LexerFactory.create("let total: number = 10 + 20;", LanguageVersion.V1_1))
 
         assertEquals(
             listOf(
@@ -39,11 +40,14 @@ class LexerFactoryTest {
     @Test
     fun `every source overload produces the same tokens`() {
         val source = "println(x);"
-        val expected = typesOf(LexerFactory.create(source))
+        val expected = typesOf(LexerFactory.create(source, LanguageVersion.V1_1))
 
-        assertEquals(expected, typesOf(LexerFactory.create(StringReader(source))))
-        assertEquals(expected, typesOf(LexerFactory.create(CharStream(StringReader(source)))))
-        assertEquals(expected, typesOf(LexerFactory.create(ByteArrayInputStream(source.toByteArray()))))
+        assertEquals(expected, typesOf(LexerFactory.create(StringReader(source), LanguageVersion.V1_1)))
+        assertEquals(expected, typesOf(LexerFactory.create(CharStream(StringReader(source)), LanguageVersion.V1_1)))
+        assertEquals(
+            expected,
+            typesOf(LexerFactory.create(ByteArrayInputStream(source.toByteArray()), LanguageVersion.V1_1)),
+        )
     }
 
     @Test
@@ -52,7 +56,7 @@ class LexerFactoryTest {
         val input = ByteArrayInputStream(source.toByteArray(StandardCharsets.UTF_8))
 
         val values =
-            LexerFactory.create(input, StandardCharsets.UTF_8)
+            LexerFactory.create(input, LanguageVersion.V1_1, StandardCharsets.UTF_8)
                 .tokenize()
                 .asSequence()
                 .map { it.value }
@@ -62,21 +66,26 @@ class LexerFactoryTest {
         assertTrue(values.contains("añil"))
     }
 
-    // el lexer es agnostico de version a proposito: `const` sale como CONST aunque el
-    // programa sea 1.0, y es el parser el que decide que esa feature no esta disponible
     @Test
-    fun `keywords of both versions are tokenized regardless of version`() {
-        val types = typesOf(LexerFactory.create("const if else readInput readEnv true"))
+    fun `version 1_1 tokenizes its own keywords`() {
+        val types = typesOf(LexerFactory.create("const if else readInput readEnv true", LanguageVersion.V1_1))
 
         assertTrue(types.containsAll(listOf(TokenType.CONST, TokenType.IF, TokenType.ELSE)))
         assertTrue(types.containsAll(listOf(TokenType.READINPUT, TokenType.READENV, TokenType.BOOLEANLITERAL)))
     }
 
     @Test
-    fun `default readers cover identifiers numbers strings and symbols`() {
-        val types = typesOf(LexerFactory.create("x 1 \"s\" +"))
+    fun `version 1_0 reads those same words as plain identifiers`() {
+        val types = typesOf(LexerFactory.create("const if else readInput readEnv true boolean", LanguageVersion.V1_0))
 
-        assertEquals(4, LexerFactory.defaultReaders().size)
+        assertEquals(List(7) { TokenType.IDENTIFIER } + TokenType.EOF, types)
+    }
+
+    @Test
+    fun `default readers cover identifiers numbers strings and symbols`() {
+        val types = typesOf(LexerFactory.create("x 1 \"s\" +", LanguageVersion.V1_1))
+
+        assertEquals(4, LexerFactory.defaultReaders(LanguageVersion.V1_1).size)
         assertEquals(
             listOf(
                 TokenType.IDENTIFIER,
@@ -104,7 +113,12 @@ class LexerFactoryTest {
                 }
             }
 
-        val tokens = LexerFactory.create("@", listOf(customReader)).tokenize().asSequence().toList()
+        val tokens =
+            LexerFactory.create(
+                "@",
+                LanguageVersion.V1_1,
+                listOf(customReader),
+            ).tokenize().asSequence().toList()
 
         assertEquals(2, tokens.size)
         assertEquals("custom", tokens[0].value)
@@ -114,7 +128,7 @@ class LexerFactoryTest {
     @Test
     fun `unknown characters still fail as lexical errors`() {
         assertFailsWith<LexicalError> {
-            LexerFactory.create("let x = #;").tokenize().asSequence().toList()
+            LexerFactory.create("let x = #;", LanguageVersion.V1_1).tokenize().asSequence().toList()
         }
     }
 }

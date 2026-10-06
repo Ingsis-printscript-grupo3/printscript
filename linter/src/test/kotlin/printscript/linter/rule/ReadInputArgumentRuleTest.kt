@@ -13,7 +13,7 @@ import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.common.TokenType
-import printscript.linter.Linter
+import printscript.linter.LinterFactory
 import printscript.linter.LinterRules
 import printscript.linter.Warning
 import kotlin.test.Test
@@ -118,7 +118,7 @@ class ReadInputArgumentRuleTest {
         val stmt = VariableDeclaration("name", "string", ReadInput(concat("a", "b"), pos()), pos())
 
         val warnings = mutableListOf<Warning>()
-        Linter(LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = false))
+        LinterFactory.create(LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = false))
             .analyze(listOf<Statement>(stmt).iterator(), warnings::add)
 
         assertEquals(0, warnings.size)
@@ -129,7 +129,7 @@ class ReadInputArgumentRuleTest {
         val stmt = VariableDeclaration("name", "string", ReadInput(concat("a", "b"), pos()), pos())
 
         val warnings = mutableListOf<Warning>()
-        Linter().analyze(listOf<Statement>(stmt).iterator(), warnings::add)
+        LinterFactory.create().analyze(listOf<Statement>(stmt).iterator(), warnings::add)
 
         assertEquals(1, warnings.size)
     }

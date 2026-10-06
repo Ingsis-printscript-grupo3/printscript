@@ -25,7 +25,12 @@ class EndOfInputTest {
                 token(TokenType.PLUS, "+"),
                 token(TokenType.EOF),
             )
-        val parser = ExpressionParser(TokenStream(tokens.iterator()), LanguageVersion.V1_1)
+        val parser =
+            ExpressionParser(
+                TokenStream(tokens.iterator()),
+                DefaultExpressionParselets.prefix(LanguageVersion.V1_1),
+                DefaultExpressionParselets.infix,
+            )
 
         val result = parser.parseExpression()
 

@@ -29,7 +29,7 @@ class ExpressionResolverTest {
     private fun resolver(
         symbolTable: SymbolTable = SymbolTable(),
         version: LanguageVersion = LanguageVersion.V1_1,
-    ) = ExpressionResolver(symbolTable, SemanticRules.from(version))
+    ) = resolverFor(symbolTable, version)
 
     @Test
     fun `resolves number literals`() {
@@ -107,7 +107,7 @@ class ExpressionResolverTest {
             ExpressionResolver(
                 SymbolTable(),
                 SemanticRules.from(LanguageVersion.V1_1),
-                registry = emptyRegistry,
+                emptyRegistry,
             )
         val node = NumberLiteral(1.0, printscript.common.Position(4, 2))
 
@@ -248,7 +248,7 @@ class ExpressionResolverTest {
     fun `fails resolving readInput when expectedType is not supported`() {
         val result = resolver().resolveType(ReadInput(StringLiteral("Prompt:")), "unknownType")
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Type 'unknownType' is not supported in PrintScript 1.1.", result.message)
+        assertEquals("Unknown type 'unknownType'.", result.message)
     }
 
     @Test

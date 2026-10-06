@@ -21,7 +21,6 @@ object ParserFactory {
     ): ParserInterface =
         Parser(
             tokens = tokens,
-            version = version,
             prefixParselets = prefixParselets,
             infixParselets = infixParselets,
             statementHandlers = statementHandlers,

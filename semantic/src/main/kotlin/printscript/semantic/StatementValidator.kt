@@ -15,19 +15,8 @@ class StatementValidator(
     val symbolTable: SymbolTable,
     val expressionResolver: ExpressionResolver,
     val rules: SemanticRules,
-    private val registry: Registry<Statement, StatementValidator, SemanticResult<Unit>> =
-        Registry(defaultHandlers(rules.version)),
+    private val registry: Registry<Statement, StatementValidator, SemanticResult<Unit>>,
 ) {
-    val version: LanguageVersion get() = rules.version
-
-    constructor(
-        symbolTable: SymbolTable,
-        expressionResolver: ExpressionResolver,
-        version: LanguageVersion,
-        registry: Registry<Statement, StatementValidator, SemanticResult<Unit>> =
-            Registry(defaultHandlers(version)),
-    ) : this(symbolTable, expressionResolver, SemanticRules.from(version), registry)
-
     companion object {
         fun defaultHandlers(
             version: LanguageVersion,

@@ -96,7 +96,8 @@ fun parseExpression(
             tokens.toList() + token(TokenType.EOF)
         }
     val stream = TokenStream(tokenList.iterator())
-    val expressionParser = ExpressionParser(stream, version)
+    val expressionParser =
+        ExpressionParser(stream, DefaultExpressionParselets.prefix(version), DefaultExpressionParselets.infix)
     return expressionParser.parseExpression()
 }
 
@@ -118,7 +119,7 @@ fun parseExpressionWithInfix(
             tokens.toList() + token(TokenType.EOF)
         }
     val stream = TokenStream(tokenList.iterator())
-    val expressionParser = ExpressionParser(stream, version, infixParselets = infixParselets)
+    val expressionParser = ExpressionParser(stream, DefaultExpressionParselets.prefix(version), infixParselets)
     return expressionParser.parseExpression()
 }
 

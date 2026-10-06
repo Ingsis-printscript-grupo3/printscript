@@ -105,7 +105,7 @@ class Engine(
     ): FormatResult =
         runCatchingErrors {
             openReader().use { consume(parseIntoAst(parserFor(it, languageVersion), onProgress)) }
-            openReader().use { format(LexerFactory.create(it).tokenize()) }
+            openReader().use { format(LexerFactory.create(it, languageVersion).tokenize()) }
         }.asFormatResult()
 
     // el linter trabaja sobre el ast crudo: no necesita el chequeo semantico
@@ -124,7 +124,7 @@ class Engine(
 private fun parserFor(
     reader: Reader,
     languageVersion: LanguageVersion,
-): ParserInterface = ParserFactory.create(LexerFactory.create(reader).tokenize(), languageVersion)
+): ParserInterface = ParserFactory.create(LexerFactory.create(reader, languageVersion).tokenize(), languageVersion)
 
 // segundo paso: de resultados del parser a statements, cortando con SyntaxError en el primer fallo
 private fun parseIntoAst(

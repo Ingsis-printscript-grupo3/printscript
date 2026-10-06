@@ -2,15 +2,12 @@ package printscript.linter
 
 import printscript.ast.Statement
 import printscript.linter.rule.LinterRule
-import printscript.linter.rule.LinterRuleRegistry
 
 // una sola regla: si son varias vienen agrupadas en un CompositeRule
 class Linter(
     private val rule: LinterRule,
-    private val traverser: CompoundStatementTraverser = DefaultCompoundStatementTraverser(),
+    private val traverser: CompoundStatementTraverser,
 ) : LinterInterface {
-    constructor(config: LinterRules = LinterRules()) : this(LinterRuleRegistry().ruleFor(config))
-
     override fun analyze(
         statements: Iterator<Statement>,
         onWarning: (Warning) -> Unit,

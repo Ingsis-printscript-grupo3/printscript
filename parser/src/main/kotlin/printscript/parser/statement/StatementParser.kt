@@ -1,7 +1,6 @@
 package printscript.parser.statement
 
 import printscript.ast.Statement
-import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.TokenType
 import printscript.parser.expression.ExpressionParser
@@ -11,8 +10,7 @@ import printscript.parser.stream.TokenStream
 class StatementParser(
     private val stream: TokenStream,
     private val expressionParser: ExpressionParser,
-    version: LanguageVersion,
-    private val handlers: Map<TokenType, StatementHandler> = DefaultStatementHandlers.map(version),
+    private val handlers: Map<TokenType, StatementHandler>,
 ) {
     fun parseStatement(): ASTResult<Statement> {
         val token = stream.peek()

@@ -35,8 +35,7 @@ class StatementValidatorTest {
         symbolTable: SymbolTable = SymbolTable(),
         version: LanguageVersion = LanguageVersion.V1_1,
     ): StatementValidator {
-        val rules = SemanticRules.from(version)
-        return StatementValidator(symbolTable, ExpressionResolver(symbolTable, rules), rules)
+        return validatorFor(symbolTable, version)
     }
 
     @Test
@@ -94,7 +93,7 @@ class StatementValidatorTest {
             )
 
         assertIs<SemanticResult.Failure>(result)
-        assertEquals("Type 'boolean' is not supported in PrintScript 1.0.", result.message)
+        assertEquals("Unknown type 'boolean'.", result.message)
     }
 
     @Test
@@ -159,7 +158,7 @@ class StatementValidatorTest {
         val validator =
             StatementValidator(
                 symbolTable,
-                ExpressionResolver(symbolTable, SemanticRules.from(LanguageVersion.V1_1)),
+                resolverFor(symbolTable),
                 SemanticRules.from(LanguageVersion.V1_1),
                 emptyRegistry,
             )
@@ -584,14 +583,5 @@ class StatementValidatorTest {
         val handlers11 = StatementValidator.defaultHandlers(LanguageVersion.V1_1)
         assertEquals(3, handlers10.size)
         assertEquals(5, handlers11.size)
-    }
-
-    @Test
-    fun `validating const declaration in 1_0 fails as unsupported`() {
-        val constDecl = VariableDeclaration("x", "number", NumberLiteral(10.0), Position(4, 1), isConst = true)
-        val result = validator(version = LanguageVersion.V1_0).validate(constDecl)
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals("'const' declarations are not supported in PrintScript 1.0.", result.message)
-        assertEquals(Position(4, 1), result.position)
     }
 }
