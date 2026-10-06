@@ -4,7 +4,7 @@ import printscript.common.Token
 import printscript.common.TokenType
 import printscript.lexer.plugin.TokenReader
 
-class Lexer(
+class Lexer internal constructor(
     private val charStream: CharStream,
     private val readers: List<TokenReader>,
 ) : LexerInterface {

@@ -4,7 +4,7 @@ import printscript.ast.Statement
 import printscript.linter.rule.LinterRule
 
 // una sola regla: si son varias vienen agrupadas en un CompositeRule
-class Linter(
+class Linter internal constructor(
     private val rule: LinterRule,
     private val traverser: CompoundStatementTraverser,
 ) : LinterInterface {

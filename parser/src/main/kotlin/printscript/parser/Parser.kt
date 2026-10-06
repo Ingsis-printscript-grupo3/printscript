@@ -14,7 +14,7 @@ import printscript.parser.stream.TokenStream
 
 // los parselets y handlers se reciben por constructor y no se arman adentro: asi
 // ParserFactory puede componer otra combinacion sin tocar esta clase
-class Parser(
+class Parser internal constructor(
     tokens: Iterator<Token>,
     version: LanguageVersion,
     prefixParselets: Map<TokenType, PrefixParselet>,
