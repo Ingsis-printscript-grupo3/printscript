@@ -35,8 +35,7 @@ class StatementValidatorTest {
         symbolTable: SymbolTable = SymbolTable(),
         version: LanguageVersion = LanguageVersion.V1_1,
     ): StatementValidator {
-        val rules = SemanticRules.from(version)
-        return StatementValidator(symbolTable, ExpressionResolver(symbolTable, rules), rules)
+        return validatorFor(symbolTable, version)
     }
 
     @Test
@@ -159,7 +158,7 @@ class StatementValidatorTest {
         val validator =
             StatementValidator(
                 symbolTable,
-                ExpressionResolver(symbolTable, SemanticRules.from(LanguageVersion.V1_1)),
+                resolverFor(symbolTable),
                 SemanticRules.from(LanguageVersion.V1_1),
                 emptyRegistry,
             )

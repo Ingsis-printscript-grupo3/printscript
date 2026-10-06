@@ -16,19 +16,9 @@ import printscript.semantic.symbol.SymbolTable
 class ExpressionResolver(
     val symbolTable: SymbolTable,
     val rules: SemanticRules,
+    private val registry: Registry<Expression, ExpressionResolver, SemanticResult<String>>,
     val expectedType: String? = null,
-    private val registry: Registry<Expression, ExpressionResolver, SemanticResult<String>> =
-        Registry(defaultHandlers(rules.version)),
 ) {
-    val version: LanguageVersion get() = rules.version
-
-    constructor(
-        symbolTable: SymbolTable,
-        version: LanguageVersion,
-        registry: Registry<Expression, ExpressionResolver, SemanticResult<String>> =
-            Registry(defaultHandlers(version)),
-    ) : this(symbolTable, SemanticRules.from(version), null, registry)
-
     companion object {
         fun defaultHandlers(
             version: LanguageVersion,
@@ -59,7 +49,7 @@ class ExpressionResolver(
         if (this.expectedType == expectedType) {
             this
         } else {
-            ExpressionResolver(symbolTable, rules, expectedType, registry)
+            ExpressionResolver(symbolTable, rules, registry, expectedType)
         }
 
     fun resolveType(

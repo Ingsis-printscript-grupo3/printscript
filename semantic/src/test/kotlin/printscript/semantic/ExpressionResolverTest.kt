@@ -29,7 +29,7 @@ class ExpressionResolverTest {
     private fun resolver(
         symbolTable: SymbolTable = SymbolTable(),
         version: LanguageVersion = LanguageVersion.V1_1,
-    ) = ExpressionResolver(symbolTable, SemanticRules.from(version))
+    ) = resolverFor(symbolTable, version)
 
     @Test
     fun `resolves number literals`() {
@@ -107,7 +107,7 @@ class ExpressionResolverTest {
             ExpressionResolver(
                 SymbolTable(),
                 SemanticRules.from(LanguageVersion.V1_1),
-                registry = emptyRegistry,
+                emptyRegistry,
             )
         val node = NumberLiteral(1.0, printscript.common.Position(4, 2))
 

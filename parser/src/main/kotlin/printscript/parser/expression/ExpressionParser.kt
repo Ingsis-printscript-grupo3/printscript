@@ -1,7 +1,6 @@
 package printscript.parser.expression
 
 import printscript.ast.Expression
-import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
@@ -10,9 +9,8 @@ import printscript.parser.stream.TokenStream
 
 class ExpressionParser(
     private val stream: TokenStream,
-    version: LanguageVersion,
-    private val prefixParselets: Map<TokenType, PrefixParselet> = DefaultExpressionParselets.prefix(version),
-    private val infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix,
+    private val prefixParselets: Map<TokenType, PrefixParselet>,
+    private val infixParselets: Map<TokenType, InfixParselet>,
 ) {
     fun parseExpression(minPrecedence: Int = 0): ASTResult<Expression> {
         var left =

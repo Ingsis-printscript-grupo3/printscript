@@ -6,12 +6,8 @@ import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
-import printscript.common.LanguageVersion
 import printscript.common.Position
-import printscript.semantic.ExpressionResolver
 import printscript.semantic.SemanticResult
-import printscript.semantic.SemanticRules
-import printscript.semantic.StatementValidator
 import printscript.semantic.handler.expression.BinaryExpressionHandler
 import printscript.semantic.handler.expression.BooleanLiteralHandler
 import printscript.semantic.handler.expression.IdentifierHandler
@@ -24,7 +20,9 @@ import printscript.semantic.handler.statement.BlockHandler
 import printscript.semantic.handler.statement.IfStatementHandler
 import printscript.semantic.handler.statement.PrintCallHandler
 import printscript.semantic.handler.statement.VariableDeclarationHandler
+import printscript.semantic.resolverFor
 import printscript.semantic.symbol.SymbolTable
+import printscript.semantic.validatorFor
 import kotlin.test.Test
 import kotlin.test.assertIs
 
@@ -35,16 +33,9 @@ import kotlin.test.assertIs
 private val AT = Position(1, 1)
 
 class HandlerGuardsTest {
-    private fun resolverContext() = ExpressionResolver(SymbolTable(), SemanticRules.from(LanguageVersion.V1_1))
+    private fun resolverContext() = resolverFor()
 
-    private fun validatorContext(): StatementValidator {
-        val symbolTable = SymbolTable()
-        return StatementValidator(
-            symbolTable,
-            ExpressionResolver(symbolTable, SemanticRules.from(LanguageVersion.V1_1)),
-            SemanticRules.from(LanguageVersion.V1_1),
-        )
-    }
+    private fun validatorContext() = validatorFor()
 
     @Test
     fun `expression handlers reject nodes that are not theirs`() {
@@ -90,7 +81,7 @@ class HandlerGuardsTest {
     fun `identifier handler looks up the symbol table from the context`() {
         val symbolTable = SymbolTable()
         symbolTable.define("a", "string", at = AT)
-        val resolver = ExpressionResolver(symbolTable, SemanticRules.from(LanguageVersion.V1_1))
+        val resolver = resolverFor(symbolTable)
 
         val result = IdentifierHandler().handle(Identifier("a"), resolver)
 

@@ -1,6 +1,5 @@
 package printscript.parser
 
-import printscript.common.LanguageVersion
 import printscript.common.Token
 import printscript.common.TokenType
 import printscript.parser.expression.ExpressionParser
@@ -16,14 +15,13 @@ import printscript.parser.stream.TokenStream
 // ParserFactory puede componer otra combinacion sin tocar esta clase
 class Parser(
     tokens: Iterator<Token>,
-    version: LanguageVersion,
     prefixParselets: Map<TokenType, PrefixParselet>,
     infixParselets: Map<TokenType, InfixParselet>,
     statementHandlers: Map<TokenType, StatementHandler>,
 ) : ParserInterface {
     private val stream = TokenStream(tokens)
-    private val expressionParser = ExpressionParser(stream, version, prefixParselets, infixParselets)
-    private val statementParser = StatementParser(stream, expressionParser, version, statementHandlers)
+    private val expressionParser = ExpressionParser(stream, prefixParselets, infixParselets)
+    private val statementParser = StatementParser(stream, expressionParser, statementHandlers)
 
     override fun parse(): Iterator<ParseResult> =
         iterator {
