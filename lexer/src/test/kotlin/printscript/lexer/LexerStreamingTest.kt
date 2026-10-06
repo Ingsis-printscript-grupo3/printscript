@@ -54,7 +54,7 @@ class LexerStreamingTest {
         val source = STATEMENT.repeat(REPETITIONS_LARGE)
         val counting = CountingReader(StringReader(source))
 
-        val firstToken = Lexer(CharStream(counting)).tokenize().next()
+        val firstToken = LexerFactory.create(CharStream(counting)).tokenize().next()
 
         assertEquals(TokenType.LET, firstToken.type)
         assertTrue(
@@ -68,7 +68,7 @@ class LexerStreamingTest {
         val source = STATEMENT.repeat(REPETITIONS_LARGE)
         val counting = CountingReader(StringReader(source))
 
-        val tokens = Lexer(CharStream(counting)).tokenize().asSequence().count()
+        val tokens = LexerFactory.create(CharStream(counting)).tokenize().asSequence().count()
 
         assertTrue(tokens > REPETITIONS_LARGE)
         assertEquals(source.length, counting.charsRead)
@@ -80,7 +80,7 @@ class LexerStreamingTest {
         val content = "x".repeat(LONG_LINE_CHARS)
         val source = "let largo: string = \"$content\";"
 
-        val tokens = Lexer(CharStream(StringReader(source))).tokenize().asSequence().toList()
+        val tokens = LexerFactory.create(CharStream(StringReader(source))).tokenize().asSequence().toList()
 
         val literal = tokens.single { it.type == TokenType.STRINGLITERAL }
         assertEquals(LONG_LINE_CHARS, literal.value.length)

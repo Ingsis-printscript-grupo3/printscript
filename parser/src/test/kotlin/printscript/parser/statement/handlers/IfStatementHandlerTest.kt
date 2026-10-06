@@ -9,7 +9,7 @@ import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
-import printscript.parser.Parser
+import printscript.parser.ParserFactory
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
 import kotlin.test.Test
@@ -30,7 +30,7 @@ class IfStatementHandlerTest {
         vararg tokens: Token,
     ): List<ParseResult> {
         val tokenList = tokens.toList() + token(TokenType.EOF)
-        return Parser(tokenList.iterator(), version).parse().asSequence().toList()
+        return ParserFactory.create(tokenList.iterator(), version).parse().asSequence().toList()
     }
 
     private fun parseStatements(vararg tokens: Token): List<Statement> =

@@ -3,13 +3,11 @@ package printscript.parser
 import printscript.common.LanguageVersion
 import printscript.common.Token
 import printscript.common.TokenType
-import printscript.parser.expression.DefaultExpressionParselets
 import printscript.parser.expression.ExpressionParser
 import printscript.parser.expression.InfixParselet
 import printscript.parser.expression.PrefixParselet
 import printscript.parser.result.ASTResult
 import printscript.parser.result.ParseResult
-import printscript.parser.statement.DefaultStatementHandlers
 import printscript.parser.statement.StatementHandler
 import printscript.parser.statement.StatementParser
 import printscript.parser.stream.TokenStream
@@ -19,9 +17,9 @@ import printscript.parser.stream.TokenStream
 class Parser(
     tokens: Iterator<Token>,
     version: LanguageVersion,
-    prefixParselets: Map<TokenType, PrefixParselet> = DefaultExpressionParselets.prefix(version),
-    infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix,
-    statementHandlers: Map<TokenType, StatementHandler> = DefaultStatementHandlers.map(version),
+    prefixParselets: Map<TokenType, PrefixParselet>,
+    infixParselets: Map<TokenType, InfixParselet>,
+    statementHandlers: Map<TokenType, StatementHandler>,
 ) : ParserInterface {
     private val stream = TokenStream(tokens)
     private val expressionParser = ExpressionParser(stream, version, prefixParselets, infixParselets)

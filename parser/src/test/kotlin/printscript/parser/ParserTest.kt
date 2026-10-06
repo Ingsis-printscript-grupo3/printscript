@@ -32,7 +32,7 @@ class ParserTest {
         vararg tokens: Token,
     ): List<Statement> {
         val tokenList = tokens.toList() + createToken(TokenType.EOF)
-        val parser = Parser(tokenList.iterator(), version)
+        val parser = ParserFactory.create(tokenList.iterator(), version)
         return parser.parse().asSequence().map { result ->
             when (result) {
                 is ParseResult.Success -> result.statement
@@ -348,7 +348,7 @@ class ParserTest {
                 Token(TokenType.IDENTIFIER, Position(1, 5), Position(1, 6), "x"),
                 colon,
             )
-        val parser = Parser(tokens.iterator(), LanguageVersion.V1_0)
+        val parser = ParserFactory.create(tokens.iterator(), LanguageVersion.V1_0)
         val results = parser.parse().asSequence().toList()
         assertEquals(1, results.size)
         val failure = results[0] as ParseResult.Failure
@@ -366,7 +366,7 @@ class ParserTest {
                 Token(TokenType.IDENTIFIER, Position(1, 5), Position(1, 6), "x"),
                 colon,
             )
-        val parser = Parser(tokens.iterator(), LanguageVersion.V1_1)
+        val parser = ParserFactory.create(tokens.iterator(), LanguageVersion.V1_1)
         val results = parser.parse().asSequence().toList()
         assertEquals(1, results.size)
         val failure = results[0] as ParseResult.Failure

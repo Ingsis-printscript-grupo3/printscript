@@ -12,7 +12,7 @@ import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.common.TokenType
 import printscript.linter.IdentifierFormat
-import printscript.linter.Linter
+import printscript.linter.LinterFactory
 import printscript.linter.LinterRules
 import printscript.linter.Warning
 import kotlin.test.Test
@@ -193,7 +193,7 @@ class LinterRuleRegistryTest {
         val statements = listOf<Statement>(Assignment("miVariable", Identifier("x"), Position(7, 2)))
 
         val warnings = mutableListOf<Warning>()
-        Linter(registry.ruleFor(LinterRules())).analyze(statements.iterator(), warnings::add)
+        LinterFactory.create(registry = registry).analyze(statements.iterator(), warnings::add)
 
         assertEquals(1, warnings.size)
         assertEquals("siempre avisa", warnings[0].message)
