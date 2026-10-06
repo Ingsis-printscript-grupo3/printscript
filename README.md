@@ -27,6 +27,12 @@ por módulo y el test de carga con heap acotado):
 ./gradlew check
 ```
 
+La verificación de cobertura (`jacocoTestCoverageVerification`) corre los tests antes de medir,
+también si se la llama sola. Antes no los corría: medía el `.exec` que hubiera quedado de la
+última corrida, que podía ser de antes de los cambios, y si no había ninguno se salteaba y daba
+verde. En la demo hizo falta un `clean check` por eso. Ya no hace falta `clean`: si los tests
+están al día, Gradle no los repite.
+
 ## Diagramas
 
 | Diagrama | Archivo |
