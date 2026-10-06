@@ -6,7 +6,7 @@ import printscript.ast.registry.Handler
 import printscript.ast.registry.Registry
 import printscript.interpreter.plugin.InterpreterContext
 
-class Interpreter internal constructor(
+class Interpreter(
     private val statementInterpreters: List<Handler<Statement, InterpreterContext, Unit>>,
     private val expressionEvaluators: List<Handler<Expression, InterpreterContext, Value>>,
 ) : InterpreterInterface {
