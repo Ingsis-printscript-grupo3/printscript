@@ -30,7 +30,7 @@ end note
 ENGINE -> LEXER : LexerFactory.create(reader, version).tokenize()
 LEXER --> ENGINE : Iterator<Token>
 
-ENGINE -> PARSER : Parser(tokens, version).parse()
+ENGINE -> PARSER : ParserFactory.create(tokens, version).parse()
 PARSER --> ENGINE : Iterator<ParseResult>
 
 ENGINE -> ENGINE : parseIntoAst(...)
