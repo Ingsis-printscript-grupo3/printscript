@@ -1,7 +1,7 @@
 package printscript.runner
 
 import printscript.common.LanguageVersion
-import printscript.formatter.Formatter
+import printscript.formatter.FormatterFactory
 import printscript.formatter.FormatterRules
 import printscript.interpreter.output.BucketOutput
 import java.io.StringReader
@@ -286,7 +286,7 @@ class EndToEndTest {
         val writer = StringWriter()
         val rules = FormatterRules(spaceAfterColon = true, spacingAroundEquals = true, indentInsideIf = 2)
         Engine(BucketOutput()).format({ StringReader(code) }, LanguageVersion.V1_1) { tokens ->
-            Formatter(rules).format(tokens, writer)
+            FormatterFactory.create(rules).format(tokens, writer)
         }
         return writer.toString()
     }

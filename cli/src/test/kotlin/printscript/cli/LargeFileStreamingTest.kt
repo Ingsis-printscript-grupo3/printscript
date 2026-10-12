@@ -2,7 +2,7 @@ package printscript.cli
 
 import org.junit.jupiter.api.Tag
 import printscript.common.LanguageVersion
-import printscript.formatter.Formatter
+import printscript.formatter.FormatterFactory
 import printscript.formatter.FormatterRules
 import printscript.interpreter.output.Output
 import printscript.runner.Engine
@@ -59,7 +59,7 @@ class LargeFileStreamingTest {
 
         val result =
             Engine(DiscardingOutput).format({ file.reader() }, LanguageVersion.V1_0) { tokens ->
-                Formatter(FormatterRules()).format(tokens, discardingWriter())
+                FormatterFactory.create(FormatterRules()).format(tokens, discardingWriter())
             }
 
         assertTrue(result is FormatResult.Success)

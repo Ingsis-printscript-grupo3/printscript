@@ -4,21 +4,6 @@ import printscript.common.ConfigParser
 import java.io.InputStream
 
 object FormatterRulesLoader {
-    private val knownKeys =
-        setOf(
-            "enforce-spacing-before-colon-in-declaration",
-            "enforce-spacing-after-colon-in-declaration",
-            "enforce-spacing-around-equals",
-            "enforce-no-spacing-around-equals",
-            "line-breaks-after-println",
-            "mandatory-single-space-separation",
-            "mandatory-space-surrounding-operations",
-            "mandatory-line-break-after-statement",
-            "indent-inside-if",
-            "if-brace-same-line",
-            "if-brace-below-line",
-        )
-
     fun fromJson(json: String): FormatterRules = buildRules(ConfigParser.parseJson(json))
 
     fun fromYaml(yaml: String): FormatterRules = buildRules(ConfigParser.parseYaml(yaml))
@@ -28,42 +13,52 @@ object FormatterRulesLoader {
 
     fun fromFile(path: String): FormatterRules = buildRules(ConfigParser.parseFile(path))
 
-    private fun bool(
-        map: Map<String, String>,
-        key: String,
-    ): Boolean =
-        when (map[key]?.lowercase()) {
+    // cada key se nombra una sola vez, aca: las que no se leyeron son las desconocidas
+    private fun buildRules(map: Map<String, String>): FormatterRules {
+        val config = ConfigReader(map)
+        val rules =
+            FormatterRules(
+                spaceBeforeColon = config.bool("enforce-spacing-before-colon-in-declaration"),
+                spaceAfterColon = config.bool("enforce-spacing-after-colon-in-declaration"),
+                spacingAroundEquals = config.bool("enforce-spacing-around-equals"),
+                noSpacingAroundEquals = config.bool("enforce-no-spacing-around-equals"),
+                lineBreaksAfterPrintln = config.int("line-breaks-after-println"),
+                singleSpaceSeparation = config.bool("mandatory-single-space-separation"),
+                spaceSurroundingOperations = config.bool("mandatory-space-surrounding-operations"),
+                lineBreakAfterStatement = config.bool("mandatory-line-break-after-statement"),
+                indentInsideIf = config.int("indent-inside-if"),
+                ifBraceSameLine = config.bool("if-brace-same-line"),
+                ifBraceBelowLine = config.bool("if-brace-below-line"),
+            )
+        config.unreadKeys().forEach { System.err.println("formatter: ignoring unknown key '$it'") }
+        return rules
+    }
+}
+
+// lee la config y se acuerda que keys pidio
+private class ConfigReader(
+    private val map: Map<String, String>,
+) {
+    private val read = mutableSetOf<String>()
+
+    fun bool(key: String): Boolean =
+        when (raw(key)?.lowercase()) {
             null, "", "null" -> false
             "true" -> true
             "false" -> false
             else -> throw IllegalArgumentException("Expected boolean for '$key'")
         }
 
-    private fun int(
-        map: Map<String, String>,
-        key: String,
-    ): Int? {
-        val raw = map[key] ?: return null
+    fun int(key: String): Int? {
+        val raw = raw(key) ?: return null
         if (raw.isEmpty() || raw == "null") return null
         return raw.toIntOrNull() ?: throw IllegalArgumentException("Expected integer for '$key', got '$raw'")
     }
 
-    private fun buildRules(map: Map<String, String>): FormatterRules {
-        map.keys.filter { it !in knownKeys }.forEach {
-            System.err.println("formatter: ignoring unknown key '$it'")
-        }
-        return FormatterRules(
-            spaceBeforeColon = bool(map, "enforce-spacing-before-colon-in-declaration"),
-            spaceAfterColon = bool(map, "enforce-spacing-after-colon-in-declaration"),
-            spacingAroundEquals = bool(map, "enforce-spacing-around-equals"),
-            noSpacingAroundEquals = bool(map, "enforce-no-spacing-around-equals"),
-            lineBreaksAfterPrintln = int(map, "line-breaks-after-println"),
-            singleSpaceSeparation = bool(map, "mandatory-single-space-separation"),
-            spaceSurroundingOperations = bool(map, "mandatory-space-surrounding-operations"),
-            lineBreakAfterStatement = bool(map, "mandatory-line-break-after-statement"),
-            indentInsideIf = int(map, "indent-inside-if"),
-            ifBraceSameLine = bool(map, "if-brace-same-line"),
-            ifBraceBelowLine = bool(map, "if-brace-below-line"),
-        )
+    fun unreadKeys(): Set<String> = map.keys - read
+
+    private fun raw(key: String): String? {
+        read += key
+        return map[key]
     }
 }

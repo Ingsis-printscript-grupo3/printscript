@@ -16,7 +16,7 @@ class TckGoldenTest {
     private fun format(case: Case): String {
         val writer = StringWriter()
         val tokens = Lexer(CharStream(StringReader(case.input))).tokenize()
-        Formatter(FormatterRulesLoader.fromJson(case.config)).format(tokens, writer)
+        FormatterFactory.create(FormatterRulesLoader.fromJson(case.config)).format(tokens, writer)
         return writer.toString()
     }
 
