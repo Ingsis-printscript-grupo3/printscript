@@ -23,7 +23,7 @@ class LinterTest {
         config: LinterRules = LinterRules(),
     ): List<Warning> {
         val warnings = mutableListOf<Warning>()
-        Linter(config).analyze(statements.iterator(), warnings::add)
+        LinterFactory.create(config).analyze(statements.iterator(), warnings::add)
         return warnings
     }
 
