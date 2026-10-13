@@ -34,10 +34,7 @@ class StatementValidatorTest {
     private fun validator(
         symbolTable: SymbolTable = SymbolTable(),
         version: LanguageVersion = LanguageVersion.V1_1,
-    ): StatementValidator {
-        val rules = SemanticRules.from(version)
-        return StatementValidator(symbolTable, ExpressionResolver(symbolTable, rules), rules)
-    }
+    ): StatementValidator = StatementValidator(symbolTable, ExpressionResolver(symbolTable, version), version)
 
     @Test
     fun `declaring a variable without an initializer succeeds`() {
@@ -84,17 +81,6 @@ class StatementValidatorTest {
 
         assertIs<SemanticResult.Failure>(result)
         assertEquals("Constant 'a' must be initialized.", result.message)
-    }
-
-    @Test
-    fun `declaring a variable with unsupported type fails`() {
-        val result =
-            validator(version = LanguageVersion.V1_0).validate(
-                VariableDeclaration("a", "boolean", null),
-            )
-
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals("Type 'boolean' is not supported in PrintScript 1.0.", result.message)
     }
 
     @Test
@@ -159,8 +145,8 @@ class StatementValidatorTest {
         val validator =
             StatementValidator(
                 symbolTable,
-                ExpressionResolver(symbolTable, SemanticRules.from(LanguageVersion.V1_1)),
-                SemanticRules.from(LanguageVersion.V1_1),
+                ExpressionResolver(symbolTable, LanguageVersion.V1_1),
+                LanguageVersion.V1_1,
                 emptyRegistry,
             )
         val node = PrintCall(NumberLiteral(1.0), Position(9, 1))
@@ -584,14 +570,5 @@ class StatementValidatorTest {
         val handlers11 = StatementValidator.defaultHandlers(LanguageVersion.V1_1)
         assertEquals(3, handlers10.size)
         assertEquals(5, handlers11.size)
-    }
-
-    @Test
-    fun `validating const declaration in 1_0 fails as unsupported`() {
-        val constDecl = VariableDeclaration("x", "number", NumberLiteral(10.0), Position(4, 1), isConst = true)
-        val result = validator(version = LanguageVersion.V1_0).validate(constDecl)
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals("'const' declarations are not supported in PrintScript 1.0.", result.message)
-        assertEquals(Position(4, 1), result.position)
     }
 }

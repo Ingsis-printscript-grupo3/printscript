@@ -14,20 +14,10 @@ import printscript.semantic.symbol.SymbolTable
 class StatementValidator(
     val symbolTable: SymbolTable,
     val expressionResolver: ExpressionResolver,
-    val rules: SemanticRules,
+    val version: LanguageVersion = LanguageVersion.V1_1,
     private val registry: Registry<Statement, StatementValidator, SemanticResult<Unit>> =
-        Registry(defaultHandlers(rules.version)),
+        Registry(defaultHandlers(version)),
 ) {
-    val version: LanguageVersion get() = rules.version
-
-    constructor(
-        symbolTable: SymbolTable,
-        expressionResolver: ExpressionResolver,
-        version: LanguageVersion,
-        registry: Registry<Statement, StatementValidator, SemanticResult<Unit>> =
-            Registry(defaultHandlers(version)),
-    ) : this(symbolTable, expressionResolver, SemanticRules.from(version), registry)
-
     companion object {
         fun defaultHandlers(
             version: LanguageVersion,

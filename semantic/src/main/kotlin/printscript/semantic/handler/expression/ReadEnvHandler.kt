@@ -19,7 +19,7 @@ class ReadEnvHandler : Handler<Expression, ExpressionResolver, SemanticResult<St
         val argRes = validateArgument(node.argument, ctx)
         if (argRes is SemanticResult.Failure) return argRes
 
-        return validateResolvedType(ctx, node)
+        return SemanticResult.Success(ctx.expectedType ?: "string")
     }
 
     private fun validateArgument(
@@ -38,18 +38,4 @@ class ReadEnvHandler : Handler<Expression, ExpressionResolver, SemanticResult<St
                     SemanticResult.Success(Unit)
                 }
         }
-
-    private fun validateResolvedType(
-        ctx: ExpressionResolver,
-        node: ReadEnv,
-    ): SemanticResult<String> {
-        val resolvedType = ctx.expectedType ?: "string"
-        if (resolvedType !in ctx.rules.supportedTypes) {
-            return SemanticResult.Failure(
-                "Type '$resolvedType' is not supported in PrintScript ${ctx.rules.version.label}.",
-                node.position,
-            )
-        }
-        return SemanticResult.Success(resolvedType)
-    }
 }
