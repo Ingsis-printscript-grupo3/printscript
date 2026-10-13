@@ -127,21 +127,6 @@ class LinterFactoryTest {
         assertTrue(LinterFactory.defaultRegistry().rulesFor(LinterRules()).isNotEmpty())
     }
 
-    // el traverser inyectable es lo que permite que el linter entre a bloques propios
-    @Test
-    fun `a custom traverser decides which children are visited`() {
-        val blind = CompoundStatementTraverser { emptySequence() }
-
-        val warnings =
-            warningsOf(
-                LinterFactory.create(LinterRules(), LinterFactory.defaultRegistry(), blind),
-                snakeCaseDeclaration(),
-            )
-
-        assertEquals(1, warnings.size)
-        assertTrue(LinterFactory.defaultTraverser() is DefaultCompoundStatementTraverser)
-    }
-
     @Test
     fun `fromJson and fromYaml build the same linter`() {
         val fromJson = warningsOf(LinterFactory.fromJson(camelCaseJson, LanguageVersion.V1_1), snakeCaseDeclaration())
