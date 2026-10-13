@@ -29,7 +29,7 @@ class LinterTckCasesTest {
             }
         }
         val warnings = mutableListOf<Warning>()
-        Linter(LinterRulesLoader.fromJson(configJson)).analyze(statements.iterator(), warnings::add)
+        LinterFactory.create(LinterRulesLoader.fromJson(configJson)).analyze(statements.iterator(), warnings::add)
         return warnings
     }
 
