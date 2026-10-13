@@ -7,6 +7,7 @@ import printscript.ast.BooleanLiteral
 import printscript.ast.Identifier
 import printscript.ast.IfStatement
 import printscript.ast.NumberLiteral
+import printscript.ast.PositionedNode
 import printscript.ast.PrintCall
 import printscript.ast.ReadEnv
 import printscript.ast.ReadInput
@@ -110,5 +111,15 @@ class NodeChildrenTest {
         assertEquals(emptyList(), childrenOf(StringLiteral("a", pos())))
         assertEquals(emptyList(), childrenOf(BooleanLiteral(false, pos())))
         assertEquals(emptyList(), childrenOf(Identifier("x", pos())))
+    }
+
+    @Test
+    fun `childrenOf returns empty list for unknown PositionedNode implementation`() {
+        val unknown: PositionedNode =
+            object : PositionedNode {
+                override val position: Position = pos()
+            }
+
+        assertEquals(emptyList(), childrenOf(unknown))
     }
 }

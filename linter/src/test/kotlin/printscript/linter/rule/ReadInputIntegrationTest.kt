@@ -119,4 +119,18 @@ class ReadInputIntegrationTest {
             warnings.map { it.message },
         )
     }
+
+    @Test
+    fun `readInput nested inside another readInput with literal argument only warns once for the outer call`() {
+        val source = """let name: string = readInput(readInput("a"));"""
+        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = true)
+
+        val warnings = lint(source, config)
+
+        assertEquals(1, warnings.size)
+        assertEquals(
+            "readInput can only be called with an identifier or a literal, not an expression",
+            warnings[0].message,
+        )
+    }
 }

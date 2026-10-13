@@ -188,6 +188,33 @@ class LinterRuleRegistryTest {
         assertEquals(Position(7, 2), warnings[0].position)
     }
 
+    @Test
+    fun `a rule targeting an expression registered by hand runs on nested expressions`() {
+        val rule =
+            object : LinterRule {
+                override fun appliesTo(node: PositionedNode): Boolean = node is BinaryExpression
+
+                override fun check(node: PositionedNode): List<Warning> =
+                    listOf(Warning("operacion binaria encontrada", node.position))
+            }
+        val registry = LinterRuleRegistry().register(LinterRuleFactory { listOf(rule) })
+        val value =
+            BinaryExpression(
+                NumberLiteral(1.0, Position(1, 20)),
+                TokenType.PLUS,
+                NumberLiteral(2.0, Position(1, 24)),
+                Position(1, 20),
+            )
+        val statement = VariableDeclaration("x", "number", value, Position(1, 1))
+
+        val warnings = mutableListOf<Warning>()
+        LinterFactory.create(registry = registry).analyze(listOf<Statement>(statement).iterator(), warnings::add)
+
+        assertEquals(1, warnings.size)
+        assertEquals("operacion binaria encontrada", warnings[0].message)
+        assertEquals(Position(1, 20), warnings[0].position)
+    }
+
     private class NoOpRule : LinterRule {
         override fun appliesTo(node: PositionedNode): Boolean = false
 

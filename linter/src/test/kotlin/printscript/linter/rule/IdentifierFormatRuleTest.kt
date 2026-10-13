@@ -86,4 +86,11 @@ class IdentifierFormatRuleTest {
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'MI_CONST' does not match format camel case", warnings[0].message)
     }
+
+    @Test
+    fun `check returns empty list for node where appliesTo is false`() {
+        val print = PrintCall(Identifier("myVar", pos()), pos())
+
+        assertEquals(emptyList(), camelCaseRule.check(print))
+    }
 }
