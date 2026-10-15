@@ -1,11 +1,12 @@
 package printscript.formatter.rule
 
+import printscript.common.LanguageVersion
 import printscript.common.TokenType
 import printscript.formatter.FormatterFactory
 import printscript.formatter.FormatterRules
 import printscript.formatter.Gap
 import printscript.lexer.CharStream
-import printscript.lexer.Lexer
+import printscript.lexer.LexerFactory
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.Test
@@ -41,7 +42,7 @@ class FormatterRuleRegistryTest {
         config: FormatterRules = FormatterRules(),
     ): String {
         val writer = StringWriter()
-        val tokens = Lexer(CharStream(StringReader(code))).tokenize()
+        val tokens = LexerFactory.create(CharStream(StringReader(code)), LanguageVersion.V1_1).tokenize()
         FormatterFactory.create(config, registry).format(tokens, writer)
         return writer.toString()
     }

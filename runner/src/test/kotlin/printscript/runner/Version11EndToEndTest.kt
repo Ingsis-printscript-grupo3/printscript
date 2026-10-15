@@ -37,16 +37,16 @@ class Version11EndToEndTest {
     }
 
     @Test
-    fun `the same program under version 1_0 fails in parser because const is not a 1_0 token`() {
+    fun `the same program under version 1_0 fails in parser because const is a plain identifier in 1_0`() {
         val result = runEngine(program, LanguageVersion.V1_0)
 
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Syntax", result.type)
-        assertTrue(result.message.contains("Unexpected token 'const'"))
+        assertEquals("Expected '='.", result.message)
     }
 
     @Test
-    fun `if statement under version 1_0 fails in parser because if is not a 1_0 token`() {
+    fun `if statement under version 1_0 fails in parser because if is a plain identifier in 1_0`() {
         val code =
             """
             if (true) {
@@ -58,7 +58,23 @@ class Version11EndToEndTest {
 
         assertTrue(result is ExecutionResult.Failure)
         assertEquals("Syntax", result.type)
-        assertTrue(result.message.contains("Unexpected token 'if'"))
+        assertEquals("Expected '='.", result.message)
+    }
+
+    @Test
+    fun `keywords of 1_1 can be declared and printed as variable names in 1_0`() {
+        val bucket = BucketOutput()
+        val engine = Engine(output = bucket)
+        val code =
+            """
+            let if: number = 5;
+            println(if);
+            """.trimIndent()
+
+        val result = engine.execute(code, LanguageVersion.V1_0)
+
+        assertEquals(ExecutionResult.Success, result)
+        assertEquals(listOf("5"), bucket.lines())
     }
 
     @Test

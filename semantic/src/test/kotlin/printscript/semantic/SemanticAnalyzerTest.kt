@@ -87,22 +87,6 @@ class SemanticAnalyzerTest {
     }
 
     @Test
-    fun `semantic analyzer rejects unsupported type declaration in 1_0`() {
-        val statements =
-            listOf(
-                VariableDeclaration("x", "boolean", null, Position(1, 1)),
-            )
-
-        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
-
-        assertEquals(1, results.size)
-        val failure = results.single()
-        assertIs<SemanticResult.Failure>(failure)
-        assertEquals(Position(1, 1), failure.position)
-        assertTrue(failure.message.contains("Type 'boolean' is not supported in PrintScript 1.0"))
-    }
-
-    @Test
     fun `semantic analyzer accepts valid if statement in 1_1`() {
         val statements =
             listOf(
@@ -304,27 +288,5 @@ class SemanticAnalyzerTest {
         assertIs<SemanticResult.Failure>(failure)
         assertEquals("Unknown expression type.", failure.message)
         assertEquals(Position(2, 20), failure.position)
-    }
-
-    @Test
-    fun `semantic analyzer in 1_0 rejects const declaration`() {
-        val statements =
-            listOf(
-                VariableDeclaration(
-                    "x",
-                    "number",
-                    NumberLiteral(10.0, Position(1, 17)),
-                    Position(1, 1),
-                    isConst = true,
-                ),
-            )
-
-        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements.iterator()).asSequence().toList()
-
-        assertEquals(1, results.size)
-        val failure = results.single()
-        assertIs<SemanticResult.Failure>(failure)
-        assertEquals("'const' declarations are not supported in PrintScript 1.0.", failure.message)
-        assertEquals(Position(1, 1), failure.position)
     }
 }

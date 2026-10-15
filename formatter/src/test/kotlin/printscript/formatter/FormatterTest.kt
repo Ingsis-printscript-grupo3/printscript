@@ -1,7 +1,8 @@
 package printscript.formatter
 
+import printscript.common.LanguageVersion
 import printscript.lexer.CharStream
-import printscript.lexer.Lexer
+import printscript.lexer.LexerFactory
 import java.io.StringReader
 import java.io.StringWriter
 import java.io.Writer
@@ -9,7 +10,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class FormatterTest {
-    private fun tokensOf(code: String) = Lexer(CharStream(StringReader(code))).tokenize()
+    private fun tokensOf(
+        code: String,
+        version: LanguageVersion = LanguageVersion.V1_1,
+    ) = LexerFactory.create(CharStream(StringReader(code)), version).tokenize()
 
     private fun format(
         code: String,

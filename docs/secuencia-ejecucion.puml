@@ -27,7 +27,7 @@ note over ENGINE, SEMANTIC
   caracteres adelantados.
 end note
 
-ENGINE -> LEXER : Lexer(CharStream(reader)).tokenize()
+ENGINE -> LEXER : LexerFactory.create(reader, version).tokenize()
 LEXER --> ENGINE : Iterator<Token>
 
 ENGINE -> PARSER : Parser(tokens, version).parse()
