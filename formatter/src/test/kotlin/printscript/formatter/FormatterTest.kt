@@ -20,7 +20,7 @@ class FormatterTest {
         rules: FormatterRules = FormatterRules(),
     ): String {
         val writer = StringWriter()
-        Formatter(rules).format(tokensOf(code), writer)
+        FormatterFactory.create(rules).format(tokensOf(code), writer)
         return writer.toString()
     }
 
@@ -75,7 +75,7 @@ class FormatterTest {
                 override fun close() = Unit
             }
 
-        Formatter(FormatterRules()).format(counting, spy)
+        FormatterFactory.create().format(counting, spy)
 
         // si juntara los tokens antes de escribir, al primer write ya los habria leido todos
         assertEquals(1, readAtFirstWrite)

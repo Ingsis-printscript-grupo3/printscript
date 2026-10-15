@@ -13,7 +13,8 @@ import printscript.ast.Statement
 import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
-import printscript.formatter.Formatter
+import printscript.formatter.FormatterFactory
+import printscript.formatter.FormatterInterface
 import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
 import printscript.interpreter.env.SystemEnvProvider
@@ -165,10 +166,10 @@ class AnalyzeCommand : PrintScriptCommand(
 class FormatCommand : PrintScriptCommand("format", "Format a .prs file and print the result") {
     private val config by option("--config", help = "Path to a JSON or YAML file with formatting rules")
         .file(mustExist = true, canBeDir = false, mustBeReadable = true)
-    private lateinit var rules: FormatterRules
+    private lateinit var formatter: FormatterInterface
 
     override fun runOn(version: LanguageVersion) {
-        rules = loadRules()
+        formatter = FormatterFactory.create(loadRules())
         checkResult(engine.format(::openFile, version, progress::report, ::formatTokens))
     }
 
@@ -184,7 +185,7 @@ class FormatCommand : PrintScriptCommand("format", "Format a .prs file and print
     // the engine opens the file twice: once to validate it and once to format it
     private fun openFile(): Reader = file.reader()
 
-    private fun formatTokens(tokens: Iterator<Token>) = Formatter(rules).format(tokens, echoWriter())
+    private fun formatTokens(tokens: Iterator<Token>) = formatter.format(tokens, echoWriter())
 
     // prints each piece as soon as it is formatted
     private fun echoWriter(): Writer =

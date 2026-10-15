@@ -1,7 +1,7 @@
 package printscript.runner
 
 import printscript.common.LanguageVersion
-import printscript.formatter.Formatter
+import printscript.formatter.FormatterFactory
 import printscript.formatter.FormatterRulesLoader
 import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.input.InputProvider
@@ -48,10 +48,10 @@ object PrintScriptRunner {
     ) {
         val version = parseVersion(versionStr, onError) ?: return
         handleExecution(onError) {
-            val rules = FormatterRulesLoader.fromStream(config)
+            val formatter = FormatterFactory.create(FormatterRulesLoader.fromStream(config))
             val result =
                 withTempCopy(src) { openSource ->
-                    Engine(NO_OP_OUTPUT).format(openSource, version) { Formatter(rules).format(it, writer) }
+                    Engine(NO_OP_OUTPUT).format(openSource, version) { formatter.format(it, writer) }
                 }
             if (result is FormatResult.Failure) onError(result.message)
         }
