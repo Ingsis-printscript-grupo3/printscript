@@ -1,5 +1,6 @@
 package printscript.interpreter
 
+import printscript.common.LanguageVersion
 import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
@@ -19,7 +20,7 @@ class ReadInputTest {
         val output = BucketOutput()
         val interpreter = InterpreterFactory.create11(output = output, input = input)
 
-        interpreter.interpret(parse(code))
+        interpreter.interpret(parse(code, LanguageVersion.V1_1))
 
         assertEquals(listOf("26"), output.lines())
     }
@@ -35,7 +36,7 @@ class ReadInputTest {
         val output = BucketOutput()
         val interpreter = InterpreterFactory.create11(output = output, input = input)
 
-        interpreter.interpret(parse(code))
+        interpreter.interpret(parse(code, LanguageVersion.V1_1))
 
         assertEquals(listOf("true"), output.lines())
     }
@@ -53,7 +54,7 @@ class ReadInputTest {
 
         val error =
             assertFailsWith<ValueConversionError> {
-                interpreter.interpret(parse(code))
+                interpreter.interpret(parse(code, LanguageVersion.V1_1))
             }
 
         assertEquals(StringValue("not_a_number"), error.value)
@@ -73,7 +74,7 @@ class ReadInputTest {
         val output = BucketOutput()
         val interpreter = InterpreterFactory.create11(output = output, input = input)
 
-        interpreter.interpret(parse(code))
+        interpreter.interpret(parse(code, LanguageVersion.V1_1))
 
         assertEquals(listOf("50"), output.lines())
     }
@@ -92,7 +93,7 @@ class ReadInputTest {
 
         val error =
             assertFailsWith<ValueConversionError> {
-                interpreter.interpret(parse(code))
+                interpreter.interpret(parse(code, LanguageVersion.V1_1))
             }
 
         assertEquals(StringValue("not_a_number"), error.value)

@@ -9,9 +9,10 @@ import printscript.parser.Parser
 import printscript.parser.result.ParseResult
 import java.io.StringReader
 
-// parsea con 1.1 para que los tests de 1.0 reciban nodos que su interprete no soporta
-internal fun parse(code: String): Iterator<Statement> {
-    val version = LanguageVersion.V1_1
+internal fun parse(
+    code: String,
+    version: LanguageVersion = LanguageVersion.V1_0,
+): Iterator<Statement> {
     val tokens = Lexer(CharStream(StringReader(code)), LexerFactory.defaultReaders(version)).tokenize()
     return Parser(tokens, version)
         .parse()
