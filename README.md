@@ -92,8 +92,8 @@ Las reglas también se componen, y la configuración decide cuáles se crean.
 Y los dos últimos son los que arman todo y lo exponen.
 
 **`runner`** — El único módulo que depende del pipeline completo. Su `Engine` lo encadena y
-traduce cualquier excepción en un resultado con tipo, mensaje y posición. Expone también
-`PrintScriptRunner`, que es la fachada que consume el TCK de la cátedra.
+traduce cualquier excepción en un resultado con tipo, mensaje y posición. No sabe nada del
+TCK: los adaptadores que traducen sus interfaces al `Engine` viven en el repo del TCK.
 
 **`cli`** — La interfaz de línea de comandos, construida con Clikt. Delega la ejecución en
 `runner`; de `interpreter`, `formatter` y `linter` toma solo los tipos que necesita para
@@ -215,12 +215,13 @@ con un token que tenga permiso `write:packages`:
 ## Cómo correr el TCK
 
 El TCK de la cátedra vive en un repo aparte y se engancha a esta implementación por
-`CustomImplementationFactory`, que adapta `PrintScriptRunner` a sus interfaces.
+`CustomImplementationFactory`. Sus adaptadores llaman al `Engine` directo, así que un cambio
+en el TCK se resuelve en su repo sin tocar esta librería.
 
 ```bash
-# 1. publicar esta implementación en el repositorio local, con la version por defecto
-#    (0.0.1-SNAPSHOT), que es la que pide el build.gradle del fork
-./gradlew publishToMavenLocal
+# 1. publicar esta implementación en el repositorio local, con la version que pide
+#    el build.gradle del fork
+./gradlew publishToMavenLocal "-Pversion=<version del fork>"
 
 # 2. clonar el fork del grupo, en la rama de validación
 git clone -b group-3-validation https://github.com/Ingsis-printscript-grupo3/printscript-tck.git
