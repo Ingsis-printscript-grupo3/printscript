@@ -49,4 +49,17 @@ class OutputTest {
     fun `MultiOutput with no destinations does not fail`() {
         MultiOutput().emit("hello")
     }
+
+    @Test
+    fun `printing with a MultiOutput reaches every destination`() {
+        val code = "println(5 * 3);"
+        val first = BucketOutput()
+        val second = BucketOutput()
+        val interpreter = InterpreterFactory.create10(MultiOutput(first, second))
+
+        interpreter.interpret(parse(code))
+
+        assertEquals(listOf("15"), first.lines())
+        assertEquals(listOf("15"), second.lines())
+    }
 }
