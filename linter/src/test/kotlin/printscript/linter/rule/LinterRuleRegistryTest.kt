@@ -4,6 +4,7 @@ import printscript.ast.Assignment
 import printscript.ast.BinaryExpression
 import printscript.ast.Identifier
 import printscript.ast.NumberLiteral
+import printscript.ast.PositionedNode
 import printscript.ast.PrintCall
 import printscript.ast.ReadInput
 import printscript.ast.Statement
@@ -52,7 +53,11 @@ class LinterRuleRegistryTest {
     private fun warningsFor(
         config: LinterRules,
         statement: Statement,
-    ): List<Warning> = LinterRuleRegistry().ruleFor(config).check(statement)
+    ): List<Warning> {
+        val warnings = mutableListOf<Warning>()
+        LinterFactory.create(config).analyze(listOf(statement).iterator(), warnings::add)
+        return warnings
+    }
 
     @Test
     fun `the default config registers one rule per active check`() {
@@ -62,15 +67,6 @@ class LinterRuleRegistryTest {
         assertTrue(rules.any { it is IdentifierFormatRule })
         assertTrue(rules.any { it is PrintCallArgumentRule })
         assertTrue(rules.any { it is ReadInputArgumentRule })
-    }
-
-    // rulesFor cuenta reglas reales: si las de argumentos volvieran envueltas en un grupo,
-    // el tamano de la lista mentiria sobre cuantas estan activas
-    @Test
-    fun `the println and readInput rules come back loose and not wrapped in a group`() {
-        val rules = LinterRuleRegistry().rulesFor(LinterRules())
-
-        assertTrue(rules.none { it is CompositeRule })
     }
 
     @Test
@@ -173,14 +169,6 @@ class LinterRuleRegistryTest {
     }
 
     @Test
-    fun `ruleFor hands back a single rule that runs all of them`() {
-        val rule = LinterRuleRegistry().ruleFor(LinterRules())
-
-        assertTrue(rule is CompositeRule)
-        assertEquals(1, rule.check(printlnWithExpression()).size)
-    }
-
-    @Test
     fun `a factory that returns an empty list contributes no rule`() {
         val rules = LinterRuleRegistry(listOf(LinterRuleFactory { emptyList() })).rulesFor(LinterRules())
 
@@ -200,11 +188,42 @@ class LinterRuleRegistryTest {
         assertEquals(Position(7, 2), warnings[0].position)
     }
 
+    @Test
+    fun `a rule targeting an expression registered by hand runs on nested expressions`() {
+        val rule =
+            object : LinterRule {
+                override fun appliesTo(node: PositionedNode): Boolean = node is BinaryExpression
+
+                override fun check(node: PositionedNode): List<Warning> =
+                    listOf(Warning("operacion binaria encontrada", node.position))
+            }
+        val registry = LinterRuleRegistry().register(LinterRuleFactory { listOf(rule) })
+        val value =
+            BinaryExpression(
+                NumberLiteral(1.0, Position(1, 20)),
+                TokenType.PLUS,
+                NumberLiteral(2.0, Position(1, 24)),
+                Position(1, 20),
+            )
+        val statement = VariableDeclaration("x", "number", value, Position(1, 1))
+
+        val warnings = mutableListOf<Warning>()
+        LinterFactory.create(registry = registry).analyze(listOf<Statement>(statement).iterator(), warnings::add)
+
+        assertEquals(1, warnings.size)
+        assertEquals("operacion binaria encontrada", warnings[0].message)
+        assertEquals(Position(1, 20), warnings[0].position)
+    }
+
     private class NoOpRule : LinterRule {
-        override fun check(statement: Statement): List<Warning> = emptyList()
+        override fun appliesTo(node: PositionedNode): Boolean = false
+
+        override fun check(node: PositionedNode): List<Warning> = emptyList()
     }
 
     private class AlwaysWarnsRule : LinterRule {
-        override fun check(statement: Statement): List<Warning> = listOf(Warning("siempre avisa", statement.position))
+        override fun appliesTo(node: PositionedNode): Boolean = node is Assignment
+
+        override fun check(node: PositionedNode): List<Warning> = listOf(Warning("siempre avisa", node.position))
     }
 }

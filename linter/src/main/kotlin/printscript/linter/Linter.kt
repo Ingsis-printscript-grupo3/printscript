@@ -1,32 +1,34 @@
 package printscript.linter
 
+import printscript.ast.PositionedNode
 import printscript.ast.Statement
 import printscript.linter.rule.LinterRule
 
-// una sola regla: si son varias vienen agrupadas en un CompositeRule
-class Linter(
-    private val rule: LinterRule,
-    private val traverser: CompoundStatementTraverser = DefaultCompoundStatementTraverser(),
-) : LinterInterface {
+class Linter(private val rules: List<LinterRule>) : LinterInterface {
     override fun analyze(
         statements: Iterator<Statement>,
         onWarning: (Warning) -> Unit,
     ) {
         while (statements.hasNext()) {
-            flatten(statements.next()).forEach { statement ->
-                rule.check(statement).forEach(onWarning)
-            }
+            walk(statements.next()).forEach { node -> lint(node, onWarning) }
         }
     }
 
-    // el recorrido vive aca y no en cada regla, asi las reglas ven un statement a la vez
-    // y no repiten la logica de desempaquetar bloques.
-    // Sequence y no List: el pipeline es streaming, aplanar entero romperia esa garantia
-    private fun flatten(statement: Statement): Sequence<Statement> =
+    // aca se decide que regla corre sobre que nodo
+    private fun lint(
+        node: PositionedNode,
+        onWarning: (Warning) -> Unit,
+    ) {
+        for (rule in rules) {
+            if (rule.appliesTo(node)) rule.check(node).forEach(onWarning)
+        }
+    }
+
+    // pre-order: el nodo antes que sus hijos, asi el orden de los warnings sigue el del codigo.
+    // Sequence y no List para no romper el streaming
+    private fun walk(node: PositionedNode): Sequence<PositionedNode> =
         sequence {
-            yield(statement)
-            traverser.childrenOf(statement).forEach { child ->
-                yieldAll(flatten(child))
-            }
+            yield(node)
+            childrenOf(node).forEach { yieldAll(walk(it)) }
         }
 }

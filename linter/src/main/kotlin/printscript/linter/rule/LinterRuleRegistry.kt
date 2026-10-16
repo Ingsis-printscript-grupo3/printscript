@@ -17,9 +17,6 @@ class LinterRuleRegistry(
 
     fun rulesFor(config: LinterRules): List<LinterRule> = factories.flatMap { it.create(config) }
 
-    // el Linter recorre una sola regla: las que pidio la config vienen agrupadas
-    fun ruleFor(config: LinterRules): LinterRule = CompositeRule(rulesFor(config))
-
     private companion object {
         val DEFAULT_FACTORIES: List<LinterRuleFactory> =
             listOf(
@@ -27,9 +24,7 @@ class LinterRuleRegistry(
                     val format = config.identifierFormat
                     if (format != null) listOf(IdentifierFormatRule(format)) else emptyList()
                 },
-                // println y readInput piden lo mismo, pero se devuelven sueltas: agruparlas aca
-                // en un CompositeRule solo duplicaria el que ya arma ruleFor, y haria que
-                // rulesFor() reporte menos reglas de las que realmente estan activas
+                // println y readInput piden lo mismo, pero se devuelven sueltas
                 LinterRuleFactory { config -> argumentRules(config) },
             )
 

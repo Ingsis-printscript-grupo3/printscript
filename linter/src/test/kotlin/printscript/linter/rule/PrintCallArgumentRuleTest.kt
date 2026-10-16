@@ -14,6 +14,8 @@ import printscript.common.Position
 import printscript.common.TokenType
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 private const val MESSAGE = "println can only be called with an identifier or a literal, not an expression"
 
@@ -27,6 +29,13 @@ class PrintCallArgumentRuleTest {
     private fun operation(operator: TokenType = TokenType.PLUS) = BinaryExpression(num(1.0), operator, num(2.0), pos())
 
     private fun print(value: Expression) = PrintCall(value, pos())
+
+    @Test
+    fun `applies only to PrintCall`() {
+        assertTrue(rule.appliesTo(print(num(5.0))))
+        assertFalse(rule.appliesTo(VariableDeclaration("total", "number", operation(), pos())))
+        assertFalse(rule.appliesTo(num(5.0)))
+    }
 
     @Test
     fun `println with a number literal is valid`() {
@@ -90,7 +99,10 @@ class PrintCallArgumentRuleTest {
     }
 
     @Test
-    fun `a statement that is not a println is ignored`() {
-        assertEquals(0, rule.check(VariableDeclaration("total", "number", operation(), pos())).size)
+    fun `check returns empty list for non matching node`() {
+        val nonMatchingNode = VariableDeclaration("total", "number", operation(), pos())
+
+        assertEquals(emptyList(), rule.check(nonMatchingNode))
+        assertEquals(emptyList(), rule.check(num(5.0)))
     }
 }
