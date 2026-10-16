@@ -1,10 +1,14 @@
 package printscript.linter.rule
 
+import printscript.ast.PositionedNode
 import printscript.ast.PrintCall
 import printscript.linter.Warning
 
-class PrintCallArgumentRule : NodeRule<PrintCall>(PrintCall::class) {
-    override fun checkNode(node: PrintCall): List<Warning> {
+class PrintCallArgumentRule : LinterRule {
+    override fun appliesTo(node: PositionedNode): Boolean = node is PrintCall
+
+    override fun check(node: PositionedNode): List<Warning> {
+        if (node !is PrintCall) return emptyList()
         if (node.value.isLiteralOrIdentifier()) return emptyList()
         return listOf(Warning(message = MESSAGE, position = node.position))
     }
