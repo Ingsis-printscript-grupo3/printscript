@@ -3,6 +3,7 @@ package printscript.runner
 import printscript.common.LanguageVersion
 import printscript.formatter.FormatterFactory
 import printscript.formatter.FormatterRules
+import printscript.formatter.FormatterRulesLoader
 import printscript.interpreter.output.BucketOutput
 import java.io.StringReader
 import java.io.StringWriter
@@ -300,6 +301,42 @@ class EndToEndTest {
         assertEquals(once, formatOnce(once))
     }
 
+    private fun formatWithConfig(
+        code: String,
+        config: String,
+    ): String {
+        val writer = StringWriter()
+        val formatter = FormatterFactory.create(FormatterRulesLoader.fromJson(config))
+        val result =
+            Engine(BucketOutput()).format({ StringReader(code) }, LanguageVersion.V1_1) { tokens ->
+                formatter.format(tokens, writer)
+            }
+        assertEquals(FormatResult.Success, result)
+        return writer.toString()
+    }
+
+    // caso if-indent-inside-2 del TCK
+    @Test
+    fun `nested ifs are indented, with unix line endings`() {
+        val code = NESTED_IFS.joinToString("\n")
+        val config = "{\n  \"indent-inside-if\": 4\n}"
+
+        val formatted = formatWithConfig(code, config)
+
+        assertEquals(NESTED_IFS_INDENTED.joinToString("\n"), formatted)
+    }
+
+    // el TCK clonado en Windows tiene los .ps con CRLF
+    @Test
+    fun `nested ifs are indented, with windows line endings`() {
+        val code = NESTED_IFS.joinToString("\r\n")
+        val config = "{\r\n  \"indent-inside-if\": 4\r\n}"
+
+        val formatted = formatWithConfig(code, config)
+
+        assertEquals(NESTED_IFS_INDENTED.joinToString("\n"), formatted.replace("\r\n", "\n"))
+    }
+
     @Test
     fun `executes negative numeric literals`() {
         val (result, output) =
@@ -508,3 +545,23 @@ class EndToEndTest {
         assertEquals("Syntax", result.type)
     }
 }
+
+private val NESTED_IFS =
+    listOf(
+        "let something: boolean = true;",
+        "if (something) {",
+        "  if (something) {",
+        "    println(\"Entered two ifs\");",
+        "  }",
+        "}",
+    )
+
+private val NESTED_IFS_INDENTED =
+    listOf(
+        "let something: boolean = true;",
+        "if (something) {",
+        "    if (something) {",
+        "        println(\"Entered two ifs\");",
+        "    }",
+        "}",
+    )
