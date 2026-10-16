@@ -3,12 +3,14 @@ package printscript.interpreter
 import printscript.ast.Assignment
 import printscript.ast.Block
 import printscript.ast.BooleanLiteral
+import printscript.ast.Expression
 import printscript.ast.Identifier
 import printscript.ast.IfStatement
 import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
 import printscript.ast.ReadEnv
 import printscript.ast.ReadInput
+import printscript.ast.Statement
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.Position
@@ -31,8 +33,23 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-// posicion de mentira: estos tests miran el error, no donde ocurrio
+// posicion fija: estos tests verifican el error, no su ubicacion
 private val AT = Position(1, 1)
+
+// para los handlers que no usan el contexto o que fallan antes de usarlo
+private fun unusedContext() = InterpreterContext(Environment(), StubInterpreter { error("no deberia evaluar nada") })
+
+// cualquier expresion que el handler pida evaluar devuelve value
+private fun contextEvaluatingTo(value: Value) = InterpreterContext(Environment(), StubInterpreter { value })
+
+// aisla al handler bajo prueba del resto de los evaluadores
+private class StubInterpreter(
+    private val evaluator: (Expression) -> Value,
+) : InterpreterInterface {
+    override fun interpret(statements: Iterator<Statement>) = Unit
+
+    override fun evaluate(expression: Expression): Value = evaluator(expression)
+}
 
 class Handlers11Test {
     private fun createTestInterpreter(
@@ -55,7 +72,7 @@ class Handlers11Test {
     @Test
     fun `BooleanLiteralEvaluator evaluates boolean literals`() {
         val evaluator = BooleanLiteralEvaluator()
-        val ctx = InterpreterContext(Environment(), InterpreterFactory.create11())
+        val ctx = unusedContext()
 
         assertEquals(BooleanValue(true), evaluator.handle(BooleanLiteral(true), ctx))
         assertEquals(BooleanValue(false), evaluator.handle(BooleanLiteral(false), ctx))
@@ -69,23 +86,14 @@ class Handlers11Test {
 
     @Test
     fun `ReadInputEvaluator reads from input provider`() {
-        val input = QueueInput("user_input")
-        val evaluator = ReadInputEvaluator(input)
-        val dummyInterpreter =
-            object : InterpreterInterface {
-                override fun interpret(statements: Iterator<printscript.ast.Statement>) {
-                    // Unused in dummy interpreter
-                }
-
-                override fun evaluate(expression: printscript.ast.Expression): Value = StringValue("prompt: ")
-            }
-        val ctx = InterpreterContext(Environment(), dummyInterpreter)
+        val evaluator = ReadInputEvaluator(QueueInput("user_input"))
+        val ctx = contextEvaluatingTo(StringValue("prompt: "))
 
         val result = evaluator.handle(ReadInput(StringLiteral("prompt: ")), ctx)
+
         assertEquals(StringValue("user_input"), result)
         assertTrue(evaluator.applies(ReadInput(StringLiteral("p"))))
         assertFalse(evaluator.applies(StringLiteral("p")))
-
         assertFailsWith<UnknownExpressionError> {
             evaluator.handle(StringLiteral("p"), ctx)
         }
@@ -94,43 +102,37 @@ class Handlers11Test {
     @Test
     fun `ReadInputEvaluator throws MissingInputError at the readInput position when provider has no data`() {
         val evaluator = ReadInputEvaluator(QueueInput())
-        val ctx = InterpreterContext(Environment(), createTestInterpreter())
+        val ctx = contextEvaluatingTo(StringValue("name:"))
         val position = Position(3, 7)
 
         val error =
             assertFailsWith<MissingInputError> {
                 evaluator.handle(ReadInput(StringLiteral("name:"), position), ctx)
             }
+
         assertEquals(position, error.start)
     }
 
     @Test
     fun `ReadInputEvaluator accepts an empty string as a valid input`() {
         val evaluator = ReadInputEvaluator(QueueInput(""))
-        val ctx = InterpreterContext(Environment(), createTestInterpreter())
+        val ctx = contextEvaluatingTo(StringValue("name:"))
 
-        assertEquals(StringValue(""), evaluator.handle(ReadInput(StringLiteral("name:")), ctx))
+        val result = evaluator.handle(ReadInput(StringLiteral("name:")), ctx)
+
+        assertEquals(StringValue(""), result)
     }
 
     @Test
     fun `ReadEnvEvaluator reads existing environment variables`() {
-        val env = MapEnvProvider("MY_VAR" to "my_value")
-        val evaluator = ReadEnvEvaluator(env)
-        val dummyInterpreter =
-            object : InterpreterInterface {
-                override fun interpret(statements: Iterator<printscript.ast.Statement>) {
-                    // Unused in dummy interpreter
-                }
-
-                override fun evaluate(expression: printscript.ast.Expression): Value = StringValue("MY_VAR")
-            }
-        val ctx = InterpreterContext(Environment(), dummyInterpreter)
+        val evaluator = ReadEnvEvaluator(MapEnvProvider("MY_VAR" to "my_value"))
+        val ctx = contextEvaluatingTo(StringValue("MY_VAR"))
 
         val result = evaluator.handle(ReadEnv(StringLiteral("MY_VAR")), ctx)
+
         assertEquals(StringValue("my_value"), result)
         assertTrue(evaluator.applies(ReadEnv(StringLiteral("x"))))
         assertFalse(evaluator.applies(StringLiteral("x")))
-
         assertFailsWith<UnknownExpressionError> {
             evaluator.handle(StringLiteral("x"), ctx)
         }
@@ -138,28 +140,21 @@ class Handlers11Test {
 
     @Test
     fun `ReadEnvEvaluator throws EnvVariableNotFoundError if variable does not exist`() {
-        val env = MapEnvProvider()
-        val evaluator = ReadEnvEvaluator(env)
-        val dummyInterpreter =
-            object : InterpreterInterface {
-                override fun interpret(statements: Iterator<printscript.ast.Statement>) {
-                    // Unused in dummy interpreter
-                }
-
-                override fun evaluate(expression: printscript.ast.Expression): Value = StringValue("UNKNOWN_VAR")
-            }
-        val ctx = InterpreterContext(Environment(), dummyInterpreter)
+        val evaluator = ReadEnvEvaluator(MapEnvProvider())
+        val ctx = contextEvaluatingTo(StringValue("UNKNOWN_VAR"))
 
         val error =
             assertFailsWith<EnvVariableNotFoundError> {
                 evaluator.handle(ReadEnv(StringLiteral("UNKNOWN_VAR")), ctx)
             }
+
         assertEquals("UNKNOWN_VAR", error.name)
     }
 
     @Test
     fun `IfStatementInterpreter executes thenBranch when condition is true`() {
         val output = BucketOutput()
+        val interpreter = createTestInterpreter(output = output)
         val stmt =
             IfStatement(
                 condition = BooleanLiteral(true),
@@ -167,7 +162,6 @@ class Handlers11Test {
                 elseBranch = Block(listOf(PrintCall(StringLiteral("inside else")))),
             )
 
-        val interpreter = createTestInterpreter(output = output)
         interpreter.interpret(stmt)
 
         assertEquals(listOf("inside then"), output.lines())
@@ -176,6 +170,7 @@ class Handlers11Test {
     @Test
     fun `IfStatementInterpreter executes elseBranch when condition is false`() {
         val output = BucketOutput()
+        val interpreter = createTestInterpreter(output = output)
         val stmt =
             IfStatement(
                 condition = BooleanLiteral(false),
@@ -183,7 +178,6 @@ class Handlers11Test {
                 elseBranch = Block(listOf(PrintCall(StringLiteral("inside else")))),
             )
 
-        val interpreter = createTestInterpreter(output = output)
         interpreter.interpret(stmt)
 
         assertEquals(listOf("inside else"), output.lines())
@@ -192,6 +186,7 @@ class Handlers11Test {
     @Test
     fun `IfStatementInterpreter does nothing when condition is false and elseBranch is null`() {
         val output = BucketOutput()
+        val interpreter = createTestInterpreter(output = output)
         val stmt =
             IfStatement(
                 condition = BooleanLiteral(false),
@@ -199,7 +194,6 @@ class Handlers11Test {
                 elseBranch = null,
             )
 
-        val interpreter = createTestInterpreter(output = output)
         interpreter.interpret(stmt)
 
         assertTrue(output.lines().isEmpty())
@@ -210,12 +204,8 @@ class Handlers11Test {
         val interpreter =
             Interpreter(
                 statementInterpreters = listOf(IfStatementInterpreter()),
-                expressionEvaluators =
-                    listOf(
-                        printscript.interpreter.plugin.expression.NumberLiteralEvaluator(),
-                    ),
+                expressionEvaluators = listOf(NumberLiteralEvaluator()),
             )
-
         val stmt =
             IfStatement(
                 condition = NumberLiteral(1.0),
@@ -227,30 +217,29 @@ class Handlers11Test {
             assertFailsWith<ConditionTypeError> {
                 interpreter.interpret(stmt)
             }
+
         assertEquals("number", error.actualType)
     }
 
     @Test
     fun `IfStatementInterpreter rejects foreign nodes`() {
         val interpreter = IfStatementInterpreter()
-        val ctx = InterpreterContext(Environment(), InterpreterFactory.create11())
+        val ctx = unusedContext()
 
         assertTrue(interpreter.applies(IfStatement(BooleanLiteral(true), Block(emptyList()), null)))
         assertFalse(interpreter.applies(Block(emptyList())))
-
         assertFailsWith<UnknownStatementError> {
             interpreter.handle(Block(emptyList()), ctx)
         }
     }
 
     @Test
-    fun `BlockInterpreter enters and exits scope`() {
+    fun `BlockInterpreter rejects foreign nodes`() {
         val blockHandler = BlockInterpreter()
-        val ctx = InterpreterContext(Environment(), InterpreterFactory.create11())
+        val ctx = unusedContext()
 
         assertTrue(blockHandler.applies(Block(emptyList())))
         assertFalse(blockHandler.applies(PrintCall(StringLiteral("hi"))))
-
         assertFailsWith<UnknownStatementError> {
             blockHandler.handle(PrintCall(StringLiteral("hi")), ctx)
         }
@@ -259,63 +248,43 @@ class Handlers11Test {
     @Test
     fun `VariableDeclaration and Assignment with const and conversion`() {
         val env = Environment()
-        val dummyInterpreter =
-            object : InterpreterInterface {
-                override fun interpret(statements: Iterator<printscript.ast.Statement>) {
-                    // Unused in dummy interpreter
-                }
-
-                override fun evaluate(expression: printscript.ast.Expression): Value =
+        // readInput y readEnv devuelven texto para verificar la conversion al tipo declarado
+        val ctx =
+            InterpreterContext(
+                env,
+                StubInterpreter { expression ->
                     when (expression) {
-                        is StringLiteral -> StringValue(expression.value)
                         is NumberLiteral -> NumberValue(expression.value)
-                        is BooleanLiteral -> BooleanValue(expression.value)
                         is ReadInput -> StringValue("99")
                         is ReadEnv -> StringValue("true")
                         is Identifier -> env.lookup(expression.name, at = AT)
-                        else -> throw IllegalArgumentException()
+                        else -> error("el test no usa $expression")
                     }
-            }
-        val ctx = InterpreterContext(env, dummyInterpreter)
+                },
+            )
         val varDecl = VariableDeclarationInterpreter()
         val assign = AssignmentInterpreter()
 
-        varDecl.handle(
-            VariableDeclaration("inputNum", "number", ReadInput(StringLiteral("p"))),
-            ctx,
-        )
+        varDecl.handle(VariableDeclaration("inputNum", "number", ReadInput(StringLiteral("p"))), ctx)
+        varDecl.handle(VariableDeclaration("envBool", "boolean", ReadEnv(StringLiteral("B"))), ctx)
+        varDecl.handle(VariableDeclaration("c", "number", NumberLiteral(10.0), isConst = true), ctx)
+        varDecl.handle(VariableDeclaration("mutableNum", "number", NumberLiteral(1.0)), ctx)
+        assign.handle(Assignment("mutableNum", ReadInput(StringLiteral("p"))), ctx)
+
         assertEquals(NumberValue(99.0), env.lookup("inputNum", at = AT))
-
-        varDecl.handle(
-            VariableDeclaration("envBool", "boolean", ReadEnv(StringLiteral("B"))),
-            ctx,
-        )
         assertEquals(BooleanValue(true), env.lookup("envBool", at = AT))
-
-        varDecl.handle(
-            VariableDeclaration("c", "number", NumberLiteral(10.0), isConst = true),
-            ctx,
-        )
         assertEquals(NumberValue(10.0), env.lookup("c", at = AT))
-
+        assertEquals(NumberValue(99.0), env.lookup("mutableNum", at = AT))
         assertFailsWith<CannotAssignToConstError> {
             assign.handle(Assignment("c", NumberLiteral(20.0)), ctx)
         }
-
-        varDecl.handle(
-            VariableDeclaration("mutableNum", "number", NumberLiteral(1.0)),
-            ctx,
-        )
-        assign.handle(Assignment("mutableNum", ReadInput(StringLiteral("p"))), ctx)
-        assertEquals(NumberValue(99.0), env.lookup("mutableNum", at = AT))
     }
 
     @Test
     fun `statement plugins reject foreign nodes`() {
         val varDecl = VariableDeclarationInterpreter()
         val assign = AssignmentInterpreter()
-        val ctx = InterpreterContext(Environment(), InterpreterFactory.create11())
-
+        val ctx = unusedContext()
         val letNode = VariableDeclaration("x", "number", NumberLiteral(1.0), isConst = false)
         val constNode = VariableDeclaration("y", "number", NumberLiteral(2.0), isConst = true)
         val assignNode = Assignment("x", NumberLiteral(3.0))
@@ -323,11 +292,9 @@ class Handlers11Test {
         assertTrue(varDecl.applies(letNode))
         assertTrue(varDecl.applies(constNode))
         assertFalse(varDecl.applies(assignNode))
-
         assertTrue(assign.applies(assignNode))
         assertFalse(assign.applies(letNode))
         assertFalse(assign.applies(constNode))
-
         assertFailsWith<UnknownStatementError> { varDecl.handle(assignNode, ctx) }
         assertFailsWith<UnknownStatementError> { assign.handle(letNode, ctx) }
         assertFailsWith<UnknownStatementError> { assign.handle(constNode, ctx) }
