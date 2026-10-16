@@ -1,21 +1,19 @@
 package printscript.linter.rule
 
 import printscript.ast.Assignment
-import printscript.ast.PositionedNode
+import printscript.ast.Statement
 import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.linter.IdentifierFormat
 import printscript.linter.Warning
 
 class IdentifierFormatRule(private val format: IdentifierFormat) : LinterRule {
-    override fun appliesTo(node: PositionedNode): Boolean = node is VariableDeclaration || node is Assignment
-
-    override fun check(node: PositionedNode): List<Warning> =
-        when (node) {
+    override fun check(statement: Statement): List<Warning> =
+        when (statement) {
             // VariableDeclaration cubre let y const, el parser no hace un nodo aparte para const.
             // el warning va al nombre, no al let: en Assignment la posicion ya es la del nombre
-            is VariableDeclaration -> checkIdentifier(node.name, node.namePosition)
-            is Assignment -> checkIdentifier(node.name, node.position)
+            is VariableDeclaration -> checkIdentifier(statement.name, statement.namePosition)
+            is Assignment -> checkIdentifier(statement.name, statement.position)
             else -> emptyList()
         }
 

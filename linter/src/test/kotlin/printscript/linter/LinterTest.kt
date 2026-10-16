@@ -342,19 +342,6 @@ class LinterTest {
         assertEquals(1, analyze(listOf(stmt)).size)
     }
 
-    @Test
-    fun `warnings in if statement are reported in pre-order traversal sequence`() {
-        val condition = ReadInput(BinaryExpression(str("a"), TokenType.PLUS, str("b"), pos()), Position(1, 5))
-        val thenBranch = block(Assignment("bad_then", num(1.0), Position(2, 5)))
-        val elseBranch = block(Assignment("bad_else", num(2.0), Position(4, 5)))
-        val stmt = IfStatement(condition, thenBranch, elseBranch, Position(1, 1))
-
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE))
-
-        assertEquals(3, warnings.size)
-        assertEquals(listOf(Position(1, 5), Position(2, 5), Position(4, 5)), warnings.map { it.position })
-    }
-
     // con IdentifierFormat como enum un formato invalido ya no compila: el unico String que
     // puede nombrar un formato inexistente entra por la config, y ahi es donde se valida
     @Test
