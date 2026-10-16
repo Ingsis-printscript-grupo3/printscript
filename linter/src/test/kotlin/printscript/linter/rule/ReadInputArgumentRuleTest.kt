@@ -98,4 +98,13 @@ class ReadInputArgumentRuleTest {
 
         assertTrue(rules.any { it is ReadInputArgumentRule })
     }
+
+    @Test
+    fun `check returns empty list for non matching node`() {
+        val decl = VariableDeclaration("name", "string", null, pos())
+        val print = PrintCall(str("hello"), pos())
+
+        assertEquals(emptyList(), rule.check(decl))
+        assertEquals(emptyList(), rule.check(print))
+    }
 }

@@ -97,4 +97,12 @@ class PrintCallArgumentRuleTest {
 
         assertEquals(Position(7, 1), rule.check(statement)[0].position)
     }
+
+    @Test
+    fun `check returns empty list for non matching node`() {
+        val nonMatchingNode = VariableDeclaration("total", "number", operation(), pos())
+
+        assertEquals(emptyList(), rule.check(nonMatchingNode))
+        assertEquals(emptyList(), rule.check(num(5.0)))
+    }
 }

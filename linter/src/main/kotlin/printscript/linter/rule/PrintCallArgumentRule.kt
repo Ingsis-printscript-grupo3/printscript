@@ -1,16 +1,12 @@
 package printscript.linter.rule
 
-import printscript.ast.PositionedNode
 import printscript.ast.PrintCall
 import printscript.linter.Warning
 
-class PrintCallArgumentRule : LinterRule {
-    override fun appliesTo(node: PositionedNode): Boolean = node is PrintCall
-
-    override fun check(node: PositionedNode): List<Warning> {
-        val printCall = node as PrintCall
-        if (printCall.value.isLiteralOrIdentifier()) return emptyList()
-        return listOf(Warning(message = MESSAGE, position = printCall.position))
+class PrintCallArgumentRule : NodeRule<PrintCall>(PrintCall::class) {
+    override fun checkNode(node: PrintCall): List<Warning> {
+        if (node.value.isLiteralOrIdentifier()) return emptyList()
+        return listOf(Warning(message = MESSAGE, position = node.position))
     }
 
     private companion object {

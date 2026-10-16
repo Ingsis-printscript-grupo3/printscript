@@ -5,7 +5,7 @@ import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.lexer.CharStream
 import printscript.lexer.LexerFactory
-import printscript.parser.Parser
+import printscript.parser.ParserFactory
 import printscript.parser.result.ParseResult
 import java.io.StringReader
 import kotlin.test.Test
@@ -22,7 +22,7 @@ class LinterTckCasesTest {
     ): List<Warning> {
         val tokens = LexerFactory.create(CharStream(StringReader(source)), version).tokenize()
         val statements = mutableListOf<Statement>()
-        Parser(tokens, version).parse().forEach { result ->
+        ParserFactory.create(tokens, version).parse().forEach { result ->
             when (result) {
                 is ParseResult.Success -> statements.add(result.statement)
                 is ParseResult.Failure -> error("no debería fallar el parseo: ${result.message} en ${result.start}")

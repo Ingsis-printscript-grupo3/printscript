@@ -1,14 +1,11 @@
-package printscript.linter.rule
+package printscript.linter
 
 import printscript.ast.Statement
 import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.lexer.CharStream
 import printscript.lexer.LexerFactory
-import printscript.linter.LinterFactory
-import printscript.linter.LinterRules
-import printscript.linter.Warning
-import printscript.parser.Parser
+import printscript.parser.ParserFactory
 import printscript.parser.result.ParseResult
 import java.io.StringReader
 import kotlin.test.Test
@@ -21,7 +18,7 @@ class ReadInputIntegrationTest {
     ): List<Warning> {
         val tokens = LexerFactory.create(CharStream(StringReader(source)), LanguageVersion.V1_1).tokenize()
         val statements = mutableListOf<Statement>()
-        Parser(tokens, LanguageVersion.V1_1).parse().forEach { result ->
+        ParserFactory.create11(tokens).parse().forEach { result ->
             when (result) {
                 is ParseResult.Success -> statements.add(result.statement)
                 is ParseResult.Failure -> error("No deberia fallar el parseo: ${result.message} en ${result.start}")
