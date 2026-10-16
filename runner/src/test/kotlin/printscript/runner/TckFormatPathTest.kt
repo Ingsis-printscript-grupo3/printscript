@@ -1,12 +1,15 @@
 package printscript.runner
 
-import java.io.ByteArrayInputStream
+import printscript.common.LanguageVersion
+import printscript.formatter.FormatterFactory
+import printscript.formatter.FormatterRulesLoader
+import printscript.interpreter.output.BucketOutput
+import java.io.StringReader
 import java.io.StringWriter
-import java.nio.charset.StandardCharsets
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-// el caso if-indent-inside-2 del TCK, entrando por PrintScriptRunner como entra el TCK.
+// el caso if-indent-inside-2 del TCK, entrando por Engine.format como entra el TCK.
 // Nuestro TckGoldenTest llama al Formatter directo, y por eso no vio este fallo.
 class TckFormatPathTest {
     private val config = "{\n  \"indent-inside-if\": 4\n}"
@@ -36,15 +39,12 @@ class TckFormatPathTest {
         config: String,
     ): String {
         val writer = StringWriter()
-        val errors = mutableListOf<String>()
-        PrintScriptRunner.format(
-            src = ByteArrayInputStream(source.toByteArray(StandardCharsets.UTF_8)),
-            versionStr = "1.1",
-            config = ByteArrayInputStream(config.toByteArray(StandardCharsets.UTF_8)),
-            writer = writer,
-            onError = errors::add,
-        )
-        assertEquals(emptyList(), errors)
+        val formatter = FormatterFactory.create(FormatterRulesLoader.fromJson(config))
+        val result =
+            Engine(BucketOutput()).format({ StringReader(source) }, LanguageVersion.V1_1) {
+                formatter.format(it, writer)
+            }
+        assertEquals(FormatResult.Success, result)
         return writer.toString()
     }
 
