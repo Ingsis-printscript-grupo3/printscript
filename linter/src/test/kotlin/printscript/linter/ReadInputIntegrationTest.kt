@@ -130,4 +130,19 @@ class ReadInputIntegrationTest {
             warnings[0].message,
         )
     }
+
+    @Test
+    fun `readInput with literal or identifier argument produces no warnings`() {
+        val source =
+            """
+            let prompt: string = "ingrese su nombre:";
+            let name: string = readInput(prompt);
+            let age: string = readInput("ingrese su edad:");
+            """.trimIndent()
+        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = true)
+
+        val warnings = lint(source, config)
+
+        assertEquals(0, warnings.size)
+    }
 }

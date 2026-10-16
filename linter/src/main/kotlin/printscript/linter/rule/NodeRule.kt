@@ -5,6 +5,10 @@ import printscript.linter.Warning
 import kotlin.reflect.KClass
 import kotlin.reflect.safeCast
 
+/**
+ * Regla base para reglas de linter que analizan un unico tipo de nodo del AST.
+ * Filtra por tipo de nodo y garantiza que check retorne lista vacia sin fallar ante otros nodos.
+ */
 abstract class NodeRule<T : PositionedNode>(
     private val type: KClass<T>,
 ) : LinterRule {

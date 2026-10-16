@@ -25,7 +25,7 @@ class LinterTckCasesTest {
         ParserFactory.create(tokens, version).parse().forEach { result ->
             when (result) {
                 is ParseResult.Success -> statements.add(result.statement)
-                is ParseResult.Failure -> error("no debería fallar el parseo: ${result.message} en ${result.start}")
+                is ParseResult.Failure -> error("no deberia fallar el parseo: ${result.message} en ${result.start}")
             }
         }
         val warnings = mutableListOf<Warning>()
