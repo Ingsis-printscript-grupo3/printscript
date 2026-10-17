@@ -34,13 +34,15 @@ import java.io.Writer
 // commands: execute, validate, format, analyze (--config only for format and analyze)
 // example: execute ejemplos\programas\ok\10-consigna-joe-doe.prs
 
+private const val DEFAULT_INDENT = 4
+
 private val DEFAULT_FORMATTER_RULES =
-    FormatterRules(
-        lineBreakAfterStatement = true,
-        singleSpaceSeparation = true,
-        spaceSurroundingOperations = true,
-        ifBraceSameLine = true,
-        indentInsideIf = 4,
+    FormatterRules.of(
+        "mandatory-line-break-after-statement" to true,
+        "mandatory-single-space-separation" to true,
+        "mandatory-space-surrounding-operations" to true,
+        "if-brace-same-line" to true,
+        "indent-inside-if" to DEFAULT_INDENT,
     )
 
 class PrintScriptCli : CliktCommand(name = "printscript") {
