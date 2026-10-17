@@ -13,6 +13,7 @@ import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.common.TokenType
+import printscript.linter.rule.LinterRuleRegistry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -20,12 +21,16 @@ import kotlin.test.assertFailsWith
 class LinterTest {
     private fun analyze(
         statements: List<Statement>,
-        config: LinterRules = LinterRules(),
+        config: Map<String, String> = LinterRuleRegistry().defaultConfig(),
     ): List<Warning> {
         val warnings = mutableListOf<Warning>()
-        LinterFactory.create(config).analyze(statements.iterator(), warnings::add)
+        LinterFactory.create(config = config).analyze(statements.iterator(), warnings::add)
         return warnings
     }
+
+    private val camelCase = mapOf("identifier_format" to "camel case")
+
+    private val snakeCase = mapOf("identifier_format" to "snake case")
 
     private fun pos() = Position(0, 0)
 
@@ -38,14 +43,14 @@ class LinterTest {
     @Test
     fun `camel case variable declaration is valid`() {
         val stmt = VariableDeclaration("myVar", "number", null, pos())
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE))
+        val warnings = analyze(listOf(stmt), camelCase)
         assertEquals(0, warnings.size)
     }
 
     @Test
     fun `snake case variable declaration warns when camel case is expected`() {
         val stmt = VariableDeclaration("my_var", "number", null, pos())
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE))
+        val warnings = analyze(listOf(stmt), camelCase)
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'my_var' does not match format camel case", warnings[0].message)
     }
@@ -53,14 +58,14 @@ class LinterTest {
     @Test
     fun `snake case variable declaration is valid when snake case is expected`() {
         val stmt = VariableDeclaration("my_var", "number", null, pos())
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.SNAKE_CASE))
+        val warnings = analyze(listOf(stmt), snakeCase)
         assertEquals(0, warnings.size)
     }
 
     @Test
     fun `camel case variable declaration warns when snake case is expected`() {
         val stmt = VariableDeclaration("myVar", "number", null, pos())
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.SNAKE_CASE))
+        val warnings = analyze(listOf(stmt), snakeCase)
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'myVar' does not match format snake case", warnings[0].message)
     }
@@ -95,7 +100,7 @@ class LinterTest {
     fun `println with binary expression is valid when rule is off`() {
         val expr = BinaryExpression(num(1.0), TokenType.PLUS, num(2.0), pos())
         val stmt = PrintCall(expr, pos())
-        val warnings = analyze(listOf(stmt), LinterRules(printCallArgumentsMustBeLiteralOrIdentifier = false))
+        val warnings = analyze(listOf(stmt), mapOf("mandatory-variable-or-literal-in-println" to "false"))
         assertEquals(0, warnings.size)
     }
 
@@ -127,7 +132,7 @@ class LinterTest {
 
     // sin config el linter chequea todo, que es lo que usa el CLI cuando no le pasan --config
     @Test
-    fun `LinterRules with no config turns every rule on`() {
+    fun `no config turns every rule on`() {
         val statements =
             listOf(
                 VariableDeclaration("my_var", "number", null, Position(1, 1)),
@@ -153,7 +158,7 @@ class LinterTest {
                 VariableDeclaration("my_var", "number", null, Position(1, 1)),
                 PrintCall(BinaryExpression(num(1.0), TokenType.PLUS, num(2.0), pos()), Position(2, 1)),
             )
-        val config = LinterRules(null, null, null)
+        val config = emptyMap<String, String>()
 
         assertEquals(0, analyze(statements, config).size)
     }
@@ -177,7 +182,7 @@ class LinterTest {
     fun `snake case assignment warns when camel case is expected`() {
         val stmt = Assignment("mi_variable", num(3.0), pos())
 
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE))
+        val warnings = analyze(listOf(stmt), camelCase)
 
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'mi_variable' does not match format camel case", warnings[0].message)
@@ -187,7 +192,7 @@ class LinterTest {
     fun `camel case assignment warns when snake case is expected`() {
         val stmt = Assignment("miVariable", num(3.0), pos())
 
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.SNAKE_CASE))
+        val warnings = analyze(listOf(stmt), snakeCase)
 
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'miVariable' does not match format snake case", warnings[0].message)
@@ -197,7 +202,7 @@ class LinterTest {
     fun `a well formatted assignment is valid`() {
         val stmt = Assignment("miVariable", num(3.0), pos())
 
-        assertEquals(0, analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE)).size)
+        assertEquals(0, analyze(listOf(stmt), camelCase).size)
     }
 
     @Test
@@ -211,7 +216,7 @@ class LinterTest {
     fun `a const declaration with a bad name warns just like a let`() {
         val stmt = VariableDeclaration("mi_constante", "number", num(3.0), Position(2, 1), isConst = true)
 
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE))
+        val warnings = analyze(listOf(stmt), camelCase)
 
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'mi_constante' does not match format camel case", warnings[0].message)
@@ -222,7 +227,7 @@ class LinterTest {
     fun `a well formatted const declaration is valid`() {
         val stmt = VariableDeclaration("miConstante", "number", num(3.0), pos(), isConst = true)
 
-        assertEquals(0, analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE)).size)
+        assertEquals(0, analyze(listOf(stmt), camelCase).size)
     }
 
     @Test
@@ -233,7 +238,7 @@ class LinterTest {
                 Assignment("valor2", num(1.0), pos()),
             )
 
-        assertEquals(0, analyze(statements, LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE)).size)
+        assertEquals(0, analyze(statements, camelCase).size)
     }
 
     @Test
@@ -244,7 +249,7 @@ class LinterTest {
                 Assignment("mi_valor2", num(1.0), pos()),
             )
 
-        assertEquals(0, analyze(statements, LinterRules(identifierFormat = IdentifierFormat.SNAKE_CASE)).size)
+        assertEquals(0, analyze(statements, snakeCase).size)
     }
 
     private fun block(vararg statements: Statement) = Block(statements.toList(), pos())
@@ -258,7 +263,7 @@ class LinterTest {
     fun `a badly formatted declaration inside an if block warns`() {
         val stmt = ifStmt(block(VariableDeclaration("mi_variable", "number", num(1.0), Position(2, 5))))
 
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE))
+        val warnings = analyze(listOf(stmt), camelCase)
 
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'mi_variable' does not match format camel case", warnings[0].message)
@@ -270,14 +275,14 @@ class LinterTest {
         val declaration = VariableDeclaration("mi_constante", "number", num(1.0), Position(2, 5), isConst = true)
         val stmt = ifStmt(block(declaration))
 
-        assertEquals(1, analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE)).size)
+        assertEquals(1, analyze(listOf(stmt), camelCase).size)
     }
 
     @Test
     fun `a badly formatted assignment inside an if block warns`() {
         val stmt = ifStmt(block(Assignment("mi_variable", num(2.0), Position(3, 5))))
 
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE))
+        val warnings = analyze(listOf(stmt), camelCase)
 
         assertEquals(1, warnings.size)
         assertEquals(Position(3, 5), warnings[0].position)
@@ -287,7 +292,7 @@ class LinterTest {
     fun `a badly formatted assignment inside an else block warns`() {
         val stmt = ifStmt(block(), block(Assignment("mi_variable", num(2.0), Position(5, 5))))
 
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE))
+        val warnings = analyze(listOf(stmt), camelCase)
 
         assertEquals(1, warnings.size)
         assertEquals(Position(5, 5), warnings[0].position)
@@ -313,7 +318,7 @@ class LinterTest {
         val inner = ifStmt(block(VariableDeclaration("mi_variable", "number", num(1.0), Position(4, 9))))
         val stmt = ifStmt(block(inner))
 
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE))
+        val warnings = analyze(listOf(stmt), camelCase)
 
         assertEquals(1, warnings.size)
         assertEquals(Position(4, 9), warnings[0].position)
@@ -330,10 +335,10 @@ class LinterTest {
                 block(PrintCall(id("miVariable"), pos())),
             )
 
-        assertEquals(0, analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE)).size)
+        assertEquals(0, analyze(listOf(stmt)).size)
     }
 
-    // la condicion del if la mira la regla, y el if lo visita el aplanado: no debe contarse dos veces
+    // el recorrido visita la condicion del if una sola vez: el readInput no debe contarse dos veces
     @Test
     fun `a readInput in the if condition warns exactly once`() {
         val readInput = ReadInput(BinaryExpression(str("a"), TokenType.PLUS, str("b"), pos()), Position(1, 5))
@@ -349,7 +354,7 @@ class LinterTest {
         val elseBranch = block(Assignment("bad_else", num(2.0), Position(4, 5)))
         val stmt = IfStatement(condition, thenBranch, elseBranch, Position(1, 1))
 
-        val warnings = analyze(listOf(stmt), LinterRules(identifierFormat = IdentifierFormat.CAMEL_CASE))
+        val warnings = analyze(listOf(stmt))
 
         assertEquals(3, warnings.size)
         assertEquals(listOf(Position(1, 5), Position(2, 5), Position(4, 5)), warnings.map { it.position })
@@ -360,12 +365,5 @@ class LinterTest {
     @Test
     fun `rejects an identifier format that no rule knows`() {
         assertFailsWith<IllegalArgumentException> { IdentifierFormat.fromConfigValue("camelCase") }
-    }
-
-    @Test
-    fun `rejects an unknown identifier format coming from a config file`() {
-        assertFailsWith<IllegalArgumentException> {
-            LinterRulesLoader.fromJson("""{"identifier_format": "camelCase"}""")
-        }
     }
 }

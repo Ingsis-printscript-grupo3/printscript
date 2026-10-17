@@ -20,11 +20,8 @@ import printscript.formatter.FormatterRulesLoader
 import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.output.ConsoleOutput
-import printscript.linter.IdentifierFormat
+import printscript.linter.Linter
 import printscript.linter.LinterFactory
-import printscript.linter.LinterInterface
-import printscript.linter.LinterRules
-import printscript.linter.LinterRulesLoader
 import printscript.linter.Warning
 import printscript.runner.Engine
 import printscript.runner.ExecutionResult
@@ -44,13 +41,6 @@ private val DEFAULT_FORMATTER_RULES =
         spaceSurroundingOperations = true,
         ifBraceSameLine = true,
         indentInsideIf = 4,
-    )
-
-private val DEFAULT_LINTER_RULES =
-    LinterRules(
-        identifierFormat = IdentifierFormat.CAMEL_CASE,
-        printCallArgumentsMustBeLiteralOrIdentifier = true,
-        readInputArgumentsMustBeLiteralOrIdentifier = true,
     )
 
 class PrintScriptCli : CliktCommand(name = "printscript") {
@@ -136,19 +126,19 @@ class AnalyzeCommand : PrintScriptCommand(
 ) {
     private val config by option("--config", help = "Path to a JSON or YAML file with linter rules")
         .file(mustExist = true, canBeDir = false, mustBeReadable = true)
-    private lateinit var linter: LinterInterface
+    private lateinit var linter: Linter
     private var warningCount = 0
 
     override fun runOn(version: LanguageVersion) {
-        linter = LinterFactory.create(version, loadRules())
+        linter = createLinter()
         checkResult(engine.lint(file.reader(), version, progress::report, ::lintStatements))
         if (warningCount == 0) echo("${file.path}: no warnings found")
     }
 
-    private fun loadRules(): LinterRules {
-        val path = config?.path ?: return DEFAULT_LINTER_RULES
+    private fun createLinter(): Linter {
+        val path = config?.path ?: return LinterFactory.create()
         return try {
-            LinterRulesLoader.fromFile(path)
+            LinterFactory.fromFile(path)
         } catch (e: IllegalArgumentException) {
             invalidConfig(e)
         }

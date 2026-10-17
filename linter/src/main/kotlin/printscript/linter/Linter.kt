@@ -4,8 +4,8 @@ import printscript.ast.PositionedNode
 import printscript.ast.Statement
 import printscript.linter.rule.LinterRule
 
-class Linter(private val rules: List<LinterRule>) : LinterInterface {
-    override fun analyze(
+class Linter(private val rules: List<LinterRule>) {
+    fun analyze(
         statements: Iterator<Statement>,
         onWarning: (Warning) -> Unit,
     ) {

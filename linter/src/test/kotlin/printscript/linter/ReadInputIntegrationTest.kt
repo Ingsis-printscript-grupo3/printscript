@@ -1,33 +1,16 @@
 package printscript.linter
 
-import printscript.ast.Statement
-import printscript.common.LanguageVersion
 import printscript.common.Position
-import printscript.lexer.CharStream
-import printscript.lexer.LexerFactory
-import printscript.parser.ParserFactory
-import printscript.parser.result.ParseResult
-import java.io.StringReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ReadInputIntegrationTest {
+    private val readInputOn = mapOf("mandatory-variable-or-literal-in-readInput" to "true")
+
     private fun lint(
         source: String,
-        config: LinterRules = LinterRules(),
-    ): List<Warning> {
-        val tokens = LexerFactory.create(CharStream(StringReader(source)), LanguageVersion.V1_1).tokenize()
-        val statements = mutableListOf<Statement>()
-        ParserFactory.create11(tokens).parse().forEach { result ->
-            when (result) {
-                is ParseResult.Success -> statements.add(result.statement)
-                is ParseResult.Failure -> error("No deberia fallar el parseo: ${result.message} en ${result.start}")
-            }
-        }
-        val warnings = mutableListOf<Warning>()
-        LinterFactory.create(config).analyze(statements.iterator(), warnings::add)
-        return warnings
-    }
+        config: Map<String, String>,
+    ): List<Warning> = warningsOf(LinterFactory.create(config = config), source)
 
     @Test
     fun `finds readInput inside an assignment`() {
@@ -36,9 +19,8 @@ class ReadInputIntegrationTest {
             let name: string = "x";
             name = readInput("a" + "b");
             """.trimIndent()
-        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = true)
 
-        val warnings = lint(source, config)
+        val warnings = lint(source, readInputOn)
 
         assertEquals(1, warnings.size)
         assertEquals(
@@ -52,9 +34,9 @@ class ReadInputIntegrationTest {
     fun `finds readInput inside a println`() {
         val source = """println(readInput("a" + "b"));"""
         val config =
-            LinterRules(
-                printCallArgumentsMustBeLiteralOrIdentifier = false,
-                readInputArgumentsMustBeLiteralOrIdentifier = true,
+            mapOf(
+                "mandatory-variable-or-literal-in-println" to "false",
+                "mandatory-variable-or-literal-in-readInput" to "true",
             )
 
         val warnings = lint(source, config)
@@ -74,9 +56,8 @@ class ReadInputIntegrationTest {
                 println("ok");
             }
             """.trimIndent()
-        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = true)
 
-        val warnings = lint(source, config)
+        val warnings = lint(source, readInputOn)
 
         assertEquals(1, warnings.size)
         assertEquals(
@@ -89,9 +70,7 @@ class ReadInputIntegrationTest {
     @Test
     fun `finds readInput nested inside a binary expression`() {
         val source = """let total: string = "prefix: " + readInput("a" + "b");"""
-        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = true)
-
-        val warnings = lint(source, config)
+        val warnings = lint(source, readInputOn)
 
         assertEquals(1, warnings.size)
         assertEquals(
@@ -103,9 +82,7 @@ class ReadInputIntegrationTest {
     @Test
     fun `finds a readInput nested inside the argument of another readInput`() {
         val source = """let name: string = readInput(readInput("a" + "b"));"""
-        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = true)
-
-        val warnings = lint(source, config)
+        val warnings = lint(source, readInputOn)
 
         assertEquals(2, warnings.size)
         assertEquals(
@@ -120,9 +97,7 @@ class ReadInputIntegrationTest {
     @Test
     fun `readInput nested inside another readInput with literal argument only warns once for the outer call`() {
         val source = """let name: string = readInput(readInput("a"));"""
-        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = true)
-
-        val warnings = lint(source, config)
+        val warnings = lint(source, readInputOn)
 
         assertEquals(1, warnings.size)
         assertEquals(
@@ -139,9 +114,8 @@ class ReadInputIntegrationTest {
             let name: string = readInput(prompt);
             let age: string = readInput("ingrese su edad:");
             """.trimIndent()
-        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = true)
 
-        val warnings = lint(source, config)
+        val warnings = lint(source, readInputOn)
 
         assertEquals(0, warnings.size)
     }

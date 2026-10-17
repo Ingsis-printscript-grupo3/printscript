@@ -1,158 +1,121 @@
 package printscript.linter
 
-import printscript.ast.BinaryExpression
-import printscript.ast.NumberLiteral
-import printscript.ast.PrintCall
-import printscript.ast.ReadInput
-import printscript.ast.Statement
-import printscript.ast.StringLiteral
-import printscript.ast.VariableDeclaration
 import printscript.common.LanguageVersion
-import printscript.common.Position
-import printscript.common.TokenType
 import printscript.linter.rule.LinterRuleRegistry
-import java.io.ByteArrayInputStream
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class LinterFactoryTest {
-    // println(1 + 2): la marca la regla de println
-    private fun printlnWithExpression() =
-        PrintCall(
-            BinaryExpression(
-                NumberLiteral(1.0, Position(1, 9)),
-                TokenType.PLUS,
-                NumberLiteral(2.0, Position(1, 13)),
-                Position(1, 9),
-            ),
-            Position(1, 1),
-        )
-
-    // let x: string = readInput("a" + "b"): la marca la regla de readInput
-    private fun readInputWithExpression() =
-        VariableDeclaration(
-            "x",
-            "string",
-            ReadInput(
-                BinaryExpression(
-                    StringLiteral("a", Position(1, 10)),
-                    TokenType.PLUS,
-                    StringLiteral("b", Position(1, 14)),
-                    Position(1, 10),
-                ),
-                Position(1, 10),
-            ),
-            Position(1, 1),
-        )
-
-    private fun snakeCaseDeclaration() =
-        VariableDeclaration("mi_variable", "number", NumberLiteral(1.0, Position(1, 20)), Position(1, 1))
-
-    private fun warningsOf(
-        linter: LinterInterface,
-        vararg statements: Statement,
-    ): List<Warning> {
-        val warnings = mutableListOf<Warning>()
-        linter.analyze(statements.iterator(), warnings::add)
-        return warnings
-    }
-
-    private val camelCaseJson =
+    // una infraccion de cada regla por defecto
+    private val oneOfEach =
         """
-        {
-          "identifier_format": "camel case",
-          "mandatory-variable-or-literal-in-println": true,
-          "mandatory-variable-or-literal-in-readInput": true
+        let mi_variable: number = 1;
+        println(1 + 2);
+        let dato: string = readInput("a" + "b");
+        """.trimIndent()
+
+    private val snakeCaseDeclaration = "let mi_variable: number = 1;"
+
+    private val camelCaseJson = """{"identifier_format": "camel case"}"""
+
+    private fun tempConfig(
+        extension: String,
+        content: String,
+    ): File =
+        File.createTempFile("linter-config", ".$extension").apply {
+            writeText(content)
+            deleteOnExit()
         }
-        """.trimIndent()
-
-    private val camelCaseYaml =
-        """
-        identifier_format: camel case
-        mandatory-variable-or-literal-in-println: true
-        mandatory-variable-or-literal-in-readInput: true
-        """.trimIndent()
 
     @Test
     fun `create without arguments applies every default rule`() {
-        val warnings = warningsOf(LinterFactory.create(), snakeCaseDeclaration(), printlnWithExpression())
+        val linter = LinterFactory.create()
 
-        assertEquals(2, warnings.size)
+        val warnings = warningsOf(linter, oneOfEach)
+
+        assertEquals(3, warnings.size)
     }
 
     @Test
     fun `create honours the config it is given`() {
-        val config =
-            LinterRules(
-                identifierFormat = IdentifierFormat.SNAKE_CASE,
-                printCallArgumentsMustBeLiteralOrIdentifier = false,
-            )
+        val linter = LinterFactory.create(config = mapOf("identifier_format" to "snake case"))
 
-        val warnings = warningsOf(LinterFactory.create(config), snakeCaseDeclaration(), printlnWithExpression())
+        val warnings = warningsOf(linter, oneOfEach)
 
         assertTrue(warnings.isEmpty())
     }
 
     @Test
-    fun `create11 keeps the readInput rule`() {
-        val warnings = warningsOf(LinterFactory.create(LanguageVersion.V1_1), readInputWithExpression())
+    fun `an empty config builds a linter that checks nothing`() {
+        val linter = LinterFactory.create(config = emptyMap())
 
-        assertEquals(1, warnings.size)
-    }
-
-    // en 1.0 el parser rechaza readInput antes de armar el AST, asi que la regla sobra
-    @Test
-    fun `create10 drops the readInput rule and keeps the rest`() {
-        val linter = LinterFactory.create(LanguageVersion.V1_0)
-
-        assertTrue(warningsOf(linter, readInputWithExpression()).isEmpty())
-        assertEquals(1, warningsOf(LinterFactory.create10(), printlnWithExpression()).size)
-        assertEquals(1, warningsOf(LinterFactory.create10(), snakeCaseDeclaration()).size)
-    }
-
-    @Test
-    fun `create11 is the version aware entry point for 1_1`() {
-        assertEquals(1, warningsOf(LinterFactory.create11(), printlnWithExpression()).size)
+        assertTrue(warningsOf(linter, oneOfEach).isEmpty())
     }
 
     @Test
     fun `a custom registry replaces the default rules`() {
-        val emptyRegistry = LinterRuleRegistry(emptyList())
+        val linter = LinterFactory.create(registry = LinterRuleRegistry(emptyList()))
 
-        val warnings = warningsOf(LinterFactory.create(LinterRules(), emptyRegistry), snakeCaseDeclaration())
-
-        assertTrue(warnings.isEmpty())
-        assertTrue(LinterFactory.defaultRegistry().rulesFor(LinterRules()).isNotEmpty())
+        assertTrue(warningsOf(linter, oneOfEach).isEmpty())
     }
 
     @Test
-    fun `fromJson and fromYaml build the same linter`() {
-        val fromJson = warningsOf(LinterFactory.fromJson(camelCaseJson, LanguageVersion.V1_1), snakeCaseDeclaration())
-        val fromYaml = warningsOf(LinterFactory.fromYaml(camelCaseYaml, LanguageVersion.V1_1), snakeCaseDeclaration())
+    fun `fromStream reads a json config, like the TCK hands it over`() {
+        val linter = LinterFactory.fromStream(camelCaseJson.byteInputStream())
 
-        assertEquals(1, fromJson.size)
-        assertEquals(fromJson.map { it.message }, fromYaml.map { it.message })
-    }
-
-    @Test
-    fun `fromStream reads the config the runner passes through`() {
-        val stream = ByteArrayInputStream(camelCaseJson.toByteArray())
-
-        val warnings = warningsOf(LinterFactory.fromStream(stream, LanguageVersion.V1_0), snakeCaseDeclaration())
+        val warnings = warningsOf(linter, snakeCaseDeclaration, LanguageVersion.V1_0)
 
         assertEquals(1, warnings.size)
     }
 
     @Test
-    fun `fromFile reads the config the cli passes through`() {
-        val file = File.createTempFile("linter-factory", ".json")
-        file.deleteOnExit()
-        file.writeText(camelCaseJson)
+    fun `fromStream reads a yaml config`() {
+        val linter = LinterFactory.fromStream("identifier_format: camel case".byteInputStream())
 
-        val warnings = warningsOf(LinterFactory.fromFile(file.path, LanguageVersion.V1_1), snakeCaseDeclaration())
+        assertEquals(1, warningsOf(linter, snakeCaseDeclaration).size)
+    }
 
-        assertEquals(1, warnings.size)
+    @Test
+    fun `fromStream skips a UTF-8 BOM`() {
+        val linter = LinterFactory.fromStream("﻿$camelCaseJson".byteInputStream())
+
+        assertEquals(1, warningsOf(linter, snakeCaseDeclaration).size)
+    }
+
+    @Test
+    fun `fromFile reads json, yaml and yml files, like the cli passes them`() {
+        val files =
+            listOf(
+                tempConfig("json", camelCaseJson),
+                tempConfig("yaml", "identifier_format: camel case"),
+                tempConfig("yml", "identifier_format: \"camel case\""),
+                tempConfig("JSON", camelCaseJson),
+            )
+
+        files.forEach { file ->
+            assertEquals(1, warningsOf(LinterFactory.fromFile(file.path), snakeCaseDeclaration).size, file.name)
+        }
+    }
+
+    @Test
+    fun `fromFile rejects an extension that is not json or yaml`() {
+        val file = tempConfig("txt", "identifier_format: camel case")
+
+        assertFailsWith<IllegalArgumentException> { LinterFactory.fromFile(file.path) }
+    }
+
+    @Test
+    fun `fromFile rejects a file that does not exist`() {
+        assertFailsWith<IllegalArgumentException> { LinterFactory.fromFile("no-existe.json") }
+    }
+
+    @Test
+    fun `fromFile rejects an identifier format that no rule knows`() {
+        val file = tempConfig("json", """{"identifier_format": "camelCase"}""")
+
+        assertFailsWith<IllegalArgumentException> { LinterFactory.fromFile(file.path) }
     }
 }
