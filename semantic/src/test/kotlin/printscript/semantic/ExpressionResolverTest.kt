@@ -102,7 +102,7 @@ class ExpressionResolverTest {
 
     @Test
     fun `an expression with no handler registered fails explicitly with the node position`() {
-        val emptyRegistry = Registry<Expression, ExpressionResolver, SemanticResult<String>>()
+        val emptyRegistry = Registry<Expression, ResolverContext, SemanticResult<String>>()
         val resolver =
             ExpressionResolver(
                 SymbolTable(),

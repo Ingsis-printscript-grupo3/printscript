@@ -3,39 +3,19 @@ package printscript.semantic.handler.expression
 import printscript.ast.Expression
 import printscript.ast.ReadInput
 import printscript.ast.registry.Handler
-import printscript.semantic.ExpressionResolver
+import printscript.semantic.ResolverContext
 import printscript.semantic.SemanticResult
 
-class ReadInputHandler : Handler<Expression, ExpressionResolver, SemanticResult<String>> {
+class ReadInputHandler : Handler<Expression, ResolverContext, SemanticResult<String>> {
     override fun applies(node: Expression) = node is ReadInput
 
     override fun handle(
         node: Expression,
-        ctx: ExpressionResolver,
+        ctx: ResolverContext,
     ): SemanticResult<String> {
         if (node !is ReadInput) {
             return SemanticResult.Failure("Unexpected node in ReadInputHandler.", node.position)
         }
-        val argRes = validateArgument(node.argument, ctx)
-        if (argRes is SemanticResult.Failure) return argRes
-
-        return SemanticResult.Success(ctx.expectedType ?: "string")
+        return resolveReadArgument("readInput", node.argument, ctx)
     }
-
-    private fun validateArgument(
-        argument: Expression,
-        ctx: ExpressionResolver,
-    ): SemanticResult<Unit> =
-        when (val argResult = ctx.resolveType(argument, expectedType = "string")) {
-            is SemanticResult.Failure -> argResult
-            is SemanticResult.Success ->
-                if (argResult.value != "string") {
-                    SemanticResult.Failure(
-                        "'readInput' argument must be a string, found '${argResult.value}'.",
-                        argument.position,
-                    )
-                } else {
-                    SemanticResult.Success(Unit)
-                }
-        }
 }

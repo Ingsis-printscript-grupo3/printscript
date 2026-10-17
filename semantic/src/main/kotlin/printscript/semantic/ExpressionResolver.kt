@@ -16,20 +16,19 @@ import printscript.semantic.symbol.SymbolTable
 class ExpressionResolver(
     val symbolTable: SymbolTable,
     val version: LanguageVersion = LanguageVersion.V1_1,
-    val expectedType: String? = null,
-    private val registry: Registry<Expression, ExpressionResolver, SemanticResult<String>> =
+    private val registry: Registry<Expression, ResolverContext, SemanticResult<String>> =
         Registry(defaultHandlers(version)),
 ) {
     companion object {
         fun defaultHandlers(
             version: LanguageVersion,
-        ): List<Handler<Expression, ExpressionResolver, SemanticResult<String>>> =
+        ): List<Handler<Expression, ResolverContext, SemanticResult<String>>> =
             when (version) {
                 LanguageVersion.V1_0 -> default10Handlers()
                 LanguageVersion.V1_1 -> default11Handlers()
             }
 
-        fun default10Handlers(): List<Handler<Expression, ExpressionResolver, SemanticResult<String>>> =
+        fun default10Handlers(): List<Handler<Expression, ResolverContext, SemanticResult<String>>> =
             listOf(
                 NumberLiteralHandler(),
                 StringLiteralHandler(),
@@ -37,7 +36,7 @@ class ExpressionResolver(
                 BinaryExpressionHandler(),
             )
 
-        fun default11Handlers(): List<Handler<Expression, ExpressionResolver, SemanticResult<String>>> =
+        fun default11Handlers(): List<Handler<Expression, ResolverContext, SemanticResult<String>>> =
             default10Handlers() +
                 listOf(
                     BooleanLiteralHandler(),
@@ -46,19 +45,10 @@ class ExpressionResolver(
                 )
     }
 
-    fun withExpectedType(expectedType: String?): ExpressionResolver =
-        if (this.expectedType == expectedType) {
-            this
-        } else {
-            ExpressionResolver(symbolTable, version, expectedType, registry)
-        }
-
     fun resolveType(
         expression: Expression,
         expectedType: String? = null,
-    ): SemanticResult<String> {
-        val resolver = withExpectedType(expectedType)
-        return resolver.registry.resolveOrNull(expression, resolver)
+    ): SemanticResult<String> =
+        registry.resolveOrNull(expression, ResolverContext(this, expectedType))
             ?: SemanticResult.Failure("Unknown expression type.", expression.position)
-    }
 }
