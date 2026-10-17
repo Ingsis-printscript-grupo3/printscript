@@ -1,16 +1,16 @@
 package printscript.semantic.handler.expression
 
 import printscript.ast.Expression
-import printscript.semantic.ExpressionResolver
+import printscript.semantic.ResolverContext
 import printscript.semantic.SemanticResult
 
 // readInput y readEnv se validan igual: el argumento es un string y el tipo lo decide el contexto
 internal fun resolveReadArgument(
     function: String,
     argument: Expression,
-    ctx: ExpressionResolver,
+    ctx: ResolverContext,
 ): SemanticResult<String> =
-    when (val argumentType = ctx.resolveType(argument, expectedType = "string")) {
+    when (val argumentType = ctx.resolver.resolveType(argument, expectedType = "string")) {
         is SemanticResult.Failure -> argumentType
         is SemanticResult.Success ->
             if (argumentType.value != "string") {

@@ -3,15 +3,15 @@ package printscript.semantic.handler.expression
 import printscript.ast.Expression
 import printscript.ast.ReadInput
 import printscript.ast.registry.Handler
-import printscript.semantic.ExpressionResolver
+import printscript.semantic.ResolverContext
 import printscript.semantic.SemanticResult
 
-class ReadInputHandler : Handler<Expression, ExpressionResolver, SemanticResult<String>> {
+class ReadInputHandler : Handler<Expression, ResolverContext, SemanticResult<String>> {
     override fun applies(node: Expression) = node is ReadInput
 
     override fun handle(
         node: Expression,
-        ctx: ExpressionResolver,
+        ctx: ResolverContext,
     ): SemanticResult<String> {
         if (node !is ReadInput) {
             return SemanticResult.Failure("Unexpected node in ReadInputHandler.", node.position)

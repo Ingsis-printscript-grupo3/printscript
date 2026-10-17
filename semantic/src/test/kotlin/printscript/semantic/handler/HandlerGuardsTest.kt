@@ -9,6 +9,7 @@ import printscript.ast.VariableDeclaration
 import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.semantic.ExpressionResolver
+import printscript.semantic.ResolverContext
 import printscript.semantic.SemanticResult
 import printscript.semantic.StatementValidator
 import printscript.semantic.handler.expression.BinaryExpressionHandler
@@ -34,7 +35,8 @@ import kotlin.test.assertIs
 private val AT = Position(1, 1)
 
 class HandlerGuardsTest {
-    private fun resolverContext() = ExpressionResolver(SymbolTable(), LanguageVersion.V1_1)
+    private fun resolverContext() =
+        ResolverContext(ExpressionResolver(SymbolTable(), LanguageVersion.V1_1), expectedType = null)
 
     private fun validatorContext(): StatementValidator {
         val symbolTable = SymbolTable()
@@ -91,7 +93,7 @@ class HandlerGuardsTest {
         symbolTable.define("a", "string", at = AT)
         val resolver = ExpressionResolver(symbolTable, LanguageVersion.V1_1)
 
-        val result = IdentifierHandler().handle(Identifier("a"), resolver)
+        val result = IdentifierHandler().handle(Identifier("a"), ResolverContext(resolver, expectedType = null))
 
         assertIs<SemanticResult.Success<String>>(result)
     }

@@ -5,28 +5,28 @@ import printscript.ast.Expression
 import printscript.ast.registry.Handler
 import printscript.common.Position
 import printscript.common.TokenType
-import printscript.semantic.ExpressionResolver
+import printscript.semantic.ResolverContext
 import printscript.semantic.SemanticResult
 
-class BinaryExpressionHandler : Handler<Expression, ExpressionResolver, SemanticResult<String>> {
+class BinaryExpressionHandler : Handler<Expression, ResolverContext, SemanticResult<String>> {
     override fun applies(node: Expression) = node is BinaryExpression
 
     override fun handle(
         node: Expression,
-        ctx: ExpressionResolver,
+        ctx: ResolverContext,
     ): SemanticResult<String> {
         if (node !is BinaryExpression) {
             return SemanticResult.Failure("Unexpected node in BinaryExpressionHandler.", node.position)
         }
 
         val left =
-            when (val leftResult = ctx.resolveType(node.left)) {
+            when (val leftResult = ctx.resolver.resolveType(node.left)) {
                 is SemanticResult.Failure -> return leftResult
                 is SemanticResult.Success -> leftResult.value
             }
 
         val right =
-            when (val rightResult = ctx.resolveType(node.right)) {
+            when (val rightResult = ctx.resolver.resolveType(node.right)) {
                 is SemanticResult.Failure -> return rightResult
                 is SemanticResult.Success -> rightResult.value
             }
