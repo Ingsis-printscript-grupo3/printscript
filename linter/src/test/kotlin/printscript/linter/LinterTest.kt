@@ -338,7 +338,7 @@ class LinterTest {
         assertEquals(0, analyze(listOf(stmt)).size)
     }
 
-    // la condicion del if la mira la regla, y el if lo visita el aplanado: no debe contarse dos veces
+    // el recorrido visita la condicion del if una sola vez: el readInput no debe contarse dos veces
     @Test
     fun `a readInput in the if condition warns exactly once`() {
         val readInput = ReadInput(BinaryExpression(str("a"), TokenType.PLUS, str("b"), pos()), Position(1, 5))
