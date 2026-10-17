@@ -1,67 +1,48 @@
 package printscript.linter.rule
 
-import printscript.ast.Assignment
 import printscript.ast.BinaryExpression
-import printscript.ast.Identifier
-import printscript.ast.NumberLiteral
 import printscript.ast.PositionedNode
-import printscript.ast.PrintCall
-import printscript.ast.ReadInput
-import printscript.ast.Statement
-import printscript.ast.StringLiteral
-import printscript.ast.VariableDeclaration
 import printscript.common.Position
-import printscript.common.TokenType
-import printscript.linter.IdentifierFormat
 import printscript.linter.LinterFactory
-import printscript.linter.LinterRules
 import printscript.linter.Warning
+import printscript.linter.warningsOf
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class LinterRuleRegistryTest {
-    // println(1 + 2): lo marca la regla de println y ninguna otra
-    private fun printlnWithExpression() =
-        PrintCall(
-            BinaryExpression(
-                NumberLiteral(1.0, Position(1, 9)),
-                TokenType.PLUS,
-                NumberLiteral(2.0, Position(1, 13)),
-                Position(1, 9),
-            ),
-            Position(1, 1),
-        )
+    private val println = "mandatory-variable-or-literal-in-println"
+    private val readInput = "mandatory-variable-or-literal-in-readInput"
 
-    // readInput("a" + "b"): lo marca la regla de readInput y ninguna otra
-    private fun readInputWithExpression() =
-        VariableDeclaration(
-            "x",
-            "string",
-            ReadInput(
-                BinaryExpression(
-                    StringLiteral("a", Position(1, 10)),
-                    TokenType.PLUS,
-                    StringLiteral("b", Position(1, 14)),
-                    Position(1, 10),
-                ),
-                Position(1, 10),
-            ),
-            Position(1, 1),
-        )
+    private val printlnWithExpression = "println(1 + 2);"
+    private val readInputWithExpression = """let dato: string = readInput("a" + "b");"""
 
-    private fun warningsFor(
-        config: LinterRules,
-        statement: Statement,
-    ): List<Warning> {
-        val warnings = mutableListOf<Warning>()
-        LinterFactory.create(config).analyze(listOf(statement).iterator(), warnings::add)
-        return warnings
+    private fun rulesFor(vararg config: Pair<String, String>) = LinterRuleRegistry().rulesFor(config.toMap())
+
+    private fun lint(
+        source: String,
+        vararg config: Pair<String, String>,
+    ): List<Warning> = warningsOf(LinterFactory.create(config = config.toMap()), source)
+
+    // stderr capturado, para ver los avisos de claves desconocidas
+    private fun stderrOf(block: () -> Unit): String {
+        val buffer = ByteArrayOutputStream()
+        val original = System.err
+        System.setErr(PrintStream(buffer))
+        try {
+            block()
+        } finally {
+            System.setErr(original)
+        }
+        return buffer.toString()
     }
 
     @Test
-    fun `the default config registers one rule per active check`() {
-        val rules = LinterRuleRegistry().rulesFor(LinterRules())
+    fun `the default config turns every rule on`() {
+        val rules = LinterRuleRegistry().run { rulesFor(defaultConfig()) }
 
         assertEquals(3, rules.size)
         assertTrue(rules.any { it is IdentifierFormatRule })
@@ -70,149 +51,137 @@ class LinterRuleRegistryTest {
     }
 
     @Test
-    fun `turning off the println rule leaves it out`() {
-        val config = LinterRules(printCallArgumentsMustBeLiteralOrIdentifier = false)
-
-        assertTrue(warningsFor(config, printlnWithExpression()).isEmpty())
+    fun `a config that names no rule builds nothing`() {
+        assertTrue(rulesFor().isEmpty())
     }
 
     @Test
-    fun `turning off the readInput rule leaves it out`() {
-        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = false)
+    fun `a rule only runs when the config names its key`() {
+        val rules = rulesFor(println to "true")
 
-        assertTrue(warningsFor(config, readInputWithExpression()).isEmpty())
+        assertEquals(listOf(PrintCallArgumentRule::class), rules.map { it::class })
     }
 
     @Test
-    fun `turning off the println rule still keeps the readInput rule active`() {
-        val config = LinterRules(printCallArgumentsMustBeLiteralOrIdentifier = false)
-
-        assertEquals(1, warningsFor(config, readInputWithExpression()).size)
+    fun `turning off the println rule keeps the readInput rule active`() {
+        assertTrue(lint(printlnWithExpression, println to "false", readInput to "true").isEmpty())
+        assertEquals(1, lint(readInputWithExpression, println to "false", readInput to "true").size)
     }
 
     @Test
-    fun `turning off the readInput rule still keeps the println rule active`() {
-        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = false)
-
-        assertEquals(1, warningsFor(config, printlnWithExpression()).size)
+    fun `turning off the readInput rule keeps the println rule active`() {
+        assertTrue(lint(readInputWithExpression, println to "true", readInput to "false").isEmpty())
+        assertEquals(1, lint(printlnWithExpression, println to "true", readInput to "false").size)
     }
 
     @Test
-    fun `turning off the println rule drops only that rule from the list`() {
-        val rules = LinterRuleRegistry().rulesFor(LinterRules(printCallArgumentsMustBeLiteralOrIdentifier = false))
+    fun `booleans ignore their casing`() {
+        assertEquals(1, rulesFor(println to "TRUE").size)
+        assertTrue(rulesFor(println to "False").isEmpty())
+    }
 
-        assertEquals(2, rules.size)
-        assertTrue(rules.none { it is PrintCallArgumentRule })
-        assertTrue(rules.any { it is ReadInputArgumentRule })
+    // asi llegan un null de JSON y una clave de YAML sin valor
+    @Test
+    fun `an empty or null value falls back to the default`() {
+        assertEquals(1, lint(printlnWithExpression, println to "null").size)
+        assertEquals(1, lint(printlnWithExpression, println to "").size)
+        assertEquals(1, lint("let mi_variable: number = 1;", "identifier_format" to "").size)
     }
 
     @Test
-    fun `a config that names no rule at all builds nothing`() {
-        val rules =
-            LinterRuleRegistry().rulesFor(
-                LinterRules(
-                    identifierFormat = null,
-                    printCallArgumentsMustBeLiteralOrIdentifier = null,
-                    readInputArgumentsMustBeLiteralOrIdentifier = null,
-                ),
-            )
-
-        assertTrue(rules.isEmpty())
-    }
-
-    @Test
-    fun `the identifier rule is left out when the config does not name it`() {
-        val rules = LinterRuleRegistry().rulesFor(LinterRules(identifierFormat = null))
-
-        assertTrue(rules.none { it is IdentifierFormatRule })
-    }
-
-    @Test
-    fun `the registered identifier format rule honours the configured format`() {
-        val rules = LinterRuleRegistry().rulesFor(LinterRules(identifierFormat = IdentifierFormat.SNAKE_CASE))
-        val rule = rules.filterIsInstance<IdentifierFormatRule>().single()
-
-        val warnings = rule.check(Assignment("myVar", Identifier("x"), Position(1, 1)))
+    fun `the identifier rule honours the configured format`() {
+        val warnings = lint("let miVariable: number = 1;", "identifier_format" to "snake case")
 
         assertEquals(1, warnings.size)
-        assertEquals("Identifier 'myVar' does not match format snake case", warnings[0].message)
+        assertEquals("Identifier 'miVariable' does not match format snake case", warnings[0].message)
     }
 
     @Test
-    fun `register adds a rule on top of the default ones`() {
-        val extra = LinterRuleFactory { listOf(NoOpRule()) }
+    fun `rejects a value that is not a boolean`() {
+        val error = assertFailsWith<IllegalArgumentException> { rulesFor(println to "si") }
 
-        val rules = LinterRuleRegistry().register(extra).rulesFor(LinterRules())
+        assertEquals("Expected boolean for '$println'", error.message)
+    }
+
+    @Test
+    fun `rejects an identifier format that no rule knows`() {
+        assertFailsWith<IllegalArgumentException> { rulesFor("identifier_format" to "kebab case") }
+    }
+
+    @Test
+    fun `an unknown key is ignored and reported on stderr`() {
+        lateinit var rules: List<LinterRule>
+
+        val stderr = stderrOf { rules = rulesFor("no-existe" to "true") }
+
+        assertTrue(rules.isEmpty())
+        assertEquals("linter: ignoring unknown key 'no-existe'", stderr.trim())
+    }
+
+    @Test
+    fun `the rules keep the order of the registry, not the one of the config`() {
+        val rules = rulesFor(readInput to "true", println to "true", "identifier_format" to "camel case")
+
+        assertEquals(
+            listOf(IdentifierFormatRule::class, PrintCallArgumentRule::class, ReadInputArgumentRule::class),
+            rules.map { it::class },
+        )
+    }
+
+    @Test
+    fun `register adds a rule on top of the default ones and its key stops being unknown`() {
+        val registry = LinterRuleRegistry().register(LinterRuleFactory.toggle("no-op") { NoOpRule() })
+        lateinit var rules: List<LinterRule>
+
+        val stderr = stderrOf { rules = registry.rulesFor(registry.defaultConfig()) }
 
         assertEquals(4, rules.size)
         assertTrue(rules.any { it is NoOpRule })
-    }
-
-    @Test
-    fun `a factory can contribute multiple rules`() {
-        val extra = LinterRuleFactory { listOf(NoOpRule(), AlwaysWarnsRule()) }
-
-        val rules = LinterRuleRegistry().register(extra).rulesFor(LinterRules())
-
-        assertEquals(5, rules.size)
-        assertTrue(rules.any { it is NoOpRule })
-        assertTrue(rules.any { it is AlwaysWarnsRule })
+        assertTrue(stderr.isEmpty())
     }
 
     @Test
     fun `register does not mutate the registry it was called on`() {
         val original = LinterRuleRegistry()
 
-        original.register(LinterRuleFactory { listOf(NoOpRule()) })
+        original.register(LinterRuleFactory.toggle("no-op") { NoOpRule() })
 
-        assertEquals(3, original.rulesFor(LinterRules()).size)
+        assertEquals(3, original.rulesFor(original.defaultConfig()).size)
     }
 
     @Test
-    fun `a factory that returns an empty list contributes no rule`() {
-        val rules = LinterRuleRegistry(listOf(LinterRuleFactory { emptyList() })).rulesFor(LinterRules())
-
-        assertTrue(rules.isEmpty())
+    fun `two factories cannot share a key`() {
+        assertFailsWith<IllegalArgumentException> {
+            LinterRuleRegistry().register(LinterRuleFactory.toggle(println) { NoOpRule() })
+        }
     }
 
     @Test
-    fun `a rule registered by hand actually runs and emits its warning`() {
-        val registry = LinterRuleRegistry().register(LinterRuleFactory { listOf(AlwaysWarnsRule()) })
-        val statements = listOf<Statement>(Assignment("miVariable", Identifier("x"), Position(7, 2)))
-
-        val warnings = mutableListOf<Warning>()
-        LinterFactory.create(registry = registry).analyze(statements.iterator(), warnings::add)
-
-        assertEquals(1, warnings.size)
-        assertEquals("siempre avisa", warnings[0].message)
-        assertEquals(Position(7, 2), warnings[0].position)
-    }
-
-    @Test
-    fun `a rule targeting an expression registered by hand runs on nested expressions`() {
-        val rule =
-            object : LinterRule {
-                override fun appliesTo(node: PositionedNode): Boolean = node is BinaryExpression
-
-                override fun check(node: PositionedNode): List<Warning> =
-                    listOf(Warning("operacion binaria encontrada", node.position))
-            }
-        val registry = LinterRuleRegistry().register(LinterRuleFactory { listOf(rule) })
-        val value =
-            BinaryExpression(
-                NumberLiteral(1.0, Position(1, 20)),
-                TokenType.PLUS,
-                NumberLiteral(2.0, Position(1, 24)),
-                Position(1, 20),
+    fun `a rule registered by hand runs on nested expressions with its own config value`() {
+        val registry =
+            LinterRuleRegistry().register(
+                LinterRuleFactory("binary-expression-message", default = "operacion") { BinaryExpressionRule(it) },
             )
-        val statement = VariableDeclaration("x", "number", value, Position(1, 1))
+        val linter = LinterFactory.create(registry, mapOf("binary-expression-message" to "suma encontrada"))
 
-        val warnings = mutableListOf<Warning>()
-        LinterFactory.create(registry = registry).analyze(listOf<Statement>(statement).iterator(), warnings::add)
+        val warnings = warningsOf(linter, "let x: number = 1 + 2;")
 
         assertEquals(1, warnings.size)
-        assertEquals("operacion binaria encontrada", warnings[0].message)
-        assertEquals(Position(1, 20), warnings[0].position)
+        assertEquals("suma encontrada", warnings[0].message)
+        assertEquals(Position(1, 17), warnings[0].position)
+    }
+
+    // sin config, la factory toma los defaults del registry que recibe y no los del de fabrica
+    @Test
+    fun `a linter created with a custom registry uses that registry's defaults`() {
+        val registry =
+            LinterRuleRegistry().register(
+                LinterRuleFactory("binary-expression-message", default = "operacion") { BinaryExpressionRule(it) },
+            )
+
+        val warnings = warningsOf(LinterFactory.create(registry), "let x: number = 1 + 2;")
+
+        assertEquals(listOf("operacion"), warnings.map { it.message })
     }
 
     private class NoOpRule : LinterRule {
@@ -221,9 +190,9 @@ class LinterRuleRegistryTest {
         override fun check(node: PositionedNode): List<Warning> = emptyList()
     }
 
-    private class AlwaysWarnsRule : LinterRule {
-        override fun appliesTo(node: PositionedNode): Boolean = node is Assignment
+    private class BinaryExpressionRule(private val message: String) : LinterRule {
+        override fun appliesTo(node: PositionedNode): Boolean = node is BinaryExpression
 
-        override fun check(node: PositionedNode): List<Warning> = listOf(Warning("siempre avisa", node.position))
+        override fun check(node: PositionedNode): List<Warning> = listOf(Warning(message, node.position))
     }
 }

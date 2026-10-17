@@ -9,8 +9,6 @@ import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.common.TokenType
-import printscript.linter.LinterFactory
-import printscript.linter.LinterRules
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -86,15 +84,14 @@ class ReadInputArgumentRuleTest {
 
     @Test
     fun `the rule is off when the config disables it`() {
-        val config = LinterRules(readInputArgumentsMustBeLiteralOrIdentifier = false)
-        val rules = LinterFactory.defaultRegistry().rulesFor(config)
+        val rules = LinterRuleRegistry().rulesFor(mapOf("mandatory-variable-or-literal-in-readInput" to "false"))
 
         assertTrue(rules.none { it is ReadInputArgumentRule })
     }
 
     @Test
     fun `the rule is on by default`() {
-        val rules = LinterFactory.defaultRegistry().rulesFor(LinterRules())
+        val rules = LinterRuleRegistry().run { rulesFor(defaultConfig()) }
 
         assertTrue(rules.any { it is ReadInputArgumentRule })
     }

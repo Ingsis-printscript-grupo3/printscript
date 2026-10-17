@@ -1,13 +1,7 @@
 package printscript.linter
 
-import printscript.ast.Statement
 import printscript.common.LanguageVersion
 import printscript.common.Position
-import printscript.lexer.CharStream
-import printscript.lexer.LexerFactory
-import printscript.parser.ParserFactory
-import printscript.parser.result.ParseResult
-import java.io.StringReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -19,19 +13,7 @@ class LinterTckCasesTest {
         source: String,
         configJson: String,
         version: LanguageVersion = LanguageVersion.V1_1,
-    ): List<Warning> {
-        val tokens = LexerFactory.create(CharStream(StringReader(source)), version).tokenize()
-        val statements = mutableListOf<Statement>()
-        ParserFactory.create(tokens, version).parse().forEach { result ->
-            when (result) {
-                is ParseResult.Success -> statements.add(result.statement)
-                is ParseResult.Failure -> error("no deberia fallar el parseo: ${result.message} en ${result.start}")
-            }
-        }
-        val warnings = mutableListOf<Warning>()
-        LinterFactory.create(LinterRulesLoader.fromJson(configJson)).analyze(statements.iterator(), warnings::add)
-        return warnings
-    }
+    ): List<Warning> = warningsOf(LinterFactory.fromStream(configJson.byteInputStream()), source, version)
 
     private val camelCaseConfig =
         """
@@ -79,6 +61,18 @@ class LinterTckCasesTest {
         val source = "let mi_variable: number = 3;"
 
         assertTrue(lint(source, snakeCaseConfig, LanguageVersion.V1_0).isEmpty())
+    }
+
+    // valid-no-rules del TCK: una regla que la config no nombra no corre
+    @Test
+    fun `10 - an empty config checks nothing`() {
+        val source =
+            """
+            let myVariable: number = 5;
+            let my_variable: number = 10;
+            """.trimIndent()
+
+        assertTrue(lint(source, "{}", LanguageVersion.V1_0).isEmpty())
     }
 
     // este es el caso que el ticket 1.5 vino a arreglar: antes pasaba sin warning
