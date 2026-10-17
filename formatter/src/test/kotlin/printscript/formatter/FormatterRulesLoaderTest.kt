@@ -169,6 +169,30 @@ class FormatterRulesLoaderTest {
     }
 
     @Test
+    fun `a boolean set to false leaves the rule off`() {
+        assertEquals(FormatterRules(), FormatterRulesLoader.fromJson("""{"if-brace-same-line": false}"""))
+    }
+
+    @Test
+    fun `rejects a boolean value that is not true or false`() {
+        assertFailsWith<IllegalArgumentException> { FormatterRulesLoader.fromYaml("if-brace-same-line: si") }
+    }
+
+    @Test
+    fun `rejects an integer value that is not a number`() {
+        assertFailsWith<IllegalArgumentException> { FormatterRulesLoader.fromYaml("indent-inside-if: muchos") }
+    }
+
+    @Test
+    fun `rejects asking for spaces and no spaces around equals at once`() {
+        assertFailsWith<IllegalArgumentException> {
+            FormatterRulesLoader.fromJson(
+                """{"enforce-spacing-around-equals": true, "enforce-no-spacing-around-equals": true}""",
+            )
+        }
+    }
+
+    @Test
     fun `a null value in json or an empty one in yaml leaves the rule off`() {
         val json = """{"line-breaks-after-println": null, "enforce-spacing-around-equals": null}"""
         assertEquals(FormatterRules(), FormatterRulesLoader.fromJson(json))

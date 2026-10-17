@@ -5,67 +5,27 @@ import printscript.formatter.FormatterRules
 // cuantas lineas en blanco puede pedir line-breaks-after-println
 private val PRINTLN_BLANK_LINES = 0..2
 
-// la receta de una regla: que key de la config la prende, de que tipo es y como se crea con el valor.
-// Son solo datos: la config la lee FormatterRulesLoader recorriendo esta lista
-sealed interface FormatterRuleFactory {
-    val key: String
-}
-
-class BoolRuleFactory(
-    override val key: String,
-    val create: () -> FormatterRule,
-) : FormatterRuleFactory
-
-class IntRuleFactory(
-    override val key: String,
-    val range: IntRange,
-    val create: (Int) -> FormatterRule,
-) : FormatterRuleFactory
-
-// una restriccion entre reglas que no le pertenece a ninguna sola: falla si la config la rompe
-fun interface FormatterRuleCheck {
-    fun check(config: FormatterRules)
-}
-
-// aca se define cada regla, una sola vez: agregar una es crear su clase y sumar una linea en DEFAULT_FACTORIES.
-// Ni Formatter.kt ni el loader se tocan.
+// el catalogo de reglas: aca se define cada una, una sola vez. Agregar una es crear su clase y sumar
+// una linea en DEFAULT_FACTORIES; ni Formatter.kt, ni el loader, ni el validador se tocan.
 // El orden de la lista es el orden en que corren: primero las que deciden en que linea va cada token,
 // despues las de espacio dentro de la linea y al final la indentacion, que necesita saber cuantas
 // lineas quedaron. register() agrega al final, asi que una regla nueva tiene la ultima palabra.
 // Devuelve un registry nuevo en vez de mutar, igual que LinterRuleRegistry
 class FormatterRuleRegistry(
     val factories: List<FormatterRuleFactory> = DEFAULT_FACTORIES,
-    private val checks: List<FormatterRuleCheck> = DEFAULT_CHECKS,
+    val checks: List<FormatterRuleCheck> = DEFAULT_CHECKS,
 ) {
-    fun register(factory: FormatterRuleFactory): FormatterRuleRegistry =
-        FormatterRuleRegistry(factories + factory, checks)
+    val keys: Set<String> get() = factories.map { it.key }.toSet()
 
-    // la unica validacion de valores: la llaman el loader al cargar y rulesFor al crear las reglas
-    fun check(config: FormatterRules) {
-        factories.filterIsInstance<IntRuleFactory>().forEach { factory ->
-            val value = config.values[factory.key] as? Int
-            val range = factory.range
-            require(value == null || value in range) {
-                "${factory.key} must be ${range.first}..${range.last}, was $value"
-            }
-        }
-        checks.forEach { it.check(config) }
+    // dos reglas con la misma key correrian las dos: se rechaza en vez de elegir una en silencio
+    fun register(factory: FormatterRuleFactory): FormatterRuleRegistry {
+        require(factory.key !in keys) { "formatter key '${factory.key}' is already registered" }
+        return FormatterRuleRegistry(factories + factory, checks)
     }
 
-    // toda config pasa por aca, venga del loader o armada en codigo: una key mal escrita
-    // falla en vez de dejar la regla apagada sin avisar
-    fun rulesFor(config: FormatterRules): List<FormatterRule> {
-        val unknown = config.values.keys - factories.map { it.key }.toSet()
-        require(unknown.isEmpty()) { "unknown formatter keys: ${unknown.joinToString()}" }
-        check(config)
-        return factories.mapNotNull { factory ->
-            val value = config.values[factory.key]
-            when (factory) {
-                is BoolRuleFactory -> factory.create().takeIf { value == true }
-                is IntRuleFactory -> (value as? Int)?.let(factory.create)
-            }
-        }
-    }
+    // la config ya viene validada por FormatterRulesValidator
+    fun rulesFor(config: FormatterRules): List<FormatterRule> =
+        factories.mapNotNull { factory -> config.values[factory.key]?.let(factory::create) }
 
     private companion object {
         val DEFAULT_FACTORIES: List<FormatterRuleFactory> =
@@ -86,18 +46,11 @@ class FormatterRuleRegistry(
                 IntRuleFactory("indent-inside-if", 0..Int.MAX_VALUE) { IndentInsideIf(it) },
             )
 
+        // combinaciones que no se pueden pedir juntas
         val DEFAULT_CHECKS: List<FormatterRuleCheck> =
             listOf(
                 exclusive("if-brace-same-line", "if-brace-below-line"),
+                exclusive("enforce-spacing-around-equals", "enforce-no-spacing-around-equals"),
             )
-
-        private fun exclusive(
-            first: String,
-            second: String,
-        ) = FormatterRuleCheck { config ->
-            require(!(config.values[first] == true && config.values[second] == true)) {
-                "$first and $second cannot both be true"
-            }
-        }
     }
 }

@@ -124,30 +124,16 @@ class FormatterRuleRegistryTest {
     }
 
     @Test
-    fun `a misspelled key in a config built in code fails instead of leaving the rule off`() {
-        val config = FormatterRules.of("indent-insde-if" to 2)
+    fun `a boolean rule set to false in code stays off`() {
+        val config = FormatterRules.of("if-brace-same-line" to false)
 
-        assertFailsWith<IllegalArgumentException> { FormatterRuleRegistry().rulesFor(config) }
+        assertTrue(FormatterRuleRegistry().rulesFor(config).isEmpty())
     }
 
     @Test
-    fun `a value out of range in a config built in code fails too`() {
-        val config = FormatterRules.of("line-breaks-after-println" to 5)
+    fun `registering a key that already exists fails`() {
+        val duplicated = BoolRuleFactory("if-brace-same-line") { SpaceAfterColonFromOutside }
 
-        assertFailsWith<IllegalArgumentException> { FormatterRuleRegistry().rulesFor(config) }
-    }
-
-    @Test
-    fun `asking for the brace on both places fails when creating the rules too`() {
-        val config = FormatterRules.of("if-brace-same-line" to true, "if-brace-below-line" to true)
-
-        assertFailsWith<IllegalArgumentException> { FormatterRuleRegistry().rulesFor(config) }
-    }
-
-    @Test
-    fun `rejects asking for the brace on both places at once`() {
-        val config = FormatterRules.of("if-brace-same-line" to true, "if-brace-below-line" to true)
-
-        assertFailsWith<IllegalArgumentException> { FormatterRuleRegistry().check(config) }
+        assertFailsWith<IllegalArgumentException> { FormatterRuleRegistry().register(duplicated) }
     }
 }
