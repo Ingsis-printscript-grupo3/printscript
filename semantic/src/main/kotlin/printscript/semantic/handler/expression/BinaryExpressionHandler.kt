@@ -31,10 +31,10 @@ class BinaryExpressionHandler : Handler<Expression, ExpressionResolver, Semantic
                 is SemanticResult.Success -> rightResult.value
             }
 
-        return resultFor(node.operator, left, right, node.position)
+        return operationType(node.operator, left, right, node.position)
     }
 
-    private fun resultFor(
+    private fun operationType(
         operator: TokenType,
         left: String,
         right: String,
