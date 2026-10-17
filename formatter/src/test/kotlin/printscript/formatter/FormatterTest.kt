@@ -33,7 +33,7 @@ class FormatterTest {
 
     @Test
     fun `does not add a line break after the last statement`() {
-        val rules = FormatterRules(lineBreaksAfterPrintln = 2)
+        val rules = FormatterRules.of("line-breaks-after-println" to 2)
 
         assertEquals("println(1);", format("println(1);", rules))
     }
@@ -41,7 +41,7 @@ class FormatterTest {
     @Test
     fun `puts the brace of the else below too`() {
         val code = "if (x) {\n  println(1);\n} else {\n  println(2);\n}"
-        val rules = FormatterRules(ifBraceBelowLine = true)
+        val rules = FormatterRules.of("if-brace-below-line" to true)
 
         assertEquals("if (x)\n{\n  println(1);\n} else\n{\n  println(2);\n}", format(code, rules))
     }
@@ -49,7 +49,7 @@ class FormatterTest {
     @Test
     fun `indents the closing brace at the level of its if`() {
         val code = "if (x) {\nif (y) {\nprintln(1);\n}\n}"
-        val rules = FormatterRules(indentInsideIf = 2)
+        val rules = FormatterRules.of("indent-inside-if" to 2)
 
         assertEquals("if (x) {\n  if (y) {\n    println(1);\n  }\n}", format(code, rules))
     }

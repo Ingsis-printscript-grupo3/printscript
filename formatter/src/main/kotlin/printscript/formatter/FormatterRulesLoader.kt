@@ -1,35 +1,53 @@
 package printscript.formatter
 
 import printscript.common.ConfigParser
+import printscript.formatter.rule.BoolRuleFactory
+import printscript.formatter.rule.FormatterRuleRegistry
+import printscript.formatter.rule.IntRuleFactory
 import java.io.InputStream
 
+// no conoce ninguna key: lee las que declara el registry. Si se registra una regla de afuera,
+// hay que pasar ese mismo registry para que su key no se tome como desconocida
 object FormatterRulesLoader {
-    fun fromJson(json: String): FormatterRules = buildRules(ConfigParser.parseJson(json))
+    fun fromJson(
+        json: String,
+        registry: FormatterRuleRegistry = FormatterRuleRegistry(),
+    ): FormatterRules = buildRules(ConfigParser.parseJson(json), registry)
 
-    fun fromYaml(yaml: String): FormatterRules = buildRules(ConfigParser.parseYaml(yaml))
+    fun fromYaml(
+        yaml: String,
+        registry: FormatterRuleRegistry = FormatterRuleRegistry(),
+    ): FormatterRules = buildRules(ConfigParser.parseYaml(yaml), registry)
 
     // la config puede llegar como stream, sin extension que mirar
-    fun fromStream(input: InputStream): FormatterRules = buildRules(ConfigParser.parseStream(input))
+    fun fromStream(
+        input: InputStream,
+        registry: FormatterRuleRegistry = FormatterRuleRegistry(),
+    ): FormatterRules = buildRules(ConfigParser.parseStream(input), registry)
 
-    fun fromFile(path: String): FormatterRules = buildRules(ConfigParser.parseFile(path))
+    fun fromFile(
+        path: String,
+        registry: FormatterRuleRegistry = FormatterRuleRegistry(),
+    ): FormatterRules = buildRules(ConfigParser.parseFile(path), registry)
 
-    // cada key se nombra una sola vez, aca: las que no se leyeron son las desconocidas
-    private fun buildRules(map: Map<String, String>): FormatterRules {
+    // solo se guardan las reglas pedidas: un bool en false o un valor vacio es como no mencionarla
+    private fun buildRules(
+        map: Map<String, String>,
+        registry: FormatterRuleRegistry,
+    ): FormatterRules {
         val config = ConfigReader(map)
-        val rules =
-            FormatterRules(
-                spaceBeforeColon = config.bool("enforce-spacing-before-colon-in-declaration"),
-                spaceAfterColon = config.bool("enforce-spacing-after-colon-in-declaration"),
-                spacingAroundEquals = config.bool("enforce-spacing-around-equals"),
-                noSpacingAroundEquals = config.bool("enforce-no-spacing-around-equals"),
-                lineBreaksAfterPrintln = config.int("line-breaks-after-println"),
-                singleSpaceSeparation = config.bool("mandatory-single-space-separation"),
-                spaceSurroundingOperations = config.bool("mandatory-space-surrounding-operations"),
-                lineBreakAfterStatement = config.bool("mandatory-line-break-after-statement"),
-                indentInsideIf = config.int("indent-inside-if"),
-                ifBraceSameLine = config.bool("if-brace-same-line"),
-                ifBraceBelowLine = config.bool("if-brace-below-line"),
-            )
+        val values =
+            registry.factories
+                .mapNotNull { factory ->
+                    val value: Any? =
+                        when (factory) {
+                            is BoolRuleFactory -> config.bool(factory.key).takeIf { it }
+                            is IntRuleFactory -> config.int(factory.key, factory.range)
+                        }
+                    value?.let { factory.key to it }
+                }.toMap()
+        val rules = FormatterRules(values)
+        registry.check(rules)
         config.unreadKeys().forEach { System.err.println("formatter: ignoring unknown key '$it'") }
         return rules
     }
@@ -42,22 +60,29 @@ private class ConfigReader(
     private val read = mutableSetOf<String>()
 
     fun bool(key: String): Boolean =
-        when (raw(key)?.lowercase()) {
+        when (readValue(key)?.lowercase()) {
             null, "", "null" -> false
             "true" -> true
             "false" -> false
             else -> throw IllegalArgumentException("Expected boolean for '$key'")
         }
 
-    fun int(key: String): Int? {
-        val raw = raw(key) ?: return null
-        if (raw.isEmpty() || raw == "null") return null
-        return raw.toIntOrNull() ?: throw IllegalArgumentException("Expected integer for '$key', got '$raw'")
+    fun int(
+        key: String,
+        range: IntRange,
+    ): Int? {
+        val value = readValue(key) ?: return null
+        if (value.isEmpty() || value == "null") return null
+        val number =
+            value.toIntOrNull() ?: throw IllegalArgumentException("Expected integer for '$key', got '$value'")
+        require(number in range) { "$key must be ${range.first}..${range.last}, was $number" }
+        return number
     }
 
     fun unreadKeys(): Set<String> = map.keys - read
 
-    private fun raw(key: String): String? {
+    // devuelve el valor de la key como texto, sin convertir, y la marca como leida
+    private fun readValue(key: String): String? {
         read += key
         return map[key]
     }

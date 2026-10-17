@@ -285,7 +285,12 @@ class EndToEndTest {
 
     private fun formatOnce(code: String): String {
         val writer = StringWriter()
-        val rules = FormatterRules(spaceAfterColon = true, spacingAroundEquals = true, indentInsideIf = 2)
+        val rules =
+            FormatterRules.of(
+                "enforce-spacing-after-colon-in-declaration" to true,
+                "enforce-spacing-around-equals" to true,
+                "indent-inside-if" to 2,
+            )
         Engine(BucketOutput()).format({ StringReader(code) }, LanguageVersion.V1_1) { tokens ->
             FormatterFactory.create(rules).format(tokens, writer)
         }
