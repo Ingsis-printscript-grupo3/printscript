@@ -40,7 +40,17 @@ class FormatterRuleRegistry(
     fun register(factory: FormatterRuleFactory): FormatterRuleRegistry =
         FormatterRuleRegistry(factories + factory, checks)
 
-    fun check(config: FormatterRules) = checks.forEach { it.check(config) }
+    // la unica validacion de valores: la llaman el loader al cargar y rulesFor al crear las reglas
+    fun check(config: FormatterRules) {
+        factories.filterIsInstance<IntRuleFactory>().forEach { factory ->
+            val value = config.values[factory.key] as? Int
+            val range = factory.range
+            require(value == null || value in range) {
+                "${factory.key} must be ${range.first}..${range.last}, was $value"
+            }
+        }
+        checks.forEach { it.check(config) }
+    }
 
     // toda config pasa por aca, venga del loader o armada en codigo: una key mal escrita
     // falla en vez de dejar la regla apagada sin avisar
@@ -52,18 +62,9 @@ class FormatterRuleRegistry(
             val value = config.values[factory.key]
             when (factory) {
                 is BoolRuleFactory -> factory.create().takeIf { value == true }
-                is IntRuleFactory -> (value as? Int)?.let { createInRange(factory, it) }
+                is IntRuleFactory -> (value as? Int)?.let(factory.create)
             }
         }
-    }
-
-    private fun createInRange(
-        factory: IntRuleFactory,
-        value: Int,
-    ): FormatterRule {
-        val range = factory.range
-        require(value in range) { "${factory.key} must be ${range.first}..${range.last}, was $value" }
-        return factory.create(value)
     }
 
     private companion object {

@@ -42,7 +42,7 @@ object FormatterRulesLoader {
                     val value: Any? =
                         when (factory) {
                             is BoolRuleFactory -> config.bool(factory.key).takeIf { it }
-                            is IntRuleFactory -> config.int(factory.key, factory.range)
+                            is IntRuleFactory -> config.int(factory.key)
                         }
                     value?.let { factory.key to it }
                 }.toMap()
@@ -67,16 +67,10 @@ private class ConfigReader(
             else -> throw IllegalArgumentException("Expected boolean for '$key'")
         }
 
-    fun int(
-        key: String,
-        range: IntRange,
-    ): Int? {
+    fun int(key: String): Int? {
         val value = readValue(key) ?: return null
         if (value.isEmpty() || value == "null") return null
-        val number =
-            value.toIntOrNull() ?: throw IllegalArgumentException("Expected integer for '$key', got '$value'")
-        require(number in range) { "$key must be ${range.first}..${range.last}, was $number" }
-        return number
+        return value.toIntOrNull() ?: throw IllegalArgumentException("Expected integer for '$key', got '$value'")
     }
 
     fun unreadKeys(): Set<String> = map.keys - read
