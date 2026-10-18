@@ -3,6 +3,7 @@ package printscript.semantic
 import printscript.common.LanguageVersion
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class ReadEnvTest {
@@ -33,6 +34,17 @@ class ReadEnvTest {
 
         assertEquals(2, results.size)
         assertTrue(results.all { it is SemanticResult.Success })
+    }
+
+    // la validacion es la misma que la de readInput: esto verifica que el error nombre a readEnv
+    @Test
+    fun `a non string argument fails naming readEnv`() {
+        val code = "println(readEnv(99));"
+
+        val results = analyze(code, LanguageVersion.V1_1)
+
+        val failure = assertIs<SemanticResult.Failure>(results.single())
+        assertEquals("'readEnv' argument must be a string, found 'number'.", failure.message)
     }
 
     @Test

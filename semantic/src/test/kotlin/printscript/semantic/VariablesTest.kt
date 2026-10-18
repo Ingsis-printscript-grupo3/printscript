@@ -1,5 +1,6 @@
 package printscript.semantic
 
+import printscript.common.LanguageVersion
 import printscript.common.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,6 +31,30 @@ class VariablesTest {
         val code = "let a: number = \"x\";"
 
         val results = analyze(code)
+
+        val failure = assertIs<SemanticResult.Failure>(results.single())
+        assertEquals("Incompatible types.", failure.message)
+    }
+
+    @Test
+    fun `a boolean variable can be declared and assigned in 1_1`() {
+        val code =
+            """
+            let b: boolean = true;
+            b = false;
+            """.trimIndent()
+
+        val results = analyze(code, LanguageVersion.V1_1)
+
+        assertEquals(2, results.size)
+        assertTrue(results.all { it is SemanticResult.Success })
+    }
+
+    @Test
+    fun `a boolean variable cannot be initialized with a number in 1_1`() {
+        val code = "let b: boolean = 123;"
+
+        val results = analyze(code, LanguageVersion.V1_1)
 
         val failure = assertIs<SemanticResult.Failure>(results.single())
         assertEquals("Incompatible types.", failure.message)

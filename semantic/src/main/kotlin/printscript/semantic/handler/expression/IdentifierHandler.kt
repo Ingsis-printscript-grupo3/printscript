@@ -16,6 +16,6 @@ class IdentifierHandler : Handler<Expression, ResolverContext, SemanticResult<St
         if (node !is Identifier) {
             return SemanticResult.Failure("Unexpected node in IdentifierHandler.", node.position)
         }
-        return ctx.resolver.symbolTable.lookupType(node.name, at = node.position)
+        return ctx.symbolTable.lookupType(node.name, at = node.position)
     }
 }

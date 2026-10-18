@@ -31,4 +31,28 @@ class VersionSupportTest {
         assertEquals("Unknown expression type.", failure.message)
         assertEquals(Position(1, 17), failure.position)
     }
+
+    @Test
+    fun `the 1_0 analyzer rejects readEnv`() {
+        val code = "let x: string = readEnv(\"HOME\");"
+        val statements = parse(code, LanguageVersion.V1_1)
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements).asSequence().toList()
+
+        val failure = assertIs<SemanticResult.Failure>(results.single())
+        assertEquals("Unknown expression type.", failure.message)
+        assertEquals(Position(1, 17), failure.position)
+    }
+
+    @Test
+    fun `the 1_0 analyzer rejects boolean literals`() {
+        val code = "println(true);"
+        val statements = parse(code, LanguageVersion.V1_1)
+
+        val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements).asSequence().toList()
+
+        val failure = assertIs<SemanticResult.Failure>(results.single())
+        assertEquals("Unknown expression type.", failure.message)
+        assertEquals(Position(1, 9), failure.position)
+    }
 }

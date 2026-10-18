@@ -62,9 +62,9 @@ class SymbolTable {
         name: String,
         at: Position,
     ): SemanticResult<String> {
-        return when (val symbol = lookup(name, at)) {
-            is SemanticResult.Success -> SemanticResult.Success(symbol.value.type)
-            is SemanticResult.Failure -> symbol
+        return when (val lookupResult = lookup(name, at)) {
+            is SemanticResult.Success -> SemanticResult.Success(lookupResult.value.type)
+            is SemanticResult.Failure -> lookupResult
         }
     }
 }
