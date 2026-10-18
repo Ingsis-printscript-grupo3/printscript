@@ -58,10 +58,6 @@ package "common" {
 
 package "lexer" {
 
-  interface LexerInterface {
-    +tokenize(): Iterator<Token>
-  }
-
   class Lexer {
     -charStream: CharStream
     -readers: List<TokenReader>
@@ -156,7 +152,6 @@ ScriptError <|.. LexicalError
 RuntimeException <|-- LexicalError
 LexicalError ..> Position
 
-LexerInterface <|.. Lexer
 Lexer "1" o-- "1" CharStream
 Lexer "1" o-- "*" TokenReader : pregunta matches()\ny delega read()
 Lexer ..> Token : crea el EOF

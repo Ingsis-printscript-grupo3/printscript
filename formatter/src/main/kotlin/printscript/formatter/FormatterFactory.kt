@@ -7,7 +7,7 @@ object FormatterFactory {
     fun create(
         config: FormatterRules = FormatterRules(),
         registry: FormatterRuleRegistry = FormatterRuleRegistry(),
-    ): FormatterInterface {
+    ): Formatter {
         FormatterRulesValidator(registry).check(config)
         return Formatter(registry.rulesFor(config))
     }

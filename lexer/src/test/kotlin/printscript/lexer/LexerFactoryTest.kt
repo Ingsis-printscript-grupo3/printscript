@@ -14,7 +14,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class LexerFactoryTest {
-    private fun typesOf(lexer: LexerInterface): List<TokenType> = lexer.tokenize().asSequence().map { it.type }.toList()
+    private fun typesOf(lexer: Lexer): List<TokenType> = lexer.tokenize().asSequence().map { it.type }.toList()
 
     private fun typesOf(
         source: String,

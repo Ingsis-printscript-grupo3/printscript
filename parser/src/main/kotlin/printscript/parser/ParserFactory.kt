@@ -18,7 +18,7 @@ object ParserFactory {
         prefixParselets: Map<TokenType, PrefixParselet> = defaultPrefixParselets(version),
         infixParselets: Map<TokenType, InfixParselet> = defaultInfixParselets(),
         statementHandlers: Map<TokenType, StatementHandler> = defaultStatementHandlers(version),
-    ): ParserInterface =
+    ): Parser =
         Parser(
             tokens = tokens,
             version = version,
@@ -30,11 +30,11 @@ object ParserFactory {
     fun create(
         tokens: Iterator<Token>,
         version: String,
-    ): ParserInterface = create(tokens, LanguageVersion.parse(version))
+    ): Parser = create(tokens, LanguageVersion.parse(version))
 
-    fun create10(tokens: Iterator<Token>): ParserInterface = create(tokens, LanguageVersion.V1_0)
+    fun create10(tokens: Iterator<Token>): Parser = create(tokens, LanguageVersion.V1_0)
 
-    fun create11(tokens: Iterator<Token>): ParserInterface = create(tokens, LanguageVersion.V1_1)
+    fun create11(tokens: Iterator<Token>): Parser = create(tokens, LanguageVersion.V1_1)
 
     fun defaultPrefixParselets(version: LanguageVersion): Map<TokenType, PrefixParselet> =
         DefaultExpressionParselets.prefix(version)

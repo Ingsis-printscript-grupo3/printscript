@@ -7,8 +7,8 @@ import printscript.lexer.plugin.TokenReader
 class Lexer(
     private val charStream: CharStream,
     private val readers: List<TokenReader>,
-) : LexerInterface {
-    override fun tokenize(): Iterator<Token> =
+) {
+    fun tokenize(): Iterator<Token> =
         iterator {
             while (true) {
                 val token = nextToken()

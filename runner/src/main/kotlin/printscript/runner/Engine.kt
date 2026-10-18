@@ -11,8 +11,8 @@ import printscript.interpreter.input.InputProvider
 import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.Output
 import printscript.lexer.LexerFactory
+import printscript.parser.Parser
 import printscript.parser.ParserFactory
-import printscript.parser.ParserInterface
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
 import printscript.semantic.SemanticAnalyzer
@@ -124,11 +124,11 @@ class Engine(
 private fun parserFor(
     reader: Reader,
     languageVersion: LanguageVersion,
-): ParserInterface = ParserFactory.create(LexerFactory.create(reader, languageVersion).tokenize(), languageVersion)
+): Parser = ParserFactory.create(LexerFactory.create(reader, languageVersion).tokenize(), languageVersion)
 
 // segundo paso: de resultados del parser a statements, cortando con SyntaxError en el primer fallo
 private fun parseIntoAst(
-    parser: ParserInterface,
+    parser: Parser,
     onProgress: (Int) -> Unit,
 ): Iterator<Statement> {
     var parsedCount = 0

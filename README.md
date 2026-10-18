@@ -57,7 +57,7 @@ depende de ningún otro módulo.
 
 **`lexer`** — Convierte el texto fuente en tokens, de a uno por vez. No conoce la gramática:
 solo sabe reconocer palabras, números, strings y símbolos. Su interfaz pública es
-`LexerInterface.tokenize(): Iterator<Token>`. Se extiende agregando implementaciones de
+`Lexer.tokenize(): Iterator<Token>`. Se extiende agregando implementaciones de
 `TokenReader` a la lista que recibe el `Lexer` por constructor.
 
 **`ast`** — Los nodos del árbol sintáctico (`VariableDeclaration`, `PrintCall`,
@@ -65,7 +65,7 @@ solo sabe reconocer palabras, números, strings y símbolos. Su interfaz públic
 cada nodo. Es solo estructura: no tiene lógica de negocio.
 
 **`parser`** — Arma el árbol a partir de los tokens. Su interfaz es
-`ParserInterface.parse(): Iterator<ParseResult>`, donde cada resultado es un `Success` con
+`Parser.parse(): Iterator<ParseResult>`, donde cada resultado es un `Success` con
 una sentencia o un `Failure` con mensaje y posición. Se extiende registrando *parselets*
 (expresiones) y *handlers* (sentencias).
 

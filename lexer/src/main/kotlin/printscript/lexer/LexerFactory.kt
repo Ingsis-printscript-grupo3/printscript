@@ -20,19 +20,19 @@ object LexerFactory {
         charStream: CharStream,
         version: LanguageVersion,
         readers: List<TokenReader> = defaultReaders(version),
-    ): LexerInterface = Lexer(charStream, readers)
+    ): Lexer = Lexer(charStream, readers)
 
     fun create(
         reader: Reader,
         version: LanguageVersion,
         readers: List<TokenReader> = defaultReaders(version),
-    ): LexerInterface = create(CharStream(reader), version, readers)
+    ): Lexer = create(CharStream(reader), version, readers)
 
     fun create(
         source: String,
         version: LanguageVersion,
         readers: List<TokenReader> = defaultReaders(version),
-    ): LexerInterface = create(StringReader(source), version, readers)
+    ): Lexer = create(StringReader(source), version, readers)
 
     // CharStream ya buferea el reader, asi que alcanza con envolver el stream
     fun create(
@@ -40,7 +40,7 @@ object LexerFactory {
         version: LanguageVersion,
         charset: Charset = StandardCharsets.UTF_8,
         readers: List<TokenReader> = defaultReaders(version),
-    ): LexerInterface = create(InputStreamReader(input, charset), version, readers)
+    ): Lexer = create(InputStreamReader(input, charset), version, readers)
 
     fun defaultReaders(version: LanguageVersion): List<TokenReader> =
         listOf(
