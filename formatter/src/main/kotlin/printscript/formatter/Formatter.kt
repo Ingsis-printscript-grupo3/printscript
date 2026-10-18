@@ -10,8 +10,8 @@ private val STATEMENT_BOUNDARIES = setOf(TokenType.SEMICOLON, TokenType.LEFTBRAC
 // no conoce ninguna regla: recibe la lista ya armada y en orden. Quien elige cuales van es FormatterFactory
 class Formatter(
     private val rules: List<FormatterRule>,
-) : FormatterInterface {
-    override fun format(
+) {
+    fun format(
         tokens: Iterator<Token>,
         output: Writer,
     ) {

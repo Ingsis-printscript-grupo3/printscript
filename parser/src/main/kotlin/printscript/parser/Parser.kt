@@ -22,12 +22,12 @@ class Parser(
     prefixParselets: Map<TokenType, PrefixParselet> = DefaultExpressionParselets.prefix(version),
     infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix,
     statementHandlers: Map<TokenType, StatementHandler> = DefaultStatementHandlers.map(version),
-) : ParserInterface {
+) {
     private val stream = TokenStream(tokens)
     private val expressionParser = ExpressionParser(stream, version, prefixParselets, infixParselets)
     private val statementParser = StatementParser(stream, expressionParser, version, statementHandlers)
 
-    override fun parse(): Iterator<ParseResult> =
+    fun parse(): Iterator<ParseResult> =
         iterator {
             while (!stream.isAtEnd()) {
                 val result = statementParser.parseStatement()

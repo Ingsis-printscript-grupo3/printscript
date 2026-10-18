@@ -51,7 +51,7 @@ class ParserFactoryTest {
             token(TokenType.EOF),
         ).iterator()
 
-    private fun parse(parser: ParserInterface) = parser.parse().asSequence().toList()
+    private fun parse(parser: Parser) = parser.parse().asSequence().toList()
 
     @Test
     fun `create10 parses what 1_0 supports`() {
