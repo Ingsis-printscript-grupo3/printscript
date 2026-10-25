@@ -1,7 +1,5 @@
 package printscript.linter.rule
 
-import printscript.linter.IdentifierFormat
-
 // aca se registra cada regla nueva, asi Linter.kt no se toca mas.
 // register() devuelve un registry nuevo en vez de mutar, igual que ast.registry.Registry:
 // un registro mutable global se compartiria entre tests y entre instancias de Linter
@@ -29,11 +27,9 @@ class LinterRuleRegistry(
     private companion object {
         val DEFAULT_FACTORIES: List<LinterRuleFactory> =
             listOf(
-                LinterRuleFactory("identifier_format", default = IdentifierFormat.CAMEL_CASE.configValue) {
-                    IdentifierFormatRule(IdentifierFormat.fromConfigValue(it))
-                },
-                LinterRuleFactory.toggle("mandatory-variable-or-literal-in-println") { PrintCallArgumentRule() },
-                LinterRuleFactory.toggle("mandatory-variable-or-literal-in-readInput") { ReadInputArgumentRule() },
+                IdentifierFormatRuleFactory(),
+                BooleanRuleFactory("mandatory-variable-or-literal-in-println", PrintCallArgumentRule()),
+                BooleanRuleFactory("mandatory-variable-or-literal-in-readInput", ReadInputArgumentRule()),
             )
     }
 }
