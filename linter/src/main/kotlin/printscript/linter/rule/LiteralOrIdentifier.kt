@@ -7,7 +7,8 @@ import printscript.ast.NumberLiteral
 import printscript.ast.StringLiteral
 
 // la consigna pide lo mismo para println y para readInput: solo un identificador o un literal.
-// Se evalua por pertenencia positiva para respetar el principio Open/Closed y evitar acoplamiento
-// rigido con nuevas expresiones del lenguaje.
+// es una lista blanca: una expresion nueva queda como no permitida hasta que se agregue aca.
+// no hace falta que el compilador obligue como con children: si era un literal, se nota
+// enseguida porque el linter avisa de mas, en vez de fallar en silencio
 internal fun Expression.isLiteralOrIdentifier(): Boolean =
     this is Identifier || this is NumberLiteral || this is StringLiteral || this is BooleanLiteral
