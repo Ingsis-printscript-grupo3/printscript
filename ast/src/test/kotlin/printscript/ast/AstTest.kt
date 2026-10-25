@@ -112,4 +112,50 @@ class AstTest {
         assertEquals(null, withoutElse.elseBranch)
         assertEquals(Position(0, 0), withoutElse.position)
     }
+
+    @Test
+    fun `children property returns structural children for expressions and statements`() {
+        val num = NumberLiteral(1.0)
+        val str = StringLiteral("a")
+        val bool = BooleanLiteral(false)
+        val id = Identifier("x")
+
+        // Leaf nodes
+        assertEquals(emptyList(), num.children)
+        assertEquals(emptyList(), str.children)
+        assertEquals(emptyList(), bool.children)
+        assertEquals(emptyList(), id.children)
+
+        // Composite expressions
+        val binary = BinaryExpression(num, TokenType.PLUS, str)
+        assertEquals(listOf(num, str), binary.children)
+
+        val readInput = ReadInput(str)
+        assertEquals(listOf(str), readInput.children)
+
+        val readEnv = ReadEnv(str)
+        assertEquals(listOf(str), readEnv.children)
+
+        // Statements
+        val declWithValue = VariableDeclaration("x", "number", num)
+        assertEquals(listOf(num), declWithValue.children)
+
+        val declWithoutValue = VariableDeclaration("x", "number", null)
+        assertEquals(emptyList(), declWithoutValue.children)
+
+        val assignment = Assignment("x", num)
+        assertEquals(listOf(num), assignment.children)
+
+        val printCall = PrintCall(str)
+        assertEquals(listOf(str), printCall.children)
+
+        val block = Block(listOf(printCall, assignment))
+        assertEquals(listOf(printCall, assignment), block.children)
+
+        val ifWithElse = IfStatement(bool, block, Block(listOf(printCall)))
+        assertEquals(listOf(bool, block, Block(listOf(printCall))), ifWithElse.children)
+
+        val ifWithoutElse = IfStatement(bool, block, null)
+        assertEquals(listOf(bool, block), ifWithoutElse.children)
+    }
 }
