@@ -2,6 +2,7 @@ package printscript.linter
 
 import printscript.common.ConfigParser
 import printscript.linter.rule.LinterRuleRegistry
+import java.io.File
 import java.io.InputStream
 
 object LinterFactory {
@@ -13,7 +14,18 @@ object LinterFactory {
     ): Linter = Linter(registry.rulesFor(config))
 
     // el TCK manda la config como stream, sin extension que mirar
-    fun fromStream(input: InputStream): Linter = create(config = ConfigParser.parseStream(input))
+    fun fromStream(
+        input: InputStream,
+        registry: LinterRuleRegistry = LinterRuleRegistry(),
+    ): Linter = create(registry = registry, config = ConfigParser.parseStream(input))
 
-    fun fromFile(path: String): Linter = create(config = ConfigParser.parseFile(path))
+    fun fromFile(
+        path: String,
+        registry: LinterRuleRegistry = LinterRuleRegistry(),
+    ): Linter = create(registry = registry, config = ConfigParser.parseFile(path))
+
+    fun fromFile(
+        file: File,
+        registry: LinterRuleRegistry = LinterRuleRegistry(),
+    ): Linter = create(registry = registry, config = ConfigParser.parseFile(file))
 }

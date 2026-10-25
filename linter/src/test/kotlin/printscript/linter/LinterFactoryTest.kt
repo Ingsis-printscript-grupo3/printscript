@@ -1,6 +1,10 @@
 package printscript.linter
 
+import printscript.ast.PositionedNode
+import printscript.ast.VariableDeclaration
 import printscript.common.LanguageVersion
+import printscript.linter.rule.BooleanRuleFactory
+import printscript.linter.rule.LinterRule
 import printscript.linter.rule.LinterRuleRegistry
 import java.io.File
 import kotlin.test.Test
@@ -117,5 +121,58 @@ class LinterFactoryTest {
         val file = tempConfig("json", """{"identifier_format": "camelCase"}""")
 
         assertFailsWith<IllegalArgumentException> { LinterFactory.fromFile(file.path) }
+    }
+
+    @Test
+    fun `fromStream with an empty registry disables all rules`() {
+        val emptyRegistry = LinterRuleRegistry(emptyList())
+        val linter = LinterFactory.fromStream(camelCaseJson.byteInputStream(), emptyRegistry)
+
+        val warnings = warningsOf(linter, snakeCaseDeclaration)
+
+        assertTrue(warnings.isEmpty())
+    }
+
+    @Test
+    fun `fromFile with an empty registry disables all rules`() {
+        val emptyRegistry = LinterRuleRegistry(emptyList())
+        val file = tempConfig("json", camelCaseJson)
+        val linter = LinterFactory.fromFile(file.path, emptyRegistry)
+
+        val warnings = warningsOf(linter, snakeCaseDeclaration)
+
+        assertTrue(warnings.isEmpty())
+    }
+
+    @Test
+    fun `fromStream with custom rule factory parses custom config key and applies rule`() {
+        val customFactory = BooleanRuleFactory("custom-flag", CustomRule())
+        val registry = LinterRuleRegistry(listOf(customFactory))
+        val json = """{"custom-flag": true}"""
+        val linter = LinterFactory.fromStream(json.byteInputStream(), registry)
+
+        val warnings = warningsOf(linter, snakeCaseDeclaration)
+
+        assertEquals(1, warnings.size)
+        assertEquals("custom warning", warnings[0].message)
+    }
+
+    @Test
+    fun `fromFile with File object and custom rule factory parses custom config key and applies rule`() {
+        val customFactory = BooleanRuleFactory("custom-flag", CustomRule())
+        val registry = LinterRuleRegistry(listOf(customFactory))
+        val file = tempConfig("json", """{"custom-flag": true}""")
+        val linter = LinterFactory.fromFile(file, registry)
+
+        val warnings = warningsOf(linter, snakeCaseDeclaration)
+
+        assertEquals(1, warnings.size)
+        assertEquals("custom warning", warnings[0].message)
+    }
+
+    private class CustomRule : LinterRule {
+        override fun appliesTo(node: PositionedNode): Boolean = node is VariableDeclaration
+
+        override fun check(node: PositionedNode): List<Warning> = listOf(Warning("custom warning", node.position))
     }
 }
