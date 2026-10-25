@@ -18,8 +18,13 @@ class LinterRuleRegistry(
         (config.keys - factories.map { it.key }.toSet()).forEach {
             System.err.println("linter: ignoring unknown key '$it'")
         }
-        return factories.mapNotNull { it.createFrom(config) }
+        // clave ausente: la regla no va (el {} del TCK). Vacia o "null": vale el default
+        return factories.mapNotNull { factory ->
+            config[factory.key]?.let { factory.create(if (isBlank(it)) factory.default else it) }
+        }
     }
+
+    private fun isBlank(value: String): Boolean = value.isEmpty() || value.equals("null", ignoreCase = true)
 
     // todas las reglas prendidas: lo que usa el CLI cuando no le pasan --config
     fun defaultConfig(): Map<String, String> = factories.associate { it.key to it.default }
@@ -27,9 +32,9 @@ class LinterRuleRegistry(
     private companion object {
         val DEFAULT_FACTORIES: List<LinterRuleFactory> =
             listOf(
-                IdentifierFormatRuleFactory(),
-                BooleanRuleFactory("mandatory-variable-or-literal-in-println", PrintCallArgumentRule()),
-                BooleanRuleFactory("mandatory-variable-or-literal-in-readInput", ReadInputArgumentRule()),
+                IdentifierFormatRuleFactory,
+                PrintCallArgumentRuleFactory,
+                ReadInputArgumentRuleFactory,
             )
     }
 }
