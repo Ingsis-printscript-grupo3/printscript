@@ -2,7 +2,6 @@ package printscript.linter
 
 import printscript.common.ConfigParser
 import printscript.linter.rule.LinterRuleRegistry
-import java.io.File
 import java.io.InputStream
 
 object LinterFactory {
@@ -23,9 +22,4 @@ object LinterFactory {
         path: String,
         registry: LinterRuleRegistry = LinterRuleRegistry(),
     ): Linter = create(registry = registry, config = ConfigParser.parseFile(path))
-
-    fun fromFile(
-        file: File,
-        registry: LinterRuleRegistry = LinterRuleRegistry(),
-    ): Linter = create(registry = registry, config = ConfigParser.parseFile(file))
 }
