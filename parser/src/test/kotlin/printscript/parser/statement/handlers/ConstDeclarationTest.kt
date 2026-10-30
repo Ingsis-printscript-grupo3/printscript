@@ -4,9 +4,6 @@ import printscript.ast.BooleanLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.LanguageVersion
 import printscript.common.Position
-import printscript.common.Token
-import printscript.common.TokenType
-import printscript.parser.Parser
 import printscript.parser.parseResults
 import printscript.parser.parseStatements
 import printscript.parser.result.ParseResult
@@ -56,17 +53,10 @@ class ConstDeclarationTest {
         assertEquals(false, (second.value as BooleanLiteral).value)
     }
 
-    // el lexer 1.0 no emite CONST: se arma el token para verificar que el parser 1.0 tambien lo rechaza
+    // el lexer 1.0 no emite CONST: se usan tokens de 1.1 para verificar que el parser 1.0 lo rechaza
     @Test
     fun `const is not a valid statement under version 1_0`() {
-        val position = Position(1, 1)
-        val tokens =
-            listOf(
-                Token(TokenType.CONST, position, position, "const"),
-                Token(TokenType.EOF, position, position, ""),
-            )
-
-        val results = Parser(tokens.iterator(), LanguageVersion.V1_0).parse().asSequence().toList()
+        val results = parseResults("const x: number = 5;", LanguageVersion.V1_0, lexerVersion = LanguageVersion.V1_1)
 
         val failure = results[0] as ParseResult.Failure
         assert(failure.message.contains("Unexpected token 'const'"))
