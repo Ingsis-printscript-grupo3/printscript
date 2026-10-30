@@ -22,6 +22,7 @@ class LinterFactoryTest {
         """.trimIndent()
 
     private val snakeCaseDeclaration = "let mi_variable: number = 1;"
+    private val variableDeclaration = "let x: number = 1;"
 
     private val camelCaseJson = """{"identifier_format": "camel case"}"""
 
@@ -129,7 +130,7 @@ class LinterFactoryTest {
         val registry = LinterRuleRegistry(listOf(CustomRuleFactory))
         val linter = LinterFactory.fromStream("""{"custom-rule": true}""".byteInputStream(), registry)
 
-        val warnings = warningsOf(linter, snakeCaseDeclaration)
+        val warnings = warningsOf(linter, variableDeclaration)
 
         assertEquals(listOf("custom warning"), warnings.map { it.message })
     }
@@ -140,7 +141,7 @@ class LinterFactoryTest {
         val file = tempConfig("json", """{"custom-rule": true}""")
         val linter = LinterFactory.fromFile(file.path, registry)
 
-        val warnings = warningsOf(linter, snakeCaseDeclaration)
+        val warnings = warningsOf(linter, variableDeclaration)
 
         assertEquals(listOf("custom warning"), warnings.map { it.message })
     }

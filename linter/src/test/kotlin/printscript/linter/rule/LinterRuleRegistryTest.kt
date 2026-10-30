@@ -100,7 +100,7 @@ class LinterRuleRegistryTest {
     fun `rejects a value that is not a boolean`() {
         val error = assertFailsWith<IllegalArgumentException> { rulesFor(println to "si") }
 
-        assertEquals("Expected boolean for '$println'", error.message)
+        assertEquals("Expected boolean for '$println', got 'si'", error.message)
     }
 
     @Test

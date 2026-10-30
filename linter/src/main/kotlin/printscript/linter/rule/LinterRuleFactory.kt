@@ -41,5 +41,5 @@ private fun parseBoolean(
     when (value.lowercase()) {
         "true" -> true
         "false" -> false
-        else -> throw IllegalArgumentException("Expected boolean for '$key'")
+        else -> throw IllegalArgumentException("Expected boolean for '$key', got '$value'")
     }

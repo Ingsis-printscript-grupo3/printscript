@@ -18,7 +18,9 @@ class LinterRuleRegistry(
         (config.keys - factories.map { it.key }.toSet()).forEach {
             System.err.println("linter: ignoring unknown key '$it'")
         }
-        // clave ausente: la regla no va (el {} del TCK). Vacia o "null": vale el default
+        // clave ausente: la regla no va (el {} del TCK).
+        // Si viene vacia o "null", cae al default por compatibilidad con el TCK (donde una clave
+        // sin valor habilita la regla por defecto, a diferencia del formatter que la apaga).
         return factories.mapNotNull { factory ->
             config[factory.key]?.let { factory.create(if (isBlank(it)) factory.default else it) }
         }
