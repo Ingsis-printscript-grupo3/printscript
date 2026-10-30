@@ -24,8 +24,9 @@ internal fun parseResults(
 internal fun parseStatements(
     code: String,
     version: LanguageVersion = LanguageVersion.V1_1,
+    lexerVersion: LanguageVersion = version,
 ): List<Statement> =
-    parseResults(code, version).map { result ->
+    parseResults(code, version, lexerVersion).map { result ->
         when (result) {
             is ParseResult.Success -> result.statement
             is ParseResult.Failure -> throw SyntaxError(result.message, result.start, result.end)

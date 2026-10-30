@@ -36,14 +36,14 @@ class StatementPositionTest {
 
     @Test
     fun `an assignment takes the position of the variable name`() {
-        val statements = parseStatements("\n\n\n\n\n\n x = 5;")
+        val statements = parseStatements("\n".repeat(6) + " x = 5;")
 
         assertEquals(Position(7, 2), statements[0].position)
     }
 
     @Test
     fun `a println takes the position of the println keyword`() {
-        val statements = parseStatements("\n\n\n\n\n\n\n\n  println(x);")
+        val statements = parseStatements("\n".repeat(8) + "  println(x);")
 
         assertEquals(Position(9, 3), statements[0].position)
     }

@@ -62,9 +62,10 @@ class ConstDeclarationTest {
         assert(failure.message.contains("Unexpected token 'const'"))
     }
 
+    // el lexer 1.0 no emite BOOLEANTYPE: se usan tokens de 1.1 para verificar que el parser 1.0 lo rechaza
     @Test
     fun `the boolean type is not accepted under version 1_0`() {
-        val results = parseResults("let x: boolean;", LanguageVersion.V1_0)
+        val results = parseResults("let x: boolean;", LanguageVersion.V1_0, lexerVersion = LanguageVersion.V1_1)
 
         val failure = results[0] as ParseResult.Failure
         assert(failure.message.contains("Expected 'number' or 'string'"))

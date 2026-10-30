@@ -126,9 +126,13 @@ class ParserTest {
         assert(exception.message.contains("Expected 'number' or 'string'."))
     }
 
+    // el lexer 1.0 no emite BOOLEANTYPE: se usan tokens de 1.1 para verificar que el parser 1.0 lo rechaza
     @Test
     fun `fails when the declaration has boolean type in version 1_0`() {
-        val exception = assertThrows<SyntaxError> { parseStatements("let x: boolean = true;", LanguageVersion.V1_0) }
+        val exception =
+            assertThrows<SyntaxError> {
+                parseStatements("let x: boolean;", LanguageVersion.V1_0, lexerVersion = LanguageVersion.V1_1)
+            }
         assert(exception.message.contains("Expected 'number' or 'string'."))
     }
 

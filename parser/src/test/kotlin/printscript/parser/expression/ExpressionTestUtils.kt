@@ -13,22 +13,22 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-fun parseExpression(
+internal fun parseExpression(
     code: String,
     version: LanguageVersion = LanguageVersion.V1_1,
     infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix,
 ): ASTResult<Expression> =
     ExpressionParser(TokenStream(tokensOf(code, version)), version, infixParselets = infixParselets).parseExpression()
 
-fun parseExpressionSuccess(code: String): Expression =
+internal fun parseExpressionSuccess(code: String): Expression =
     assertIs<ASTResult.Success<Expression>>(parseExpression(code)).value
 
-fun parseExpressionSuccessWithInfix(
+internal fun parseExpressionSuccessWithInfix(
     infixParselets: Map<TokenType, InfixParselet>,
     code: String,
 ): Expression = assertIs<ASTResult.Success<Expression>>(parseExpression(code, infixParselets = infixParselets)).value
 
-fun assertDesugaredMinus(expr: Expression): Expression {
+internal fun assertDesugaredMinus(expr: Expression): Expression {
     val binary = assertIs<BinaryExpression>(expr)
     assertEquals(TokenType.MINUS, binary.operator)
     val left = assertIs<NumberLiteral>(binary.left)
@@ -36,7 +36,7 @@ fun assertDesugaredMinus(expr: Expression): Expression {
     return binary.right
 }
 
-fun assertNumber(
+internal fun assertNumber(
     expr: Expression,
     expectedValue: Double,
 ): NumberLiteral {
@@ -45,7 +45,7 @@ fun assertNumber(
     return literal
 }
 
-fun assertId(
+internal fun assertId(
     expr: Expression,
     expectedName: String,
 ): Identifier {
@@ -54,7 +54,7 @@ fun assertId(
     return identifier
 }
 
-fun assertBinary(
+internal fun assertBinary(
     expr: Expression,
     expectedOperator: TokenType,
 ): BinaryExpression {
@@ -63,7 +63,7 @@ fun assertBinary(
     return binary
 }
 
-fun assertParseFailure(
+internal fun assertParseFailure(
     code: String,
     expectedMessageSubstring: String = "Expected a value or expression",
 ): ASTResult.Failure {

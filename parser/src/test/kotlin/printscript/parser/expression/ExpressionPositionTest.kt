@@ -17,17 +17,17 @@ class ExpressionPositionTest {
 
     @Test
     fun `an identifier takes the position of its own token`() {
-        assertEquals(Position(6, 9), parseExpressionSuccess("\n\n\n\n\n        x").position)
+        assertEquals(Position(6, 9), parseExpressionSuccess("\n".repeat(5) + "        x").position)
     }
 
     @Test
     fun `a boolean literal takes the position of its own token`() {
-        assertEquals(Position(8, 2), parseExpressionSuccess("\n\n\n\n\n\n\n true").position)
+        assertEquals(Position(8, 2), parseExpressionSuccess("\n".repeat(7) + " true").position)
     }
 
     @Test
     fun `a binary expression takes the position of its left operand`() {
-        assertEquals(Position(5, 4), parseExpressionSuccess("\n\n\n\n   1 + 2").position)
+        assertEquals(Position(5, 4), parseExpressionSuccess("\n".repeat(4) + "   1 + 2").position)
     }
 
     @Test
