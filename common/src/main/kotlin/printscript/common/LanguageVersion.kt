@@ -26,14 +26,17 @@ private val KEYWORDS_1_0: Map<String, TokenType> =
 
 // 1.1 se monta sobre 1.0: en 1.0 estas palabras son identificadores comunes
 private val KEYWORDS_1_1: Map<String, TokenType> =
-    KEYWORDS_1_0 +
-        mapOf(
-            "const" to TokenType.CONST,
-            "boolean" to TokenType.BOOLEANTYPE,
-            "true" to TokenType.BOOLEANLITERAL,
-            "false" to TokenType.BOOLEANLITERAL,
-            "if" to TokenType.IF,
-            "else" to TokenType.ELSE,
-            "readInput" to TokenType.READINPUT,
-            "readEnv" to TokenType.READENV,
-        )
+    mapOf(
+        "let" to TokenType.LET,
+        "println" to TokenType.PRINTLN,
+        "number" to TokenType.NUMBERTYPE,
+        "string" to TokenType.STRINGTYPE,
+        "const" to TokenType.CONST,
+        "boolean" to TokenType.BOOLEANTYPE,
+        "true" to TokenType.BOOLEANLITERAL,
+        "false" to TokenType.BOOLEANLITERAL,
+        "if" to TokenType.IF,
+        "else" to TokenType.ELSE,
+        "readInput" to TokenType.READINPUT,
+        "readEnv" to TokenType.READENV,
+    )
