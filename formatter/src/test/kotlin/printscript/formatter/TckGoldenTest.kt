@@ -1,6 +1,5 @@
 package printscript.formatter
 
-import printscript.common.LanguageVersion
 import printscript.lexer.CharStream
 import printscript.lexer.LexerFactory
 import java.io.StringReader
@@ -14,10 +13,7 @@ class TckGoldenTest {
 
     private fun lines(vararg lines: String) = lines.joinToString("\n")
 
-    private fun tokensOf(
-        code: String,
-        version: LanguageVersion = LanguageVersion.V1_1,
-    ) = LexerFactory.create(CharStream(StringReader(code)), version.keywords).tokenize()
+    private fun tokensOf(code: String) = LexerFactory.create(CharStream(StringReader(code)), TEST_KEYWORDS).tokenize()
 
     private fun format(case: Case): String {
         val writer = StringWriter()
