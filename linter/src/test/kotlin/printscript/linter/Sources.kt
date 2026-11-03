@@ -13,7 +13,7 @@ fun statementsOf(
     source: String,
     version: LanguageVersion = LanguageVersion.V1_1,
 ): List<Statement> {
-    val tokens = LexerFactory.create(CharStream(StringReader(source)), version).tokenize()
+    val tokens = LexerFactory.create(CharStream(StringReader(source)), version.keywords).tokenize()
     return ParserFactory.create(tokens, version).parse().asSequence().map { result ->
         when (result) {
             is ParseResult.Success -> result.statement

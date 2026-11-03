@@ -1,6 +1,5 @@
 package printscript.lexer
 
-import printscript.common.LanguageVersion
 import printscript.common.TokenType
 import java.io.Reader
 import java.io.StringReader
@@ -50,10 +49,7 @@ class LexerStreamingTest {
         )
     }
 
-    private fun tokensOf(
-        reader: Reader,
-        version: LanguageVersion = LanguageVersion.V1_1,
-    ) = LexerFactory.create(CharStream(reader), version).tokenize()
+    private fun tokensOf(reader: Reader) = LexerFactory.create(CharStream(reader), KEYWORDS).tokenize()
 
     @Test
     fun `asking for a single token reads only a fraction of the source`() {
