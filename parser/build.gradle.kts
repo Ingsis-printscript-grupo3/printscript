@@ -5,4 +5,6 @@ plugins {
 dependencies {
     api(project(":common"))
     api(project(":ast"))
+
+    testImplementation(project(":lexer"))
 }
