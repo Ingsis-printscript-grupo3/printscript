@@ -15,6 +15,7 @@ import printscript.parser.Parser
 import printscript.parser.ParserFactory
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
+import printscript.runner.version.definition
 import printscript.semantic.SemanticAnalyzer
 import printscript.semantic.SemanticError
 import printscript.semantic.SemanticResult
@@ -163,7 +164,8 @@ private fun analyzeAst(
     astIterator: Iterator<Statement>,
     languageVersion: LanguageVersion,
 ): Iterator<Statement> {
-    val semanticAnalyzer = SemanticAnalyzer(languageVersion)
+    val definition = languageVersion.definition()
+    val semanticAnalyzer = SemanticAnalyzer(definition.semanticStatements, definition.semanticExpressions)
     return buildValidStatementIterator(semanticAnalyzer.analyze(astIterator))
 }
 

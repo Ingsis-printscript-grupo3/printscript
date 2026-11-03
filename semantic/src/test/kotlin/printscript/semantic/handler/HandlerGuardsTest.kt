@@ -6,10 +6,11 @@ import printscript.ast.NumberLiteral
 import printscript.ast.PrintCall
 import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
-import printscript.common.LanguageVersion
 import printscript.common.Position
+import printscript.semantic.EXPRESSION_HANDLERS
 import printscript.semantic.ExpressionResolver
 import printscript.semantic.ResolverContext
+import printscript.semantic.STATEMENT_HANDLERS
 import printscript.semantic.SemanticResult
 import printscript.semantic.StatementValidator
 import printscript.semantic.handler.expression.BinaryExpressionHandler
@@ -36,14 +37,14 @@ private val AT = Position(1, 1)
 
 class HandlerGuardsTest {
     private fun resolverContext() =
-        ResolverContext(ExpressionResolver(SymbolTable(), LanguageVersion.V1_1), expectedType = null)
+        ResolverContext(ExpressionResolver(SymbolTable(), EXPRESSION_HANDLERS), expectedType = null)
 
     private fun validatorContext(): StatementValidator {
         val symbolTable = SymbolTable()
         return StatementValidator(
             symbolTable,
-            ExpressionResolver(symbolTable, LanguageVersion.V1_1),
-            LanguageVersion.V1_1,
+            ExpressionResolver(symbolTable, EXPRESSION_HANDLERS),
+            STATEMENT_HANDLERS,
         )
     }
 
@@ -91,7 +92,7 @@ class HandlerGuardsTest {
     fun `identifier handler looks up the symbol table from the context`() {
         val symbolTable = SymbolTable()
         symbolTable.define("a", "string", at = AT)
-        val resolver = ExpressionResolver(symbolTable, LanguageVersion.V1_1)
+        val resolver = ExpressionResolver(symbolTable, EXPRESSION_HANDLERS)
 
         val result = IdentifierHandler().handle(Identifier("a"), ResolverContext(resolver, expectedType = null))
 

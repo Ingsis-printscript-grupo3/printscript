@@ -2,34 +2,24 @@ package printscript.semantic
 
 import printscript.ast.BinaryExpression
 import printscript.ast.BooleanLiteral
-import printscript.ast.Expression
 import printscript.ast.Identifier
 import printscript.ast.NumberLiteral
 import printscript.ast.ReadEnv
 import printscript.ast.ReadInput
 import printscript.ast.StringLiteral
-import printscript.ast.registry.Registry
-import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.TokenType
-import printscript.semantic.handler.expression.BooleanLiteralHandler
-import printscript.semantic.handler.expression.ReadEnvHandler
-import printscript.semantic.handler.expression.ReadInputHandler
 import printscript.semantic.symbol.SymbolTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertIs
-import kotlin.test.assertTrue
 
 // posicion de mentira: estos tests miran el resultado, no donde ocurrio
 private val AT = Position(1, 1)
 
 class ExpressionResolverTest {
-    private fun resolver(
-        symbolTable: SymbolTable = SymbolTable(),
-        version: LanguageVersion = LanguageVersion.V1_1,
-    ) = ExpressionResolver(symbolTable, version)
+    private fun resolver(symbolTable: SymbolTable = SymbolTable()) =
+        ExpressionResolver(symbolTable, EXPRESSION_HANDLERS)
 
     @Test
     fun `resolves number literals`() {
@@ -102,13 +92,7 @@ class ExpressionResolverTest {
 
     @Test
     fun `an expression with no handler registered fails explicitly with the node position`() {
-        val emptyRegistry = Registry<Expression, ResolverContext, SemanticResult<String>>()
-        val resolver =
-            ExpressionResolver(
-                SymbolTable(),
-                LanguageVersion.V1_1,
-                registry = emptyRegistry,
-            )
+        val resolver = ExpressionResolver(SymbolTable(), handlers = emptyList())
         val node = NumberLiteral(1.0, printscript.common.Position(4, 2))
 
         val result = resolver.resolveType(node)
@@ -242,59 +226,6 @@ class ExpressionResolverTest {
         val outer = ReadInput(inner)
         val result = resolver().resolveType(outer, "number")
         assertEquals(SemanticResult.Success("number"), result)
-    }
-
-    @Test
-    fun `default10Handlers does not include boolean literal or io handlers`() {
-        val handlers10 = ExpressionResolver.default10Handlers()
-        assertFalse(handlers10.any { it is BooleanLiteralHandler })
-        assertFalse(handlers10.any { it is ReadInputHandler })
-        assertFalse(handlers10.any { it is ReadEnvHandler })
-        assertEquals(4, handlers10.size)
-    }
-
-    @Test
-    fun `default11Handlers includes all 10 handlers plus boolean literal and io handlers`() {
-        val handlers11 = ExpressionResolver.default11Handlers()
-        assertTrue(handlers11.any { it is BooleanLiteralHandler })
-        assertTrue(handlers11.any { it is ReadInputHandler })
-        assertTrue(handlers11.any { it is ReadEnvHandler })
-        assertEquals(7, handlers11.size)
-    }
-
-    @Test
-    fun `resolving boolean literal in 1_0 fails as unknown expression type`() {
-        val node = BooleanLiteral(true, Position(2, 5))
-        val result = resolver(version = LanguageVersion.V1_0).resolveType(node)
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals("Unknown expression type.", result.message)
-        assertEquals(Position(2, 5), result.position)
-    }
-
-    @Test
-    fun `resolving readInput in 1_0 fails as unknown expression type`() {
-        val node = ReadInput(StringLiteral("prompt"), Position(4, 1))
-        val result = resolver(version = LanguageVersion.V1_0).resolveType(node)
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals("Unknown expression type.", result.message)
-        assertEquals(Position(4, 1), result.position)
-    }
-
-    @Test
-    fun `resolving readEnv in 1_0 fails as unknown expression type`() {
-        val node = ReadEnv(StringLiteral("VAR"), Position(6, 1))
-        val result = resolver(version = LanguageVersion.V1_0).resolveType(node)
-        assertIs<SemanticResult.Failure>(result)
-        assertEquals("Unknown expression type.", result.message)
-        assertEquals(Position(6, 1), result.position)
-    }
-
-    @Test
-    fun `defaultHandlers dispatches based on version`() {
-        val handlers10 = ExpressionResolver.defaultHandlers(LanguageVersion.V1_0)
-        val handlers11 = ExpressionResolver.defaultHandlers(LanguageVersion.V1_1)
-        assertEquals(4, handlers10.size)
-        assertEquals(7, handlers11.size)
     }
 
     @Test
