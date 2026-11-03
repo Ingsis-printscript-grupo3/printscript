@@ -49,7 +49,7 @@ class FormatterRuleRegistryTest {
         config: FormatterRules = FormatterRules(),
     ): String {
         val writer = StringWriter()
-        val tokens = LexerFactory.create(CharStream(StringReader(code)), LanguageVersion.V1_1).tokenize()
+        val tokens = LexerFactory.create(CharStream(StringReader(code)), LanguageVersion.V1_1.keywords).tokenize()
         FormatterFactory.create(config, registry).format(tokens, writer)
         return writer.toString()
     }

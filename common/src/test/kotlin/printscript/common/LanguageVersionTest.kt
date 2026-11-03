@@ -28,6 +28,29 @@ class LanguageVersionTest {
         }
     }
 
+    @Test
+    fun `version 1_1 adds its own keywords`() {
+        val added = LanguageVersion.V1_1.keywords - LanguageVersion.V1_0.keywords.keys
+
+        assertEquals(
+            setOf("const", "boolean", "true", "false", "if", "else", "readInput", "readEnv"),
+            added.keys,
+        )
+    }
+
+    // con estas palabras afuera, el lexer de 1.0 las lee como identificadores comunes
+    @Test
+    fun `version 1_0 only knows its own keywords`() {
+        assertEquals(setOf("let", "println", "number", "string"), LanguageVersion.V1_0.keywords.keys)
+    }
+
+    @Test
+    fun `version 1_1 keeps every 1_0 keyword`() {
+        val v10 = LanguageVersion.V1_0.keywords
+
+        assertEquals(v10, LanguageVersion.V1_1.keywords.filterKeys { it in v10 })
+    }
+
     // el default es el conservador a proposito: si nadie elige, una feature de 1.1 falla
     // con un mensaje claro en vez de colarse sin que nadie la haya pedido
     @Test

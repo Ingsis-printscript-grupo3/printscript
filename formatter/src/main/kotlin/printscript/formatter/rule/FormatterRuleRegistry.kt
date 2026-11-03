@@ -5,12 +5,6 @@ import printscript.formatter.FormatterRules
 // cuantas lineas en blanco puede pedir line-breaks-after-println
 private val PRINTLN_BLANK_LINES = 0..2
 
-// el catalogo de reglas: aca se define cada una, una sola vez. Agregar una es crear su clase y sumar
-// una linea en DEFAULT_FACTORIES; ni Formatter.kt, ni el loader, ni el validador se tocan.
-// El orden de la lista es el orden en que corren: primero las que deciden en que linea va cada token,
-// despues las de espacio dentro de la linea y al final la indentacion, que necesita saber cuantas
-// lineas quedaron. register() agrega al final, asi que una regla nueva tiene la ultima palabra.
-// Devuelve un registry nuevo en vez de mutar, igual que LinterRuleRegistry
 class FormatterRuleRegistry(
     val factories: List<FormatterRuleFactory> = DEFAULT_FACTORIES,
     val checks: List<FormatterRuleCheck> = DEFAULT_CHECKS,

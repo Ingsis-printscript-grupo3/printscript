@@ -13,7 +13,7 @@ class FormatterTest {
     private fun tokensOf(
         code: String,
         version: LanguageVersion = LanguageVersion.V1_1,
-    ) = LexerFactory.create(CharStream(StringReader(code)), version).tokenize()
+    ) = LexerFactory.create(CharStream(StringReader(code)), version.keywords).tokenize()
 
     private fun format(
         code: String,

@@ -1,6 +1,5 @@
 package printscript.lexer
 
-import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
@@ -18,8 +17,8 @@ class LexerFactoryTest {
 
     private fun typesOf(
         source: String,
-        version: LanguageVersion = LanguageVersion.V1_1,
-    ): List<TokenType> = typesOf(LexerFactory.create(source, version))
+        keywords: Map<String, TokenType> = KEYWORDS,
+    ): List<TokenType> = typesOf(LexerFactory.create(source, keywords))
 
     @Test
     fun `tokenizes a program from a String source`() {
@@ -47,11 +46,11 @@ class LexerFactoryTest {
         val source = "println(x);"
         val expected = typesOf(source)
 
-        assertEquals(expected, typesOf(LexerFactory.create(StringReader(source), LanguageVersion.V1_1)))
-        assertEquals(expected, typesOf(LexerFactory.create(CharStream(StringReader(source)), LanguageVersion.V1_1)))
+        assertEquals(expected, typesOf(LexerFactory.create(StringReader(source), KEYWORDS)))
+        assertEquals(expected, typesOf(LexerFactory.create(CharStream(StringReader(source)), KEYWORDS)))
         assertEquals(
             expected,
-            typesOf(LexerFactory.create(ByteArrayInputStream(source.toByteArray()), LanguageVersion.V1_1)),
+            typesOf(LexerFactory.create(ByteArrayInputStream(source.toByteArray()), KEYWORDS)),
         )
     }
 
@@ -61,7 +60,7 @@ class LexerFactoryTest {
         val input = ByteArrayInputStream(source.toByteArray(StandardCharsets.UTF_8))
 
         val values =
-            LexerFactory.create(input, LanguageVersion.V1_1, StandardCharsets.UTF_8)
+            LexerFactory.create(input, KEYWORDS, StandardCharsets.UTF_8)
                 .tokenize()
                 .asSequence()
                 .map { it.value }
@@ -72,25 +71,26 @@ class LexerFactoryTest {
     }
 
     @Test
-    fun `version 1_1 tokenizes its own keywords`() {
-        val types = typesOf("const if else readInput readEnv true", LanguageVersion.V1_1)
+    fun `tokenizes the keywords it is given`() {
+        val types = typesOf("const if else readInput readEnv true")
 
         assertTrue(types.containsAll(listOf(TokenType.CONST, TokenType.IF, TokenType.ELSE)))
         assertTrue(types.containsAll(listOf(TokenType.READINPUT, TokenType.READENV, TokenType.BOOLEANLITERAL)))
     }
 
+    // asi una version vieja deja `if` o `const` como nombres de variable: alcanza con no pasarlos
     @Test
-    fun `version 1_0 reads those same words as plain identifiers`() {
-        val types = typesOf("const if else readInput readEnv true boolean", LanguageVersion.V1_0)
+    fun `a word missing from the keywords is a plain identifier`() {
+        val types = typesOf("let const if", mapOf("let" to TokenType.LET))
 
-        assertEquals(List(7) { TokenType.IDENTIFIER } + TokenType.EOF, types)
+        assertEquals(listOf(TokenType.LET, TokenType.IDENTIFIER, TokenType.IDENTIFIER, TokenType.EOF), types)
     }
 
     @Test
     fun `default readers cover identifiers numbers strings and symbols`() {
         val types = typesOf("x 1 \"s\" +")
 
-        assertEquals(4, LexerFactory.defaultReaders(LanguageVersion.V1_1).size)
+        assertEquals(4, LexerFactory.defaultReaders(KEYWORDS).size)
         assertEquals(
             listOf(
                 TokenType.IDENTIFIER,
@@ -121,7 +121,7 @@ class LexerFactoryTest {
         val tokens =
             LexerFactory.create(
                 "@",
-                LanguageVersion.V1_1,
+                KEYWORDS,
                 listOf(customReader),
             ).tokenize().asSequence().toList()
 
@@ -133,7 +133,7 @@ class LexerFactoryTest {
     @Test
     fun `unknown characters still fail as lexical errors`() {
         assertFailsWith<LexicalError> {
-            LexerFactory.create("let x = #;", LanguageVersion.V1_1).tokenize().asSequence().toList()
+            LexerFactory.create("let x = #;", KEYWORDS).tokenize().asSequence().toList()
         }
     }
 }
