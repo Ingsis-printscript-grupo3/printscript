@@ -57,4 +57,16 @@ class LanguageSpecTest {
         assertEquals(emptySet<TokenType>(), only11 - spec11.prefixParselets.keys)
         assertEquals(emptySet<TokenType>(), spec10.prefixParselets.keys intersect only11)
     }
+
+    @Test
+    fun `infix parselets are identical in 1_0 and 1_1`() {
+        val spec10 = languageSpecFor(LanguageVersion.V1_0)
+        val spec11 = languageSpecFor(LanguageVersion.V1_1)
+
+        assertEquals(
+            setOf(TokenType.PLUS, TokenType.MINUS, TokenType.MULTIPLY, TokenType.DIVIDE),
+            spec10.infixParselets.keys,
+        )
+        assertEquals(spec10.infixParselets, spec11.infixParselets)
+    }
 }

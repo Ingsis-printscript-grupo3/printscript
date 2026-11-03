@@ -62,6 +62,32 @@ class Version11EndToEndTest {
     }
 
     @Test
+    fun `boolean declaration under version 1_0 fails in parser because boolean is not a valid type in 1_0`() {
+        val code = "let flag: boolean = true;"
+        val result = runEngine(code, LanguageVersion.V1_0)
+
+        assertTrue(result is ExecutionResult.Failure)
+        assertEquals("Syntax", result.type)
+        assertEquals("Expected 'number' or 'string'.", result.message)
+    }
+
+    @Test
+    fun `boolean declaration under version 1_1 passes validation and execution`() {
+        val bucket = BucketOutput()
+        val engine = Engine(output = bucket)
+        val code =
+            """
+            let flag: boolean = true;
+            println(flag);
+            """.trimIndent()
+
+        val result = engine.execute(code, LanguageVersion.V1_1)
+
+        assertEquals(ExecutionResult.Success, result)
+        assertEquals(listOf("true"), bucket.lines())
+    }
+
+    @Test
     fun `keywords of 1_1 can be declared and printed as variable names in 1_0`() {
         val bucket = BucketOutput()
         val engine = Engine(output = bucket)
