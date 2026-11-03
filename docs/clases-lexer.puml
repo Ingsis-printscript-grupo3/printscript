@@ -95,11 +95,20 @@ package "lexer" {
     +advance(): Char
   }
 
+  class LexerFactory <<object>> {
+    +create(source, keywords, readers): Lexer
+    +defaultReaders(keywords): List<TokenReader>
+  }
+
+  note right of LexerFactory
+    Recibe las keywords armadas: el lexer
+    no conoce LanguageVersion. Cada version
+    declara las suyas en common y el runner
+    se las pasa.
+  end note
+
   class LexerRules <<object>> {
-    +keywords10: Map<String, TokenType>
-    +keywords11: Map<String, TokenType>
     +symbols: Map<Char, TokenType>
-    +keywordsFor(version): Map<String, TokenType>
     +isQuote(c: Char): Boolean
     +isIdentifierStart(c: Char): Boolean
     +isIdentifierPart(c: Char): Boolean
@@ -170,5 +179,7 @@ TokenReader ..> CharStream : consume
 
 CharStream ..> Position : crea
 LexerRules ..> TokenType : mapea
+LexerFactory ..> Lexer : crea
+LexerFactory ..> IdentifierReader : le pasa las keywords
 
 @enduml

@@ -12,7 +12,7 @@ import java.io.StringReader
 internal fun tokensOf(
     code: String,
     version: LanguageVersion = LanguageVersion.V1_1,
-): Iterator<Token> = Lexer(CharStream(StringReader(code)), LexerFactory.defaultReaders(version)).tokenize()
+): Iterator<Token> = Lexer(CharStream(StringReader(code)), LexerFactory.defaultReaders(version.keywords)).tokenize()
 
 // lexerVersion permite que el parser reciba tokens que el lexer de su propia version no emite
 internal fun parseResults(

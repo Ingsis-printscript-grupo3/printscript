@@ -46,7 +46,7 @@ internal fun parse(
     code: String,
     version: LanguageVersion = LanguageVersion.V1_0,
 ): Iterator<Statement> {
-    val tokens = Lexer(CharStream(StringReader(code)), LexerFactory.defaultReaders(version)).tokenize()
+    val tokens = Lexer(CharStream(StringReader(code)), LexerFactory.defaultReaders(version.keywords)).tokenize()
     return Parser(tokens, version)
         .parse()
         .asSequence()
