@@ -4,7 +4,6 @@ import printscript.ast.Expression
 import printscript.ast.NumberLiteral
 import printscript.ast.VariableDeclaration
 import printscript.common.LanguageVersion
-import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
 import printscript.parser.expression.ExpressionParser
@@ -20,36 +19,9 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class ParserFactoryTest {
-    private fun token(
-        type: TokenType,
-        value: String = "",
-    ) = Token(type, Position(1, 1), Position(1, 1), value)
+    private fun declaration() = tokensOf("let x: number = 5;")
 
-    // let x: number = 5;
-    private fun declaration() =
-        listOf(
-            token(TokenType.LET, "let"),
-            token(TokenType.IDENTIFIER, "x"),
-            token(TokenType.COLON, ":"),
-            token(TokenType.NUMBERTYPE, "number"),
-            token(TokenType.ASSIGN, "="),
-            token(TokenType.NUMBERLITERAL, "5"),
-            token(TokenType.SEMICOLON, ";"),
-            token(TokenType.EOF),
-        ).iterator()
-
-    // const c: boolean = true;  -- solo existe en 1.1
-    private fun constDeclaration() =
-        listOf(
-            token(TokenType.CONST, "const"),
-            token(TokenType.IDENTIFIER, "c"),
-            token(TokenType.COLON, ":"),
-            token(TokenType.BOOLEANTYPE, "boolean"),
-            token(TokenType.ASSIGN, "="),
-            token(TokenType.BOOLEANLITERAL, "true"),
-            token(TokenType.SEMICOLON, ";"),
-            token(TokenType.EOF),
-        ).iterator()
+    private fun constDeclaration() = tokensOf("const c: boolean = true;")
 
     private fun parse(parser: Parser) = parser.parse().asSequence().toList()
 
