@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
 // el codigo se parsea con 1.1 para que el semantico de 1.0 reciba nodos que no soporta
 class SemanticVersionTest {
     private fun parse11(code: String): Iterator<Statement> {
-        val tokens = LexerFactory.create(code, LanguageVersion.V1_1).tokenize()
+        val tokens = LexerFactory.create(code, LanguageVersion.V1_1.keywords).tokenize()
         return ParserFactory.create(tokens, LanguageVersion.V1_1).parse().asSequence().map { result ->
             assertIs<ParseResult.Success>(result).statement
         }.iterator()
