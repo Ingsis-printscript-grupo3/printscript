@@ -55,7 +55,7 @@ class OutputTest {
         val code = "println(5 * 3);"
         val first = BucketOutput()
         val second = BucketOutput()
-        val interpreter = InterpreterFactory.create10(MultiOutput(first, second))
+        val interpreter = testInterpreter(MultiOutput(first, second))
 
         interpreter.interpret(parse(code))
 

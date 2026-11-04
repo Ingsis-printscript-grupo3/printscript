@@ -16,7 +16,7 @@ class ReadEnvTest {
             """.trimIndent()
         val env = MapEnvProvider("PORT" to "8080")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, env = env)
+        val interpreter = testInterpreter(output = output, env = env)
 
         interpreter.interpret(parse(code))
 
@@ -32,7 +32,7 @@ class ReadEnvTest {
             """.trimIndent()
         val env = MapEnvProvider()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, env = env)
+        val interpreter = testInterpreter(output = output, env = env)
 
         val error =
             assertFailsWith<EnvVariableNotFoundError> {
@@ -52,7 +52,7 @@ class ReadEnvTest {
             """.trimIndent()
         val env = MapEnvProvider("DEBUG" to "maybe")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, env = env)
+        val interpreter = testInterpreter(output = output, env = env)
 
         val error =
             assertFailsWith<ValueConversionError> {

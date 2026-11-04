@@ -17,7 +17,7 @@ class ReadInputTest {
             """.trimIndent()
         val input = QueueInput("25")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, input = input)
+        val interpreter = testInterpreter(output = output, input = input)
 
         interpreter.interpret(parse(code))
 
@@ -33,7 +33,7 @@ class ReadInputTest {
             """.trimIndent()
         val input = QueueInput("true")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, input = input)
+        val interpreter = testInterpreter(output = output, input = input)
 
         interpreter.interpret(parse(code))
 
@@ -49,7 +49,7 @@ class ReadInputTest {
             """.trimIndent()
         val input = QueueInput("not_a_number")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, input = input)
+        val interpreter = testInterpreter(output = output, input = input)
 
         val error =
             assertFailsWith<ValueConversionError> {
@@ -71,7 +71,7 @@ class ReadInputTest {
             """.trimIndent()
         val input = QueueInput("50")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, input = input)
+        val interpreter = testInterpreter(output = output, input = input)
 
         interpreter.interpret(parse(code))
 
@@ -88,7 +88,7 @@ class ReadInputTest {
             """.trimIndent()
         val input = QueueInput("not_a_number")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, input = input)
+        val interpreter = testInterpreter(output = output, input = input)
 
         val error =
             assertFailsWith<ValueConversionError> {
