@@ -1,7 +1,6 @@
 package printscript.linter
 
 import printscript.ast.Statement
-import printscript.common.LanguageVersion
 import printscript.common.TokenType
 import printscript.lexer.CharStream
 import printscript.lexer.LexerFactory
@@ -23,72 +22,50 @@ import printscript.parser.statement.handlers.PrintCallHandler
 import printscript.parser.statement.handlers.VariableDeclarationHandler
 import java.io.StringReader
 
-private val KEYWORDS_1_0 =
+// el parser aca solo actua como fixture generator para armar el ast de prueba
+private val KEYWORDS: Map<String, TokenType> =
     mapOf(
         "let" to TokenType.LET,
         "println" to TokenType.PRINTLN,
         "number" to TokenType.NUMBERTYPE,
         "string" to TokenType.STRINGTYPE,
+        "const" to TokenType.CONST,
+        "boolean" to TokenType.BOOLEANTYPE,
+        "true" to TokenType.BOOLEANLITERAL,
+        "false" to TokenType.BOOLEANLITERAL,
+        "if" to TokenType.IF,
+        "else" to TokenType.ELSE,
+        "readInput" to TokenType.READINPUT,
+        "readEnv" to TokenType.READENV,
     )
 
-private val KEYWORDS_1_1 =
-    KEYWORDS_1_0 +
-        mapOf(
-            "const" to TokenType.CONST,
-            "boolean" to TokenType.BOOLEANTYPE,
-            "true" to TokenType.BOOLEANLITERAL,
-            "false" to TokenType.BOOLEANLITERAL,
-            "if" to TokenType.IF,
-            "else" to TokenType.ELSE,
-            "readInput" to TokenType.READINPUT,
-            "readEnv" to TokenType.READENV,
-        )
-
-private val PREFIX_1_0: Map<TokenType, PrefixParselet> =
+private val PREFIX_PARSELETS: Map<TokenType, PrefixParselet> =
     mapOf(
         TokenType.NUMBERLITERAL to NumberLiteralParselet,
         TokenType.STRINGLITERAL to StringLiteralParselet,
         TokenType.IDENTIFIER to IdentifierParselet,
         TokenType.LEFTPAREN to ParenthesizedExpressionParselet,
         TokenType.MINUS to UnaryMinusParselet(),
+        TokenType.BOOLEANLITERAL to BooleanLiteralParselet,
+        TokenType.READINPUT to ReadInputParselet,
+        TokenType.READENV to ReadEnvParselet,
     )
 
-private val PREFIX_1_1: Map<TokenType, PrefixParselet> =
-    PREFIX_1_0 +
-        mapOf(
-            TokenType.BOOLEANLITERAL to BooleanLiteralParselet,
-            TokenType.READINPUT to ReadInputParselet,
-            TokenType.READENV to ReadEnvParselet,
-        )
+private val TYPES = setOf(TokenType.NUMBERTYPE, TokenType.STRINGTYPE, TokenType.BOOLEANTYPE)
 
-private val TYPES_1_0 = setOf(TokenType.NUMBERTYPE, TokenType.STRINGTYPE)
-private val TYPES_1_1 = TYPES_1_0 + TokenType.BOOLEANTYPE
-
-private val HANDLERS_1_0: Map<TokenType, StatementHandler> =
+private val HANDLERS: Map<TokenType, StatementHandler> =
     mapOf(
-        TokenType.LET to VariableDeclarationHandler(TYPES_1_0),
+        TokenType.LET to VariableDeclarationHandler(TYPES),
         TokenType.PRINTLN to PrintCallHandler,
         TokenType.IDENTIFIER to AssignmentHandler,
+        TokenType.CONST to VariableDeclarationHandler(TYPES),
+        TokenType.IF to IfStatementHandler,
     )
 
-private val HANDLERS_1_1: Map<TokenType, StatementHandler> =
-    HANDLERS_1_0 +
-        mapOf(
-            TokenType.LET to VariableDeclarationHandler(TYPES_1_1),
-            TokenType.CONST to VariableDeclarationHandler(TYPES_1_1),
-            TokenType.IF to IfStatementHandler,
-        )
-
-// el AST sale del lexer y el parser reales, no armado a mano
-fun statementsOf(
-    source: String,
-    version: LanguageVersion = LanguageVersion.V1_1,
-): List<Statement> {
-    val keywords = if (version == LanguageVersion.V1_0) KEYWORDS_1_0 else KEYWORDS_1_1
-    val prefix = if (version == LanguageVersion.V1_0) PREFIX_1_0 else PREFIX_1_1
-    val handlers = if (version == LanguageVersion.V1_0) HANDLERS_1_0 else HANDLERS_1_1
-    val tokens = LexerFactory.create(CharStream(StringReader(source)), keywords).tokenize()
-    return Parser(tokens, prefix, handlers).parse().asSequence().map { result ->
+// el ast sale del lexer y el parser reales, no armado a mano
+fun statementsOf(source: String): List<Statement> {
+    val tokens = LexerFactory.create(CharStream(StringReader(source)), KEYWORDS).tokenize()
+    return Parser(tokens, PREFIX_PARSELETS, HANDLERS).parse().asSequence().map { result ->
         when (result) {
             is ParseResult.Success -> result.statement
             is ParseResult.Failure -> error("no deberia fallar el parseo: ${result.message} en ${result.start}")
@@ -99,9 +76,8 @@ fun statementsOf(
 fun warningsOf(
     linter: Linter,
     source: String,
-    version: LanguageVersion = LanguageVersion.V1_1,
 ): List<Warning> {
     val warnings = mutableListOf<Warning>()
-    linter.analyze(statementsOf(source, version).iterator(), warnings::add)
+    linter.analyze(statementsOf(source).iterator(), warnings::add)
     return warnings
 }
