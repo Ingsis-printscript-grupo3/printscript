@@ -3,7 +3,6 @@ package printscript.parser.statement
 import org.junit.jupiter.api.Test
 import printscript.ast.Assignment
 import printscript.ast.NumberLiteral
-import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.common.TokenType
@@ -30,13 +29,12 @@ class StatementParserExtensibilityTest {
 
         val tokens = listOf(token(TokenType.LET), token(TokenType.EOF)).iterator()
         val stream = TokenStream(tokens)
-        val expressionParser = ExpressionParser(stream, LanguageVersion.V1_1)
+        val expressionParser = ExpressionParser(stream, prefixParselets = emptyMap())
 
         val statementParser =
             StatementParser(
                 stream,
                 expressionParser,
-                version = LanguageVersion.V1_1,
                 handlers = mapOf(TokenType.LET to fakeHandler),
             )
         val result = statementParser.parseStatement()

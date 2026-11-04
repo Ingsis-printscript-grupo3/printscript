@@ -2,7 +2,6 @@ package printscript.linter
 
 import printscript.ast.PositionedNode
 import printscript.ast.VariableDeclaration
-import printscript.common.LanguageVersion
 import printscript.linter.rule.LinterRule
 import printscript.linter.rule.LinterRuleFactory
 import printscript.linter.rule.LinterRuleRegistry
@@ -71,7 +70,7 @@ class LinterFactoryTest {
     fun `fromStream reads a json config, like the TCK hands it over`() {
         val linter = LinterFactory.fromStream(camelCaseJson.byteInputStream())
 
-        val warnings = warningsOf(linter, snakeCaseDeclaration, LanguageVersion.V1_0)
+        val warnings = warningsOf(linter, snakeCaseDeclaration)
 
         assertEquals(1, warnings.size)
     }

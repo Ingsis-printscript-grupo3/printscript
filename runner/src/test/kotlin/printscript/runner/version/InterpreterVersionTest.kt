@@ -11,6 +11,7 @@ import printscript.interpreter.output.BucketOutput
 import printscript.lexer.LexerFactory
 import printscript.parser.ParserFactory
 import printscript.parser.result.ParseResult
+import printscript.runner.languageSpecFor
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -20,9 +21,10 @@ import kotlin.test.assertSame
 // el codigo se parsea con 1.1 para que el interprete de 1.0 reciba nodos que no soporta
 class InterpreterVersionTest {
     private fun parse11(code: String): Iterator<Statement> {
-        val tokens = LexerFactory.create(code, LanguageVersion.V1_1.keywords).tokenize()
+        val spec = languageSpecFor(LanguageVersion.V1_1)
+        val tokens = LexerFactory.create(code, spec.keywords).tokenize()
         return ParserFactory
-            .create(tokens, LanguageVersion.V1_1)
+            .create(tokens, spec.prefixParselets, spec.statementHandlers, spec.infixParselets)
             .parse()
             .asSequence()
             .map { result -> assertIs<ParseResult.Success>(result).statement }
