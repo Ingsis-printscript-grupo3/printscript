@@ -1,6 +1,5 @@
 package printscript.interpreter
 
-import printscript.common.LanguageVersion
 import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
@@ -18,9 +17,9 @@ class ReadInputTest {
             """.trimIndent()
         val input = QueueInput("25")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, input = input)
+        val interpreter = testInterpreter(output = output, input = input)
 
-        interpreter.interpret(parse(code, LanguageVersion.V1_1))
+        interpreter.interpret(parse(code))
 
         assertEquals(listOf("26"), output.lines())
     }
@@ -34,9 +33,9 @@ class ReadInputTest {
             """.trimIndent()
         val input = QueueInput("true")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, input = input)
+        val interpreter = testInterpreter(output = output, input = input)
 
-        interpreter.interpret(parse(code, LanguageVersion.V1_1))
+        interpreter.interpret(parse(code))
 
         assertEquals(listOf("true"), output.lines())
     }
@@ -50,11 +49,11 @@ class ReadInputTest {
             """.trimIndent()
         val input = QueueInput("not_a_number")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, input = input)
+        val interpreter = testInterpreter(output = output, input = input)
 
         val error =
             assertFailsWith<ValueConversionError> {
-                interpreter.interpret(parse(code, LanguageVersion.V1_1))
+                interpreter.interpret(parse(code))
             }
 
         assertEquals(StringValue("not_a_number"), error.value)
@@ -72,9 +71,9 @@ class ReadInputTest {
             """.trimIndent()
         val input = QueueInput("50")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, input = input)
+        val interpreter = testInterpreter(output = output, input = input)
 
-        interpreter.interpret(parse(code, LanguageVersion.V1_1))
+        interpreter.interpret(parse(code))
 
         assertEquals(listOf("50"), output.lines())
     }
@@ -89,11 +88,11 @@ class ReadInputTest {
             """.trimIndent()
         val input = QueueInput("not_a_number")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, input = input)
+        val interpreter = testInterpreter(output = output, input = input)
 
         val error =
             assertFailsWith<ValueConversionError> {
-                interpreter.interpret(parse(code, LanguageVersion.V1_1))
+                interpreter.interpret(parse(code))
             }
 
         assertEquals(StringValue("not_a_number"), error.value)

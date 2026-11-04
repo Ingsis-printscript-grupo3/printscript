@@ -1,6 +1,5 @@
 package printscript.interpreter
 
-import printscript.common.LanguageVersion
 import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,9 +14,9 @@ class ConstTest {
             println(x);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output)
+        val interpreter = testInterpreter(output = output)
 
-        interpreter.interpret(parse(code, LanguageVersion.V1_1))
+        interpreter.interpret(parse(code))
 
         assertEquals(listOf("42"), output.lines())
     }
@@ -31,11 +30,11 @@ class ConstTest {
             PI = 3.14159;
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output)
+        val interpreter = testInterpreter(output = output)
 
         val error =
             assertFailsWith<CannotAssignToConstError> {
-                interpreter.interpret(parse(code, LanguageVersion.V1_1))
+                interpreter.interpret(parse(code))
             }
 
         assertEquals("PI", error.name)

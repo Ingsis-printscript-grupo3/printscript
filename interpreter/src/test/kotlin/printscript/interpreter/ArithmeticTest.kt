@@ -15,7 +15,7 @@ class ArithmeticTest {
             println(name + " " + lastName);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         interpreter.interpret(parse(code))
 
@@ -32,7 +32,7 @@ class ArithmeticTest {
             println("Result: " + c);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         interpreter.interpret(parse(code))
 
@@ -43,7 +43,7 @@ class ArithmeticTest {
     fun `adding two numbers gives a number and does not concatenate them`() {
         val code = "println(1 + 2);"
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         interpreter.interpret(parse(code))
 
@@ -54,7 +54,7 @@ class ArithmeticTest {
     fun `a result with decimals keeps the decimals`() {
         val code = "println(7 / 2);"
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         interpreter.interpret(parse(code))
 
@@ -69,7 +69,7 @@ class ArithmeticTest {
             println("hola" - 1);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         val error =
             assertFailsWith<TypeMismatchError> {
@@ -91,7 +91,7 @@ class ArithmeticTest {
             println(negated);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         interpreter.interpret(parse(code))
 
@@ -106,7 +106,7 @@ class ArithmeticTest {
             println(0 - -5);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         interpreter.interpret(parse(code))
 

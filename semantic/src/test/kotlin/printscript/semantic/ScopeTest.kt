@@ -1,6 +1,5 @@
 package printscript.semantic
 
-import printscript.common.LanguageVersion
 import printscript.common.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,7 +18,7 @@ class ScopeTest {
             println(scopedVar);
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertIs<SemanticResult.Success<*>>(results.first())
         val failure = assertIs<SemanticResult.Failure>(results.last())
@@ -39,7 +38,7 @@ class ScopeTest {
             elseVar = "bye";
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         val failure = assertIs<SemanticResult.Failure>(results.last())
         assertEquals("Variable 'elseVar' not declared.", failure.message)
@@ -56,7 +55,7 @@ class ScopeTest {
             }
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         val failure = assertIs<SemanticResult.Failure>(results.single())
         assertEquals("Variable 'x' not declared.", failure.message)
@@ -73,7 +72,7 @@ class ScopeTest {
             }
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertTrue(results.all { it is SemanticResult.Success })
     }
@@ -91,7 +90,7 @@ class ScopeTest {
             x = "fail";
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertEquals(4, results.size)
         assertTrue(results.dropLast(1).all { it is SemanticResult.Success })
@@ -111,7 +110,7 @@ class ScopeTest {
             outerVar = 2;
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertIs<SemanticResult.Success<*>>(results.first())
         val failure = assertIs<SemanticResult.Failure>(results.last())

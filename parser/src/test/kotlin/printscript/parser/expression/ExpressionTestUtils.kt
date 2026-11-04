@@ -8,6 +8,7 @@ import printscript.common.LanguageVersion
 import printscript.common.TokenType
 import printscript.parser.result.ASTResult
 import printscript.parser.stream.TokenStream
+import printscript.parser.testPrefixParselets
 import printscript.parser.tokensOf
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -18,7 +19,11 @@ internal fun parseExpression(
     version: LanguageVersion = LanguageVersion.V1_1,
     infixParselets: Map<TokenType, InfixParselet> = DefaultExpressionParselets.infix,
 ): ASTResult<Expression> =
-    ExpressionParser(TokenStream(tokensOf(code, version)), version, infixParselets = infixParselets).parseExpression()
+    ExpressionParser(
+        TokenStream(tokensOf(code, version)),
+        testPrefixParselets(version),
+        infixParselets = infixParselets,
+    ).parseExpression()
 
 internal fun parseExpressionSuccess(code: String): Expression =
     assertIs<ASTResult.Success<Expression>>(parseExpression(code)).value

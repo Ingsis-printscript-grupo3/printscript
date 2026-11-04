@@ -1,6 +1,5 @@
 package printscript.interpreter
 
-import printscript.common.LanguageVersion
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
@@ -17,9 +16,9 @@ class ReadEnvTest {
             """.trimIndent()
         val env = MapEnvProvider("PORT" to "8080")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, env = env)
+        val interpreter = testInterpreter(output = output, env = env)
 
-        interpreter.interpret(parse(code, LanguageVersion.V1_1))
+        interpreter.interpret(parse(code))
 
         assertEquals(listOf("8080"), output.lines())
     }
@@ -33,11 +32,11 @@ class ReadEnvTest {
             """.trimIndent()
         val env = MapEnvProvider()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, env = env)
+        val interpreter = testInterpreter(output = output, env = env)
 
         val error =
             assertFailsWith<EnvVariableNotFoundError> {
-                interpreter.interpret(parse(code, LanguageVersion.V1_1))
+                interpreter.interpret(parse(code))
             }
 
         assertEquals("SECRET_KEY", error.name)
@@ -53,11 +52,11 @@ class ReadEnvTest {
             """.trimIndent()
         val env = MapEnvProvider("DEBUG" to "maybe")
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output, env = env)
+        val interpreter = testInterpreter(output = output, env = env)
 
         val error =
             assertFailsWith<ValueConversionError> {
-                interpreter.interpret(parse(code, LanguageVersion.V1_1))
+                interpreter.interpret(parse(code))
             }
 
         assertEquals(StringValue("maybe"), error.value)

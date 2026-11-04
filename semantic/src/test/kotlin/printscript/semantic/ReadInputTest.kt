@@ -1,6 +1,5 @@
 package printscript.semantic
 
-import printscript.common.LanguageVersion
 import printscript.common.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,7 +16,7 @@ class ReadInputTest {
             let b: boolean = readInput("prompt:");
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertEquals(3, results.size)
         assertTrue(results.all { it is SemanticResult.Success })
@@ -27,7 +26,7 @@ class ReadInputTest {
     fun `a const can be initialized with readInput`() {
         val code = "const c: number = readInput(\"num:\");"
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertTrue(results.all { it is SemanticResult.Success })
     }
@@ -44,7 +43,7 @@ class ReadInputTest {
             b = readInput("prompt:");
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertEquals(6, results.size)
         assertTrue(results.all { it is SemanticResult.Success })
@@ -54,7 +53,7 @@ class ReadInputTest {
     fun `printing readInput defaults to string`() {
         val code = "println(readInput(\"Enter name:\"));"
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertTrue(results.all { it is SemanticResult.Success })
     }
@@ -68,7 +67,7 @@ class ReadInputTest {
             println("unreachable");
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         val failure = assertIs<SemanticResult.Failure>(results.single())
         assertEquals("'readInput' argument must be a string, found 'number'.", failure.message)
@@ -83,7 +82,7 @@ class ReadInputTest {
             x = readInput(false);
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         val failure = assertIs<SemanticResult.Failure>(results.last())
         assertEquals("'readInput' argument must be a string, found 'boolean'.", failure.message)
@@ -93,7 +92,7 @@ class ReadInputTest {
     fun `a non string argument in a println fails`() {
         val code = "println(readInput(99));"
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         val failure = assertIs<SemanticResult.Failure>(results.single())
         assertEquals("'readInput' argument must be a string, found 'number'.", failure.message)
@@ -103,7 +102,7 @@ class ReadInputTest {
     fun `readInput added to a string is a string`() {
         val code = "let fullName: string = readInput(\"First name: \") + \"Doe\";"
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertTrue(results.all { it is SemanticResult.Success })
     }
@@ -113,7 +112,7 @@ class ReadInputTest {
     fun `readInput added to a number cannot be stored in a number variable`() {
         val code = "let n: number = readInput(\"A: \") + 5;"
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         val failure = assertIs<SemanticResult.Failure>(results.single())
         assertEquals("Incompatible types.", failure.message)

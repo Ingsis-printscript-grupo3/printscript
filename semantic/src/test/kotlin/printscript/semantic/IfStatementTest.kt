@@ -1,6 +1,5 @@
 package printscript.semantic
 
-import printscript.common.LanguageVersion
 import printscript.common.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,7 +11,7 @@ class IfStatementTest {
     fun `an if with a boolean literal condition succeeds`() {
         val code = "if (true) { println(\"inside then\"); }"
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertTrue(results.all { it is SemanticResult.Success })
     }
@@ -29,7 +28,7 @@ class IfStatementTest {
             }
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertEquals(2, results.size)
         assertTrue(results.all { it is SemanticResult.Success })
@@ -45,7 +44,7 @@ class IfStatementTest {
             println("should not reach here");
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertEquals(2, results.size)
         val failure = assertIs<SemanticResult.Failure>(results.last())
@@ -57,7 +56,7 @@ class IfStatementTest {
     fun `a string condition fails`() {
         val code = "if (\"hello\") { println(\"x\"); }"
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         val failure = assertIs<SemanticResult.Failure>(results.single())
         assertEquals("'if' condition must be a boolean expression, found 'string'.", failure.message)
@@ -67,7 +66,7 @@ class IfStatementTest {
     fun `an undeclared variable in the condition propagates the failure`() {
         val code = "if (missing) { println(\"x\"); }"
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         val failure = assertIs<SemanticResult.Failure>(results.single())
         assertEquals("Variable 'missing' not declared.", failure.message)
@@ -83,7 +82,7 @@ class IfStatementTest {
             }
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         val failure = assertIs<SemanticResult.Failure>(results.single())
         assertEquals(Position(2, 5), failure.position)

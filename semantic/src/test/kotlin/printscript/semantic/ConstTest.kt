@@ -1,6 +1,5 @@
 package printscript.semantic
 
-import printscript.common.LanguageVersion
 import printscript.common.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,7 +15,7 @@ class ConstTest {
             println(x);
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertEquals(2, results.size)
         assertTrue(results.all { it is SemanticResult.Success })
@@ -30,7 +29,7 @@ class ConstTest {
             x = 20;
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertIs<SemanticResult.Success<*>>(results.first())
         val failure = assertIs<SemanticResult.Failure>(results.last())

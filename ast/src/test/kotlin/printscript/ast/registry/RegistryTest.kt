@@ -5,7 +5,9 @@ import printscript.common.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-private data class FakeNode(val label: String, override val position: Position) : PositionedNode
+private data class FakeNode(val label: String, override val position: Position) : PositionedNode {
+    override val children: List<PositionedNode> get() = emptyList()
+}
 
 private class FakeNodeHandler : Handler<FakeNode, Unit, String> {
     override fun applies(node: FakeNode) = true

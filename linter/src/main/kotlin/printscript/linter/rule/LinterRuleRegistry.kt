@@ -1,7 +1,5 @@
 package printscript.linter.rule
 
-import printscript.linter.IdentifierFormat
-
 // aca se registra cada regla nueva, asi Linter.kt no se toca mas.
 // register() devuelve un registry nuevo en vez de mutar, igual que ast.registry.Registry:
 // un registro mutable global se compartiria entre tests y entre instancias de Linter
@@ -20,8 +18,15 @@ class LinterRuleRegistry(
         (config.keys - factories.map { it.key }.toSet()).forEach {
             System.err.println("linter: ignoring unknown key '$it'")
         }
-        return factories.mapNotNull { it.createFrom(config) }
+        // clave ausente: la regla no va (el {} del TCK).
+        // Si viene vacia o "null", cae al default por compatibilidad con el TCK (donde una clave
+        // sin valor habilita la regla por defecto, a diferencia del formatter que la apaga).
+        return factories.mapNotNull { factory ->
+            config[factory.key]?.let { factory.create(if (isBlank(it)) factory.default else it) }
+        }
     }
+
+    private fun isBlank(value: String): Boolean = value.isEmpty() || value.equals("null", ignoreCase = true)
 
     // todas las reglas prendidas: lo que usa el CLI cuando no le pasan --config
     fun defaultConfig(): Map<String, String> = factories.associate { it.key to it.default }
@@ -29,11 +34,9 @@ class LinterRuleRegistry(
     private companion object {
         val DEFAULT_FACTORIES: List<LinterRuleFactory> =
             listOf(
-                LinterRuleFactory("identifier_format", default = IdentifierFormat.CAMEL_CASE.configValue) {
-                    IdentifierFormatRule(IdentifierFormat.fromConfigValue(it))
-                },
-                LinterRuleFactory.toggle("mandatory-variable-or-literal-in-println") { PrintCallArgumentRule() },
-                LinterRuleFactory.toggle("mandatory-variable-or-literal-in-readInput") { ReadInputArgumentRule() },
+                IdentifierFormatRuleFactory,
+                PrintCallArgumentRuleFactory,
+                ReadInputArgumentRuleFactory,
             )
     }
 }

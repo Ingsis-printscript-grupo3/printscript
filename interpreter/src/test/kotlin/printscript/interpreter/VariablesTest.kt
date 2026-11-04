@@ -17,7 +17,7 @@ class VariablesTest {
             println("Result: " + a);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         interpreter.interpret(parse(code))
 
@@ -33,7 +33,7 @@ class VariablesTest {
             println(x);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         interpreter.interpret(parse(code))
 
@@ -49,7 +49,7 @@ class VariablesTest {
             println(x);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         val error =
             assertFailsWith<UninitializedVariableError> {
@@ -68,7 +68,7 @@ class VariablesTest {
             println(x);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         val error =
             assertFailsWith<UndeclaredVariableError> {
@@ -88,7 +88,7 @@ class VariablesTest {
             println(x);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         val error =
             assertFailsWith<UndeclaredVariableError> {
@@ -107,7 +107,7 @@ class VariablesTest {
             let x: number = "not_a_number";
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         val error =
             assertFailsWith<ValueConversionError> {
@@ -127,7 +127,7 @@ class VariablesTest {
             x = "invalid";
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create10(output)
+        val interpreter = testInterpreter(output)
 
         val error =
             assertFailsWith<ValueConversionError> {
