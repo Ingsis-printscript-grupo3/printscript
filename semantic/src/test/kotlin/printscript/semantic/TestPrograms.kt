@@ -35,7 +35,7 @@ import printscript.parser.statement.handlers.IfStatementHandler as ParserIfState
 import printscript.parser.statement.handlers.PrintCallHandler as ParserPrintCallHandler
 import printscript.parser.statement.handlers.VariableDeclarationHandler as ParserVariableDeclarationHandler
 
-// el semantico no sabe de versiones: los tests le pasan todos los handlers. Que trae cada version se prueba en runner
+// el semantico no sabe de versiones: los tests le pasan todos los handlers
 internal val STATEMENT_HANDLERS: List<SemanticStatementHandler> =
     listOf(
         VariableDeclarationHandler(),

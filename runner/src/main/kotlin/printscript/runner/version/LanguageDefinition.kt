@@ -16,10 +16,8 @@ import printscript.parser.statement.StatementHandler
 import printscript.semantic.SemanticExpressionHandler
 import printscript.semantic.SemanticStatementHandler
 
-// lo que trae cada version vive en :runner, porque es el modulo que integra todas las piezas: los
-// modulos del nucleo no conocen versiones. Cada version lista todas sus piezas. Las del interprete
-// son funciones y no listas fijas porque sus handlers reciben el output, el input y el env de cada ejecucion.
-// Las demas piezas se crean una sola vez y las comparten todas las ejecuciones: no pueden guardar estado
+// las piezas del interprete son funciones porque necesitan el output, el input y el env de cada ejecucion.
+// Las demas se crean una vez y se comparten entre ejecuciones, asi que no pueden guardar estado
 internal interface LanguageDefinition {
     val keywords: Map<String, TokenType>
     val prefixParselets: Map<TokenType, PrefixParselet>

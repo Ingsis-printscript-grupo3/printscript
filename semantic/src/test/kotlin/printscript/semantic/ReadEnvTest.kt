@@ -54,4 +54,14 @@ class ReadEnvTest {
 
         assertTrue(results.all { it is SemanticResult.Success })
     }
+
+    @Test
+    fun `an undeclared variable as argument fails`() {
+        val code = "println(readEnv(name));"
+
+        val results = analyze(code)
+
+        val failure = assertIs<SemanticResult.Failure>(results.single())
+        assertEquals("Variable 'name' not declared.", failure.message)
+    }
 }

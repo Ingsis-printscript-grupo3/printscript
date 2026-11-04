@@ -117,4 +117,38 @@ class ReadInputTest {
         val failure = assertIs<SemanticResult.Failure>(results.single())
         assertEquals("Incompatible types.", failure.message)
     }
+
+    @Test
+    fun `an undeclared variable as argument fails`() {
+        val code = "println(readInput(prompt));"
+
+        val results = analyze(code)
+
+        val failure = assertIs<SemanticResult.Failure>(results.single())
+        assertEquals("Variable 'prompt' not declared.", failure.message)
+    }
+
+    @Test
+    fun `the prompt can be a concatenation or a string variable`() {
+        val code =
+            """
+            let prompt: string = "Name: ";
+            let a: string = readInput("Hello " + "World: ");
+            let b: string = readInput(prompt);
+            """.trimIndent()
+
+        val results = analyze(code)
+
+        assertEquals(3, results.size)
+        assertTrue(results.all { it is SemanticResult.Success })
+    }
+
+    @Test
+    fun `the prompt can be another readInput`() {
+        val code = "let n: number = readInput(readInput(\"Enter prompt: \"));"
+
+        val results = analyze(code)
+
+        assertTrue(results.all { it is SemanticResult.Success })
+    }
 }
