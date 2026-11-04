@@ -8,15 +8,18 @@ package "ast" {
 
   interface PositionedNode {
     +position: Position
+    +children: List<PositionedNode>
   }
 
   note right of PositionedNode
     Lo implementan Expression y
     Statement (sealed interfaces
-    en AST.kt). Es lo unico que
-    Registry le exige a un nodo:
-    poder ubicarlo en el error si
+    en AST.kt). De esto Registry
+    solo usa position: poder
+    ubicarlo en el error si
     ningun handler aplica.
+    children lo usa el recorrido
+    del linter.
   end note
 
   package "ast.registry" {
