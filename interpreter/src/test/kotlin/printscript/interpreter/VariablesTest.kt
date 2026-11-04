@@ -137,4 +137,21 @@ class VariablesTest {
         assertEquals(StringValue("invalid"), error.value)
         assertEquals(listOf("1"), output.lines())
     }
+
+    @Test
+    fun `boolean variables print as true and false`() {
+        val code =
+            """
+            let on: boolean = true;
+            let off: boolean = false;
+            println(on);
+            println(off);
+            """.trimIndent()
+        val output = BucketOutput()
+        val interpreter = testInterpreter(output = output)
+
+        interpreter.interpret(parse(code))
+
+        assertEquals(listOf("true", "false"), output.lines())
+    }
 }

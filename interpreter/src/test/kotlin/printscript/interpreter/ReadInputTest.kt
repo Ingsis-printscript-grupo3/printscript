@@ -1,5 +1,6 @@
 package printscript.interpreter
 
+import printscript.common.Position
 import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.BucketOutput
 import kotlin.test.Test
@@ -98,5 +99,34 @@ class ReadInputTest {
         assertEquals(StringValue("not_a_number"), error.value)
         assertEquals("number", error.targetType)
         assertEquals(listOf("10"), output.lines())
+    }
+
+    @Test
+    fun `an empty input is a valid string`() {
+        val code =
+            """
+            let name: string = readInput("name:");
+            println("[" + name + "]");
+            """.trimIndent()
+        val input = QueueInput("")
+        val output = BucketOutput()
+        val interpreter = testInterpreter(output = output, input = input)
+
+        interpreter.interpret(parse(code))
+
+        assertEquals(listOf("[]"), output.lines())
+    }
+
+    @Test
+    fun `readInput without input throws MissingInputError at the readInput`() {
+        val code = "let name: string = readInput(\"name:\");"
+        val interpreter = testInterpreter(output = BucketOutput(), input = QueueInput())
+
+        val error =
+            assertFailsWith<MissingInputError> {
+                interpreter.interpret(parse(code))
+            }
+
+        assertEquals(Position(1, 20), error.start)
     }
 }
