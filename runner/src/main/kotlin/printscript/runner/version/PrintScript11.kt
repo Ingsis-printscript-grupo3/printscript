@@ -37,8 +37,9 @@ import printscript.parser.statement.handlers.AssignmentHandler
 import printscript.parser.statement.handlers.IfStatementHandler
 import printscript.parser.statement.handlers.PrintCallHandler
 import printscript.parser.statement.handlers.VariableDeclarationHandler
-import printscript.semantic.SemanticExpressionHandler
-import printscript.semantic.SemanticStatementHandler
+import printscript.semantic.ResolverContext
+import printscript.semantic.SemanticResult
+import printscript.semantic.StatementValidator
 import printscript.semantic.handler.expression.BinaryExpressionHandler
 import printscript.semantic.handler.expression.BooleanLiteralHandler
 import printscript.semantic.handler.expression.IdentifierHandler
@@ -85,7 +86,7 @@ internal object PrintScript11 : LanguageDefinition {
 
     private val declarableTypes = setOf(TokenType.NUMBERTYPE, TokenType.STRINGTYPE, TokenType.BOOLEANTYPE)
 
-    override val statementHandlers: Map<TokenType, StatementHandler> =
+    override val parserStatements: Map<TokenType, StatementHandler> =
         mapOf(
             TokenType.LET to VariableDeclarationHandler(declarableTypes),
             TokenType.PRINTLN to PrintCallHandler,
@@ -94,7 +95,7 @@ internal object PrintScript11 : LanguageDefinition {
             TokenType.IF to IfStatementHandler,
         )
 
-    override val semanticStatements: List<SemanticStatementHandler> =
+    override val semanticStatements: List<Handler<Statement, StatementValidator, SemanticResult<Unit>>> =
         listOf(
             SemanticVariableDeclarationHandler(),
             SemanticAssignmentHandler(),
@@ -103,7 +104,7 @@ internal object PrintScript11 : LanguageDefinition {
             SemanticBlockHandler(),
         )
 
-    override val semanticExpressions: List<SemanticExpressionHandler> =
+    override val semanticExpressions: List<Handler<Expression, ResolverContext, SemanticResult<String>>> =
         listOf(
             NumberLiteralHandler(),
             StringLiteralHandler(),

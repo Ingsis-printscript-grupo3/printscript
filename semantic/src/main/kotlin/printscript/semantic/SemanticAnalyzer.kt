@@ -1,12 +1,14 @@
 package printscript.semantic
 
+import printscript.ast.Expression
 import printscript.ast.Statement
+import printscript.ast.registry.Handler
 import printscript.semantic.symbol.SymbolTable
 
 // recibe los handlers ya elegidos: que nodos acepta lo decide quien lo arma
 class SemanticAnalyzer(
-    private val statementHandlers: List<SemanticStatementHandler>,
-    private val expressionHandlers: List<SemanticExpressionHandler>,
+    private val statementHandlers: List<Handler<Statement, StatementValidator, SemanticResult<Unit>>>,
+    private val expressionHandlers: List<Handler<Expression, ResolverContext, SemanticResult<String>>>,
 ) {
     fun analyze(ast: Iterator<Statement>): Iterator<SemanticResult<Statement>> =
         iterator {

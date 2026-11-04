@@ -2,9 +2,6 @@ package printscript.runner.version
 
 import printscript.ast.Statement
 import printscript.common.Position
-import printscript.lexer.LexerFactory
-import printscript.parser.ParserFactory
-import printscript.parser.result.ParseResult
 import printscript.semantic.SemanticAnalyzer
 import printscript.semantic.SemanticResult
 import kotlin.test.Test
@@ -12,22 +9,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-// el codigo se parsea con 1.1 para que el semantico de 1.0 reciba nodos que no soporta
 class SemanticVersionTest {
-    private fun parse11(code: String): Iterator<Statement> {
-        val tokens = LexerFactory.create(code, PrintScript11.keywords).tokenize()
-        val parser =
-            ParserFactory.create(
-                tokens,
-                PrintScript11.prefixParselets,
-                PrintScript11.statementHandlers,
-                PrintScript11.infixParselets,
-            )
-        return parser.parse().asSequence().map { result ->
-            assertIs<ParseResult.Success>(result).statement
-        }.iterator()
-    }
-
     private fun analyze(
         definition: LanguageDefinition,
         code: String,

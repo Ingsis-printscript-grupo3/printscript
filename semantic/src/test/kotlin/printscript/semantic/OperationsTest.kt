@@ -12,7 +12,7 @@ class OperationsTest {
 
         val results = analyze(code)
 
-        assertTrue(results.all { it is SemanticResult.Success })
+        assertIs<SemanticResult.Success<*>>(results.single())
     }
 
     @Test

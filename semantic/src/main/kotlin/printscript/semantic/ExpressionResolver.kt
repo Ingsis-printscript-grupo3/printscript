@@ -5,11 +5,9 @@ import printscript.ast.registry.Handler
 import printscript.ast.registry.Registry
 import printscript.semantic.symbol.SymbolTable
 
-typealias SemanticExpressionHandler = Handler<Expression, ResolverContext, SemanticResult<String>>
-
 class ExpressionResolver(
     val symbolTable: SymbolTable,
-    handlers: List<SemanticExpressionHandler>,
+    handlers: List<Handler<Expression, ResolverContext, SemanticResult<String>>>,
 ) {
     private val registry = Registry(handlers)
 

@@ -134,7 +134,7 @@ private fun parserFor(
     return ParserFactory.create(
         tokens,
         definition.prefixParselets,
-        definition.statementHandlers,
+        definition.parserStatements,
         definition.infixParselets,
     )
 }

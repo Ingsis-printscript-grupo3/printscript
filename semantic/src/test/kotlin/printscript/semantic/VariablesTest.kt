@@ -36,7 +36,7 @@ class VariablesTest {
     }
 
     @Test
-    fun `a boolean variable can be declared and assigned in 1_1`() {
+    fun `a boolean variable can be declared and assigned`() {
         val code =
             """
             let b: boolean = true;
@@ -50,7 +50,7 @@ class VariablesTest {
     }
 
     @Test
-    fun `a boolean variable cannot be initialized with a number in 1_1`() {
+    fun `a boolean variable cannot be initialized with a number`() {
         val code = "let b: boolean = 123;"
 
         val results = analyze(code)

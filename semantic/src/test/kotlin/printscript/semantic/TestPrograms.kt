@@ -1,6 +1,8 @@
 package printscript.semantic
 
+import printscript.ast.Expression
 import printscript.ast.Statement
+import printscript.ast.registry.Handler
 import printscript.common.TokenType
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
@@ -36,7 +38,7 @@ import printscript.parser.statement.handlers.PrintCallHandler as ParserPrintCall
 import printscript.parser.statement.handlers.VariableDeclarationHandler as ParserVariableDeclarationHandler
 
 // el semantico no sabe de versiones: los tests le pasan todos los handlers
-internal val STATEMENT_HANDLERS: List<SemanticStatementHandler> =
+internal val STATEMENT_HANDLERS: List<Handler<Statement, StatementValidator, SemanticResult<Unit>>> =
     listOf(
         VariableDeclarationHandler(),
         AssignmentHandler(),
@@ -45,7 +47,7 @@ internal val STATEMENT_HANDLERS: List<SemanticStatementHandler> =
         BlockHandler(),
     )
 
-internal val EXPRESSION_HANDLERS: List<SemanticExpressionHandler> =
+internal val EXPRESSION_HANDLERS: List<Handler<Expression, ResolverContext, SemanticResult<String>>> =
     listOf(
         NumberLiteralHandler(),
         StringLiteralHandler(),

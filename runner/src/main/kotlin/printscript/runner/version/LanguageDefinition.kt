@@ -13,8 +13,9 @@ import printscript.interpreter.plugin.InterpreterContext
 import printscript.parser.expression.InfixParselet
 import printscript.parser.expression.PrefixParselet
 import printscript.parser.statement.StatementHandler
-import printscript.semantic.SemanticExpressionHandler
-import printscript.semantic.SemanticStatementHandler
+import printscript.semantic.ResolverContext
+import printscript.semantic.SemanticResult
+import printscript.semantic.StatementValidator
 
 // las piezas del interprete son funciones porque necesitan el output, el input y el env de cada ejecucion.
 // Las demas se crean una vez y se comparten entre ejecuciones, asi que no pueden guardar estado
@@ -22,9 +23,9 @@ internal interface LanguageDefinition {
     val keywords: Map<String, TokenType>
     val prefixParselets: Map<TokenType, PrefixParselet>
     val infixParselets: Map<TokenType, InfixParselet>
-    val statementHandlers: Map<TokenType, StatementHandler>
-    val semanticStatements: List<SemanticStatementHandler>
-    val semanticExpressions: List<SemanticExpressionHandler>
+    val parserStatements: Map<TokenType, StatementHandler>
+    val semanticStatements: List<Handler<Statement, StatementValidator, SemanticResult<Unit>>>
+    val semanticExpressions: List<Handler<Expression, ResolverContext, SemanticResult<String>>>
 
     fun statementInterpreters(output: Output): List<Handler<Statement, InterpreterContext, Unit>>
 
