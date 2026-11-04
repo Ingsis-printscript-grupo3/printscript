@@ -6,12 +6,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
-// el codigo se parsea con 1.1 para que el analizador 1.0 reciba nodos que no soporta
+// el analizador 1.0 debe rechazar nodos que no pertenecen a su version
 class VersionSupportTest {
     @Test
     fun `the 1_0 analyzer rejects an if statement`() {
         val code = "if (true) { println(1); }"
-        val statements = parse(code, LanguageVersion.V1_1)
+        val statements = parse(code)
 
         val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements).asSequence().toList()
 
@@ -23,7 +23,7 @@ class VersionSupportTest {
     @Test
     fun `the 1_0 analyzer rejects readInput`() {
         val code = "let x: string = readInput(\"prompt:\");"
-        val statements = parse(code, LanguageVersion.V1_1)
+        val statements = parse(code)
 
         val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements).asSequence().toList()
 
@@ -35,7 +35,7 @@ class VersionSupportTest {
     @Test
     fun `the 1_0 analyzer rejects readEnv`() {
         val code = "let x: string = readEnv(\"HOME\");"
-        val statements = parse(code, LanguageVersion.V1_1)
+        val statements = parse(code)
 
         val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements).asSequence().toList()
 
@@ -47,7 +47,7 @@ class VersionSupportTest {
     @Test
     fun `the 1_0 analyzer rejects boolean literals`() {
         val code = "println(true);"
-        val statements = parse(code, LanguageVersion.V1_1)
+        val statements = parse(code)
 
         val results = SemanticAnalyzer(LanguageVersion.V1_0).analyze(statements).asSequence().toList()
 

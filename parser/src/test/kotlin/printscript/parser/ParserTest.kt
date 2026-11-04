@@ -157,7 +157,7 @@ class ParserTest {
                 Token(TokenType.IDENTIFIER, Position(1, 5), Position(1, 6), "x"),
                 colon,
             )
-        val parser = Parser(tokens.iterator(), LanguageVersion.V1_0)
+        val parser = testParser(tokens.iterator(), LanguageVersion.V1_0)
         val results = parser.parse().asSequence().toList()
         assertEquals(1, results.size)
         val failure = results[0] as ParseResult.Failure
@@ -175,7 +175,7 @@ class ParserTest {
                 Token(TokenType.IDENTIFIER, Position(1, 5), Position(1, 6), "x"),
                 colon,
             )
-        val parser = Parser(tokens.iterator(), LanguageVersion.V1_1)
+        val parser = testParser(tokens.iterator(), LanguageVersion.V1_1)
         val results = parser.parse().asSequence().toList()
         assertEquals(1, results.size)
         val failure = results[0] as ParseResult.Failure

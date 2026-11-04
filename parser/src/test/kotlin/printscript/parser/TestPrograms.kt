@@ -12,14 +12,23 @@ import java.io.StringReader
 internal fun tokensOf(
     code: String,
     version: LanguageVersion = LanguageVersion.V1_1,
-): Iterator<Token> = Lexer(CharStream(StringReader(code)), LexerFactory.defaultReaders(version.keywords)).tokenize()
+): Iterator<Token> =
+    Lexer(
+        CharStream(StringReader(code)),
+        LexerFactory.defaultReaders(testKeywords(version)),
+    ).tokenize()
+
+internal fun testParser(
+    tokens: Iterator<Token>,
+    version: LanguageVersion = LanguageVersion.V1_1,
+): Parser = Parser(tokens, testPrefixParselets(version), testStatementHandlers(version))
 
 // lexerVersion permite que el parser reciba tokens que el lexer de su propia version no emite
 internal fun parseResults(
     code: String,
     version: LanguageVersion = LanguageVersion.V1_1,
     lexerVersion: LanguageVersion = version,
-): List<ParseResult> = Parser(tokensOf(code, lexerVersion), version).parse().asSequence().toList()
+): List<ParseResult> = testParser(tokensOf(code, lexerVersion), version).parse().asSequence().toList()
 
 internal fun parseStatements(
     code: String,

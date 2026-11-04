@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-// el codigo se parsea con 1.1 para que el interprete 1.0 reciba nodos que no soporta
+// el interprete 1.0 debe rechazar nodos que no pertenecen a su version
 class VersionSupportTest {
     @Test
     fun `1_0 interpreter rejects if statements`() {
@@ -19,7 +19,7 @@ class VersionSupportTest {
         val interpreter = InterpreterFactory.create(LanguageVersion.V1_0, output)
 
         assertFailsWith<UnknownStatementError> {
-            interpreter.interpret(parse(code, LanguageVersion.V1_1))
+            interpreter.interpret(parse(code))
         }
 
         assertEquals(listOf("before"), output.lines())
@@ -36,7 +36,7 @@ class VersionSupportTest {
         val interpreter = InterpreterFactory.create(LanguageVersion.V1_0, output)
 
         assertFailsWith<UnknownExpressionError> {
-            interpreter.interpret(parse(code, LanguageVersion.V1_1))
+            interpreter.interpret(parse(code))
         }
 
         assertEquals(listOf("before"), output.lines())
@@ -53,7 +53,7 @@ class VersionSupportTest {
         val interpreter = InterpreterFactory.create(LanguageVersion.V1_0, output)
 
         assertFailsWith<UnknownExpressionError> {
-            interpreter.interpret(parse(code, LanguageVersion.V1_1))
+            interpreter.interpret(parse(code))
         }
 
         assertEquals(listOf("before"), output.lines())
@@ -70,7 +70,7 @@ class VersionSupportTest {
         val interpreter = InterpreterFactory.create(LanguageVersion.V1_0, output)
 
         assertFailsWith<UnknownExpressionError> {
-            interpreter.interpret(parse(code, LanguageVersion.V1_1))
+            interpreter.interpret(parse(code))
         }
 
         assertEquals(listOf("before"), output.lines())
@@ -82,7 +82,7 @@ class VersionSupportTest {
         val output = BucketOutput()
         val interpreter = InterpreterFactory.create(LanguageVersion.V1_1, output)
 
-        interpreter.interpret(parse(code, LanguageVersion.V1_1))
+        interpreter.interpret(parse(code))
 
         assertEquals(listOf("inside"), output.lines())
     }
