@@ -1,4 +1,4 @@
-package printscript.interpreter
+package printscript.interpreter.plugin
 
 import printscript.ast.Assignment
 import printscript.ast.BinaryExpression
@@ -17,10 +17,14 @@ import printscript.ast.StringLiteral
 import printscript.ast.VariableDeclaration
 import printscript.ast.registry.Handler
 import printscript.common.TokenType
+import printscript.interpreter.Environment
+import printscript.interpreter.InterpreterInterface
+import printscript.interpreter.UnknownExpressionError
+import printscript.interpreter.UnknownStatementError
+import printscript.interpreter.Value
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.BucketOutput
-import printscript.interpreter.plugin.InterpreterContext
 import printscript.interpreter.plugin.expression.BinaryExpressionEvaluator
 import printscript.interpreter.plugin.expression.BooleanLiteralEvaluator
 import printscript.interpreter.plugin.expression.IdentifierEvaluator

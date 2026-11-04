@@ -117,19 +117,21 @@ class IfStatementTest {
         assertEquals(emptyList(), output.lines())
     }
 
-    // el mismo interprete corre dos programas: el segundo ve lo que dejo el primero
+    // el segundo programa corre en el mismo entorno: x prueba que se conserva e y que el bloque la descarto
     @Test
     fun `an if block discards its variables even when a statement inside fails`() {
-        val interpreter = testInterpreter(output = BucketOutput())
+        val output = BucketOutput()
+        val interpreter = testInterpreter(output = output)
 
         assertFailsWith<UndeclaredVariableError> {
-            interpreter.interpret(parse("if (true) { let y: number = 1; println(z); }"))
+            interpreter.interpret(parse("let x: number = 1; if (true) { let y: number = 2; println(z); }"))
         }
         val error =
             assertFailsWith<UndeclaredVariableError> {
-                interpreter.interpret(parse("println(y);"))
+                interpreter.interpret(parse("println(x); println(y);"))
             }
 
+        assertEquals(listOf("1"), output.lines())
         assertEquals("y", error.name)
     }
 }
