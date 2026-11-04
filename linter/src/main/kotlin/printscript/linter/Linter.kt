@@ -29,6 +29,6 @@ class Linter(private val rules: List<LinterRule>) {
     private fun walk(node: PositionedNode): Sequence<PositionedNode> =
         sequence {
             yield(node)
-            childrenOf(node).forEach { yieldAll(walk(it)) }
+            node.children.forEach { yieldAll(walk(it)) }
         }
 }

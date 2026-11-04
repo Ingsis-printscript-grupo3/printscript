@@ -100,7 +100,7 @@ class LinterRuleRegistryTest {
     fun `rejects a value that is not a boolean`() {
         val error = assertFailsWith<IllegalArgumentException> { rulesFor(println to "si") }
 
-        assertEquals("Expected boolean for '$println'", error.message)
+        assertEquals("Expected boolean for '$println', got 'si'", error.message)
     }
 
     @Test
@@ -130,7 +130,7 @@ class LinterRuleRegistryTest {
 
     @Test
     fun `register adds a rule on top of the default ones and its key stops being unknown`() {
-        val registry = LinterRuleRegistry().register(LinterRuleFactory.toggle("no-op") { NoOpRule() })
+        val registry = LinterRuleRegistry().register(NoOpRuleFactory())
         lateinit var rules: List<LinterRule>
 
         val stderr = stderrOf { rules = registry.rulesFor(registry.defaultConfig()) }
@@ -144,7 +144,7 @@ class LinterRuleRegistryTest {
     fun `register does not mutate the registry it was called on`() {
         val original = LinterRuleRegistry()
 
-        original.register(LinterRuleFactory.toggle("no-op") { NoOpRule() })
+        original.register(NoOpRuleFactory())
 
         assertEquals(3, original.rulesFor(original.defaultConfig()).size)
     }
@@ -152,16 +152,13 @@ class LinterRuleRegistryTest {
     @Test
     fun `two factories cannot share a key`() {
         assertFailsWith<IllegalArgumentException> {
-            LinterRuleRegistry().register(LinterRuleFactory.toggle(println) { NoOpRule() })
+            LinterRuleRegistry().register(NoOpRuleFactory(key = println))
         }
     }
 
     @Test
     fun `a rule registered by hand runs on nested expressions with its own config value`() {
-        val registry =
-            LinterRuleRegistry().register(
-                LinterRuleFactory("binary-expression-message", default = "operacion") { BinaryExpressionRule(it) },
-            )
+        val registry = LinterRuleRegistry().register(BinaryExpressionRuleFactory)
         val linter = LinterFactory.create(registry, mapOf("binary-expression-message" to "suma encontrada"))
 
         val warnings = warningsOf(linter, "let x: number = 1 + 2;")
@@ -174,10 +171,7 @@ class LinterRuleRegistryTest {
     // sin config, la factory toma los defaults del registry que recibe y no los del de fabrica
     @Test
     fun `a linter created with a custom registry uses that registry's defaults`() {
-        val registry =
-            LinterRuleRegistry().register(
-                LinterRuleFactory("binary-expression-message", default = "operacion") { BinaryExpressionRule(it) },
-            )
+        val registry = LinterRuleRegistry().register(BinaryExpressionRuleFactory)
 
         val warnings = warningsOf(LinterFactory.create(registry), "let x: number = 1 + 2;")
 
@@ -194,5 +188,19 @@ class LinterRuleRegistryTest {
         override fun appliesTo(node: PositionedNode): Boolean = node is BinaryExpression
 
         override fun check(node: PositionedNode): List<Warning> = listOf(Warning(message, node.position))
+    }
+
+    private class NoOpRuleFactory(override val key: String = "no-op") : LinterRuleFactory {
+        override val default = "true"
+
+        override fun create(value: String): LinterRule = NoOpRule()
+    }
+
+    // asi se ve una regla de afuera: su factory solo arma la regla con el valor que le llega
+    private object BinaryExpressionRuleFactory : LinterRuleFactory {
+        override val key = "binary-expression-message"
+        override val default = "operacion"
+
+        override fun create(value: String): LinterRule = BinaryExpressionRule(value)
     }
 }

@@ -62,7 +62,10 @@ solo sabe reconocer palabras, números, strings y símbolos. Su interfaz públic
 
 **`ast`** — Los nodos del árbol sintáctico (`VariableDeclaration`, `PrintCall`,
 `BinaryExpression`, etc.) y el `Registry<N, C, R>` genérico que resuelve qué handler atiende
-cada nodo. Es solo estructura: no tiene lógica de negocio.
+cada nodo. Es solo estructura: no tiene lógica de negocio. Cada nodo declara sus hijos
+(`children`), así que cualquier recorrido genérico, como el del linter, baja por el árbol sin
+conocer los tipos concretos. `children` no tiene valor por defecto: un nodo nuevo no compila
+hasta declarar los suyos, y lo hace en su propia clase, sin tocar los recorridos existentes.
 
 **`parser`** — Arma el árbol a partir de los tokens. Su interfaz es
 `Parser.parse(): Iterator<ParseResult>`, donde cada resultado es un `Success` con

@@ -1,6 +1,10 @@
 package printscript.linter
 
+import printscript.ast.PositionedNode
+import printscript.ast.VariableDeclaration
 import printscript.common.LanguageVersion
+import printscript.linter.rule.LinterRule
+import printscript.linter.rule.LinterRuleFactory
 import printscript.linter.rule.LinterRuleRegistry
 import java.io.File
 import kotlin.test.Test
@@ -18,6 +22,7 @@ class LinterFactoryTest {
         """.trimIndent()
 
     private val snakeCaseDeclaration = "let mi_variable: number = 1;"
+    private val variableDeclaration = "let x: number = 1;"
 
     private val camelCaseJson = """{"identifier_format": "camel case"}"""
 
@@ -117,5 +122,40 @@ class LinterFactoryTest {
         val file = tempConfig("json", """{"identifier_format": "camelCase"}""")
 
         assertFailsWith<IllegalArgumentException> { LinterFactory.fromFile(file.path) }
+    }
+
+    // con una clave que el registry por defecto no conoce: si fromStream lo ignorara, no habria warning
+    @Test
+    fun `fromStream uses the registry it is given`() {
+        val registry = LinterRuleRegistry(listOf(CustomRuleFactory))
+        val linter = LinterFactory.fromStream("""{"custom-rule": true}""".byteInputStream(), registry)
+
+        val warnings = warningsOf(linter, variableDeclaration)
+
+        assertEquals(listOf("custom warning"), warnings.map { it.message })
+    }
+
+    @Test
+    fun `fromFile uses the registry it is given`() {
+        val registry = LinterRuleRegistry(listOf(CustomRuleFactory))
+        val file = tempConfig("json", """{"custom-rule": true}""")
+        val linter = LinterFactory.fromFile(file.path, registry)
+
+        val warnings = warningsOf(linter, variableDeclaration)
+
+        assertEquals(listOf("custom warning"), warnings.map { it.message })
+    }
+
+    private class CustomRule : LinterRule {
+        override fun appliesTo(node: PositionedNode): Boolean = node is VariableDeclaration
+
+        override fun check(node: PositionedNode): List<Warning> = listOf(Warning("custom warning", node.position))
+    }
+
+    private object CustomRuleFactory : LinterRuleFactory {
+        override val key = "custom-rule"
+        override val default = "true"
+
+        override fun create(value: String): LinterRule = CustomRule()
     }
 }
