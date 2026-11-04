@@ -28,7 +28,7 @@ class ReadInputTest {
 
         val results = analyze(code)
 
-        assertTrue(results.all { it is SemanticResult.Success })
+        assertIs<SemanticResult.Success<*>>(results.single())
     }
 
     @Test
@@ -55,7 +55,7 @@ class ReadInputTest {
 
         val results = analyze(code)
 
-        assertTrue(results.all { it is SemanticResult.Success })
+        assertIs<SemanticResult.Success<*>>(results.single())
     }
 
     // el error apunta al argumento y corta el analisis
@@ -104,7 +104,7 @@ class ReadInputTest {
 
         val results = analyze(code)
 
-        assertTrue(results.all { it is SemanticResult.Success })
+        assertIs<SemanticResult.Success<*>>(results.single())
     }
 
     // dentro de una suma readInput no toma el tipo de la variable: es string, igual que en el interprete
