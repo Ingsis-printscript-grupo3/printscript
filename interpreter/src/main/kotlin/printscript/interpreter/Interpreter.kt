@@ -6,7 +6,7 @@ import printscript.ast.registry.Handler
 import printscript.ast.registry.Registry
 import printscript.interpreter.plugin.InterpreterContext
 
-// no sabe de versiones: recibe las dos listas ya armadas. Quien elige cuales van es InterpreterFactory
+// no sabe de versiones: recibe las dos listas ya armadas. Quien elige cuales van es el runner
 class Interpreter(
     private val statementInterpreters: List<Handler<Statement, InterpreterContext, Unit>>,
     private val expressionEvaluators: List<Handler<Expression, InterpreterContext, Value>>,

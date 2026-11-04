@@ -15,7 +15,7 @@ class ConstTest {
             println(x);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output)
+        val interpreter = testInterpreter(output = output)
 
         interpreter.interpret(parse(code, LanguageVersion.V1_1))
 
@@ -31,7 +31,7 @@ class ConstTest {
             PI = 3.14159;
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output)
+        val interpreter = testInterpreter(output = output)
 
         val error =
             assertFailsWith<CannotAssignToConstError> {

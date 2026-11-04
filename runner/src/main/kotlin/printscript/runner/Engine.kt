@@ -4,7 +4,7 @@ import printscript.ast.Statement
 import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
-import printscript.interpreter.InterpreterFactory
+import printscript.interpreter.Interpreter
 import printscript.interpreter.env.EnvProvider
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.InputProvider
@@ -15,6 +15,7 @@ import printscript.parser.Parser
 import printscript.parser.ParserFactory
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
+import printscript.runner.version.definition
 import printscript.semantic.SemanticAnalyzer
 import printscript.semantic.SemanticError
 import printscript.semantic.SemanticResult
@@ -73,7 +74,9 @@ class Engine(
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult =
         runCatchingErrors {
-            val interpreter = InterpreterFactory.create(languageVersion, output, input, env)
+            val definition = languageVersion.definition()
+            val interpreter =
+                Interpreter(definition.statementInterpreters(output), definition.expressionEvaluators(input, env))
             interpreter.interpret(analyzedStatements(reader, languageVersion, onProgress))
         }.asExecutionResult()
 

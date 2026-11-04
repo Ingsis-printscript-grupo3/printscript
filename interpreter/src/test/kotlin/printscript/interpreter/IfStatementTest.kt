@@ -20,7 +20,7 @@ class IfStatementTest {
             println("outside: " + x);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output)
+        val interpreter = testInterpreter(output = output)
 
         interpreter.interpret(parse(code, LanguageVersion.V1_1))
 
@@ -38,7 +38,7 @@ class IfStatementTest {
             }
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output)
+        val interpreter = testInterpreter(output = output)
 
         interpreter.interpret(parse(code, LanguageVersion.V1_1))
 
@@ -56,7 +56,7 @@ class IfStatementTest {
             println(y);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output)
+        val interpreter = testInterpreter(output = output)
 
         val error =
             assertFailsWith<UndeclaredVariableError> {
@@ -79,7 +79,7 @@ class IfStatementTest {
             println(a);
             """.trimIndent()
         val output = BucketOutput()
-        val interpreter = InterpreterFactory.create11(output = output)
+        val interpreter = testInterpreter(output = output)
 
         interpreter.interpret(parse(code, LanguageVersion.V1_1))
 
