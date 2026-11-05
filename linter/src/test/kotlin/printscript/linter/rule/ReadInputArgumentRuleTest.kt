@@ -1,14 +1,9 @@
 package printscript.linter.rule
 
-import printscript.ast.BinaryExpression
-import printscript.ast.Identifier
-import printscript.ast.NumberLiteral
-import printscript.ast.PrintCall
-import printscript.ast.ReadInput
-import printscript.ast.StringLiteral
-import printscript.ast.VariableDeclaration
 import printscript.common.Position
-import printscript.common.TokenType
+import printscript.linter.expressionOf
+import printscript.linter.statementOf
+import printscript.linter.warningsOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -17,53 +12,32 @@ import kotlin.test.assertTrue
 class ReadInputArgumentRuleTest {
     private val rule = ReadInputArgumentRule()
 
-    private fun pos() = Position(0, 0)
-
-    private fun str(v: String) = StringLiteral(v, pos())
-
-    private fun concat(
-        left: String,
-        right: String,
-    ) = BinaryExpression(str(left), TokenType.PLUS, str(right), pos())
-
     @Test
     fun `applies only to ReadInput`() {
-        val readInput = ReadInput(str("name?"), pos())
-        val decl = VariableDeclaration("name", "string", null, pos())
-        val print = PrintCall(str("hello"), pos())
-
-        assertTrue(rule.appliesTo(readInput))
-        assertFalse(rule.appliesTo(decl))
-        assertFalse(rule.appliesTo(print))
-        assertFalse(rule.appliesTo(str("name?")))
+        assertTrue(rule.appliesTo(expressionOf("""readInput("name?")""")))
+        assertFalse(rule.appliesTo(statementOf("let name: string;")))
+        assertFalse(rule.appliesTo(statementOf("""println("hello");""")))
+        assertFalse(rule.appliesTo(expressionOf("\"name?\"")))
     }
 
     @Test
     fun `readInput with a string literal is valid`() {
-        val readInput = ReadInput(str("name?"), pos())
-
-        assertEquals(0, rule.check(readInput).size)
+        assertEquals(0, warningsOf(rule, """let name: string = readInput("name?");""").size)
     }
 
     @Test
     fun `readInput with an identifier is valid`() {
-        val readInput = ReadInput(Identifier("prompt", pos()), pos())
-
-        assertEquals(0, rule.check(readInput).size)
+        assertEquals(0, warningsOf(rule, "let name: string = readInput(prompt);").size)
     }
 
     @Test
     fun `readInput with a number literal is valid`() {
-        val readInput = ReadInput(NumberLiteral(42.0, pos()), pos())
-
-        assertEquals(0, rule.check(readInput).size)
+        assertEquals(0, warningsOf(rule, "let name: string = readInput(42);").size)
     }
 
     @Test
     fun `readInput with a binary expression warns`() {
-        val readInput = ReadInput(concat("a", "b"), pos())
-
-        val warnings = rule.check(readInput)
+        val warnings = warningsOf(rule, """let name: string = readInput("a" + "b");""")
 
         assertEquals(1, warnings.size)
         assertEquals(
@@ -74,12 +48,10 @@ class ReadInputArgumentRuleTest {
 
     @Test
     fun `the warning points at the position of the readInput call`() {
-        val readInput = ReadInput(concat("a", "b"), Position(4, 18))
-
-        val warnings = rule.check(readInput)
+        val warnings = warningsOf(rule, "\n\n\nname = readInput(\"a\" + \"b\");")
 
         assertEquals(1, warnings.size)
-        assertEquals(Position(4, 18), warnings[0].position)
+        assertEquals(Position(4, 8), warnings[0].position)
     }
 
     @Test
@@ -98,10 +70,7 @@ class ReadInputArgumentRuleTest {
 
     @Test
     fun `check returns empty list for non matching node`() {
-        val decl = VariableDeclaration("name", "string", null, pos())
-        val print = PrintCall(str("hello"), pos())
-
-        assertEquals(emptyList(), rule.check(decl))
-        assertEquals(emptyList(), rule.check(print))
+        assertEquals(emptyList(), rule.check(statementOf("let name: string;")))
+        assertEquals(emptyList(), rule.check(statementOf("""println("hello");""")))
     }
 }
