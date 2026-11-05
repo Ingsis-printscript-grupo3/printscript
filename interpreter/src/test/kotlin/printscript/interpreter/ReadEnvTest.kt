@@ -63,4 +63,20 @@ class ReadEnvTest {
         assertEquals("boolean", error.targetType)
         assertEquals(listOf("before"), output.lines())
     }
+
+    @Test
+    fun `readEnv converts to boolean`() {
+        val code =
+            """
+            let debug: boolean = readEnv("DEBUG");
+            println(debug);
+            """.trimIndent()
+        val env = MapEnvProvider("DEBUG" to "true")
+        val output = BucketOutput()
+        val interpreter = testInterpreter(output = output, env = env)
+
+        interpreter.interpret(parse(code))
+
+        assertEquals(listOf("true"), output.lines())
+    }
 }

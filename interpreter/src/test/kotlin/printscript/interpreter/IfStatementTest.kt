@@ -84,4 +84,54 @@ class IfStatementTest {
 
         assertEquals(listOf("inner", "outer"), output.lines())
     }
+
+    @Test
+    fun `an if without else runs nothing when the condition is false`() {
+        val code =
+            """
+            if (false) {
+                println("then");
+            }
+            println("after");
+            """.trimIndent()
+        val output = BucketOutput()
+        val interpreter = testInterpreter(output = output)
+
+        interpreter.interpret(parse(code))
+
+        assertEquals(listOf("after"), output.lines())
+    }
+
+    @Test
+    fun `a condition that is not a boolean throws ConditionTypeError`() {
+        val code = "if (5) { println(\"then\"); }"
+        val output = BucketOutput()
+        val interpreter = testInterpreter(output = output)
+
+        val error =
+            assertFailsWith<ConditionTypeError> {
+                interpreter.interpret(parse(code))
+            }
+
+        assertEquals("number", error.actualType)
+        assertEquals(emptyList(), output.lines())
+    }
+
+    // el segundo programa corre en el mismo entorno: x prueba que se conserva e y que el bloque la descarto
+    @Test
+    fun `an if block discards its variables even when a statement inside fails`() {
+        val output = BucketOutput()
+        val interpreter = testInterpreter(output = output)
+
+        assertFailsWith<UndeclaredVariableError> {
+            interpreter.interpret(parse("let x: number = 1; if (true) { let y: number = 2; println(z); }"))
+        }
+        val error =
+            assertFailsWith<UndeclaredVariableError> {
+                interpreter.interpret(parse("println(x); println(y);"))
+            }
+
+        assertEquals(listOf("1"), output.lines())
+        assertEquals("y", error.name)
+    }
 }
