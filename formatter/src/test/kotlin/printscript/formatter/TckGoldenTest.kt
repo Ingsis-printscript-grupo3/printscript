@@ -1,7 +1,7 @@
 package printscript.formatter
 
 import printscript.lexer.CharStream
-import printscript.lexer.Lexer
+import printscript.lexer.LexerFactory
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.Test
@@ -13,10 +13,11 @@ class TckGoldenTest {
 
     private fun lines(vararg lines: String) = lines.joinToString("\n")
 
+    private fun tokensOf(code: String) = LexerFactory.create(CharStream(StringReader(code)), TEST_KEYWORDS).tokenize()
+
     private fun format(case: Case): String {
         val writer = StringWriter()
-        val tokens = Lexer(CharStream(StringReader(case.input))).tokenize()
-        Formatter(FormatterRulesLoader.fromJson(case.config)).format(tokens, writer)
+        FormatterFactory.create(FormatterRulesLoader.fromJson(case.config)).format(tokensOf(case.input), writer)
         return writer.toString()
     }
 

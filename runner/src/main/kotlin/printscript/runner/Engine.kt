@@ -4,17 +4,18 @@ import printscript.ast.Statement
 import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
-import printscript.interpreter.InterpreterFactory
+import printscript.interpreter.Interpreter
 import printscript.interpreter.env.EnvProvider
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.InputProvider
 import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.Output
 import printscript.lexer.LexerFactory
+import printscript.parser.Parser
 import printscript.parser.ParserFactory
-import printscript.parser.ParserInterface
 import printscript.parser.SyntaxError
 import printscript.parser.result.ParseResult
+import printscript.runner.version.definition
 import printscript.semantic.SemanticAnalyzer
 import printscript.semantic.SemanticError
 import printscript.semantic.SemanticResult
@@ -73,7 +74,9 @@ class Engine(
         onProgress: (Int) -> Unit = {},
     ): ExecutionResult =
         runCatchingErrors {
-            val interpreter = InterpreterFactory.create(languageVersion, output, input, env)
+            val definition = languageVersion.definition()
+            val interpreter =
+                Interpreter(definition.statementInterpreters(output), definition.expressionEvaluators(input, env))
             interpreter.interpret(analyzedStatements(reader, languageVersion, onProgress))
         }.asExecutionResult()
 
@@ -105,7 +108,8 @@ class Engine(
     ): FormatResult =
         runCatchingErrors {
             openReader().use { consume(parseIntoAst(parserFor(it, languageVersion), onProgress)) }
-            openReader().use { format(LexerFactory.create(it).tokenize()) }
+            val keywords = languageVersion.definition().keywords
+            openReader().use { format(LexerFactory.create(it, keywords).tokenize()) }
         }.asFormatResult()
 
     // el linter trabaja sobre el ast crudo: no necesita el chequeo semantico
@@ -124,11 +128,20 @@ class Engine(
 private fun parserFor(
     reader: Reader,
     languageVersion: LanguageVersion,
-): ParserInterface = ParserFactory.create(LexerFactory.create(reader).tokenize(), languageVersion)
+): Parser {
+    val definition = languageVersion.definition()
+    val tokens = LexerFactory.create(reader, definition.keywords).tokenize()
+    return ParserFactory.create(
+        tokens,
+        definition.prefixParselets,
+        definition.parserStatements,
+        definition.infixParselets,
+    )
+}
 
 // segundo paso: de resultados del parser a statements, cortando con SyntaxError en el primer fallo
 private fun parseIntoAst(
-    parser: ParserInterface,
+    parser: Parser,
     onProgress: (Int) -> Unit,
 ): Iterator<Statement> {
     var parsedCount = 0
@@ -163,7 +176,8 @@ private fun analyzeAst(
     astIterator: Iterator<Statement>,
     languageVersion: LanguageVersion,
 ): Iterator<Statement> {
-    val semanticAnalyzer = SemanticAnalyzer(languageVersion)
+    val definition = languageVersion.definition()
+    val semanticAnalyzer = SemanticAnalyzer(definition.semanticStatements, definition.semanticExpressions)
     return buildValidStatementIterator(semanticAnalyzer.analyze(astIterator))
 }
 

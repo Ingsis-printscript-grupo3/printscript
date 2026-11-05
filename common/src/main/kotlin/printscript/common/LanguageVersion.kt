@@ -1,5 +1,6 @@
 package printscript.common
 
+// solo identifica la version: que trae cada una lo define quien compone el pipeline
 enum class LanguageVersion(val label: String) {
     V1_0("1.0"),
     V1_1("1.1"),

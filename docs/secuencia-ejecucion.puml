@@ -27,10 +27,10 @@ note over ENGINE, SEMANTIC
   caracteres adelantados.
 end note
 
-ENGINE -> LEXER : Lexer(CharStream(reader)).tokenize()
+ENGINE -> LEXER : LexerFactory.create(reader, definition.keywords).tokenize()
 LEXER --> ENGINE : Iterator<Token>
 
-ENGINE -> PARSER : Parser(tokens, version).parse()
+ENGINE -> PARSER : ParserFactory.create(tokens, definition.prefixParselets, definition.parserStatements, definition.infixParselets).parse()
 PARSER --> ENGINE : Iterator<ParseResult>
 
 ENGINE -> ENGINE : parseIntoAst(...)

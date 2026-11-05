@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    // aparecen en la API publica de Engine y PrintScriptRunner
+    // aparecen en la API publica de Engine
     api(project(":common"))
     api(project(":ast"))
     api(project(":interpreter"))
@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":lexer"))
     implementation(project(":parser"))
     implementation(project(":semantic"))
-    implementation(project(":formatter"))
-    implementation(project(":linter"))
+    // el Engine no formatea ni lintea: recibe una funcion que lo hace. Los tests la arman con estos
+    testImplementation(project(":formatter"))
+    testImplementation(project(":linter"))
 }

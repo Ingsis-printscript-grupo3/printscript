@@ -1,5 +1,6 @@
 package printscript.lexer
 
+import printscript.common.TokenType
 import printscript.lexer.plugin.TokenReader
 import printscript.lexer.plugin.reader.IdentifierReader
 import printscript.lexer.plugin.reader.NumberReader
@@ -12,36 +13,38 @@ import java.io.StringReader
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 
-// A diferencia de las otras fabricas esta no recibe LanguageVersion, y es a proposito:
-// LexerRules.keywords es un superconjunto de las dos versiones y quien decide que token
-// vale en cada una es el parser. Si el lexer recortara las keywords en 1.0, un `const`
-// saldria como IDENTIFIER y el error seria peor.
+// las keywords llegan de afuera: que palabras reserva cada version lo decide quien arma el
+// pipeline, no el lexer. Con un mapa sin `const` ni `if`, esas palabras son identificadores comunes
 object LexerFactory {
     fun create(
         charStream: CharStream,
-        readers: List<TokenReader> = defaultReaders(),
-    ): LexerInterface = Lexer(charStream, readers)
+        keywords: Map<String, TokenType>,
+        readers: List<TokenReader> = defaultReaders(keywords),
+    ): Lexer = Lexer(charStream, readers)
 
     fun create(
         reader: Reader,
-        readers: List<TokenReader> = defaultReaders(),
-    ): LexerInterface = create(CharStream(reader), readers)
+        keywords: Map<String, TokenType>,
+        readers: List<TokenReader> = defaultReaders(keywords),
+    ): Lexer = create(CharStream(reader), keywords, readers)
 
     fun create(
         source: String,
-        readers: List<TokenReader> = defaultReaders(),
-    ): LexerInterface = create(StringReader(source), readers)
+        keywords: Map<String, TokenType>,
+        readers: List<TokenReader> = defaultReaders(keywords),
+    ): Lexer = create(StringReader(source), keywords, readers)
 
     // CharStream ya buferea el reader, asi que alcanza con envolver el stream
     fun create(
         input: InputStream,
+        keywords: Map<String, TokenType>,
         charset: Charset = StandardCharsets.UTF_8,
-        readers: List<TokenReader> = defaultReaders(),
-    ): LexerInterface = create(InputStreamReader(input, charset), readers)
+        readers: List<TokenReader> = defaultReaders(keywords),
+    ): Lexer = create(InputStreamReader(input, charset), keywords, readers)
 
-    fun defaultReaders(): List<TokenReader> =
+    fun defaultReaders(keywords: Map<String, TokenType>): List<TokenReader> =
         listOf(
-            IdentifierReader(LexerRules.keywords),
+            IdentifierReader(keywords),
             NumberReader(),
             StringLiteralReader(),
             SymbolReader(LexerRules.symbols),

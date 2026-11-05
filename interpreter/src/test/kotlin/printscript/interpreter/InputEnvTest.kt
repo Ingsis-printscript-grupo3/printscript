@@ -2,11 +2,9 @@ package printscript.interpreter
 
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.env.SystemEnvProvider
-import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.input.QueueInput
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class InputEnvTest {
@@ -31,12 +29,6 @@ class InputEnvTest {
         val input = QueueInput()
 
         assertNull(input.readInput("prompt"))
-    }
-
-    @Test
-    fun `ConsoleInput can be instantiated as InputProvider`() {
-        val consoleInput = ConsoleInput()
-        assertNotNull(consoleInput)
     }
 
     @Test

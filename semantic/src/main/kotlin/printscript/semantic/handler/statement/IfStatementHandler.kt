@@ -16,11 +16,11 @@ class IfStatementHandler : Handler<Statement, StatementValidator, SemanticResult
         if (node !is IfStatement) {
             return SemanticResult.Failure("Unexpected node in IfStatementHandler.", node.position)
         }
-        val condRes = validateCondition(node, ctx)
-        if (condRes is SemanticResult.Failure) return condRes
+        val conditionResult = validateCondition(node, ctx)
+        if (conditionResult is SemanticResult.Failure) return conditionResult
 
-        val thenRes = ctx.validate(node.thenBranch)
-        if (thenRes is SemanticResult.Failure) return thenRes
+        val thenResult = ctx.validate(node.thenBranch)
+        if (thenResult is SemanticResult.Failure) return thenResult
 
         return validateElseBranch(node.elseBranch, ctx)
     }

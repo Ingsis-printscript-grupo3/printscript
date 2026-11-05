@@ -58,15 +58,10 @@ package "common" {
 
 package "lexer" {
 
-  interface LexerInterface {
-    +tokenize(): Iterator<Token>
-  }
-
   class Lexer {
     -charStream: CharStream
     -readers: List<TokenReader>
     +Lexer(charStream, readers)
-    +Lexer(charStream)
     +tokenize(): Iterator<Token>
     -nextToken(): Token
     -skipWhitespace()
@@ -100,8 +95,19 @@ package "lexer" {
     +advance(): Char
   }
 
+  class LexerFactory <<object>> {
+    +create(source, keywords, readers): Lexer
+    +defaultReaders(keywords): List<TokenReader>
+  }
+
+  note right of LexerFactory
+    Recibe las keywords armadas: el lexer
+    no conoce LanguageVersion. Cada version
+    declara las suyas en common y el runner
+    se las pasa.
+  end note
+
   class LexerRules <<object>> {
-    +keywords: Map<String, TokenType>
     +symbols: Map<Char, TokenType>
     +isQuote(c: Char): Boolean
     +isIdentifierStart(c: Char): Boolean
@@ -155,7 +161,6 @@ ScriptError <|.. LexicalError
 RuntimeException <|-- LexicalError
 LexicalError ..> Position
 
-LexerInterface <|.. Lexer
 Lexer "1" o-- "1" CharStream
 Lexer "1" o-- "*" TokenReader : pregunta matches()\ny delega read()
 Lexer ..> Token : crea el EOF
@@ -174,5 +179,7 @@ TokenReader ..> CharStream : consume
 
 CharStream ..> Position : crea
 LexerRules ..> TokenType : mapea
+LexerFactory ..> Lexer : crea
+LexerFactory ..> IdentifierReader : le pasa las keywords
 
 @enduml

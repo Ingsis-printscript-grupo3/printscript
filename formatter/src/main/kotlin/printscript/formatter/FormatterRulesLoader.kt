@@ -1,69 +1,45 @@
 package printscript.formatter
 
 import printscript.common.ConfigParser
+import printscript.formatter.rule.FormatterRuleRegistry
 import java.io.InputStream
 
+// no conoce ninguna key: lee las que declara el registry. Si se registra una regla de afuera,
+// hay que pasar ese mismo registry para que su key no se tome como desconocida
 object FormatterRulesLoader {
-    private val knownKeys =
-        setOf(
-            "enforce-spacing-before-colon-in-declaration",
-            "enforce-spacing-after-colon-in-declaration",
-            "enforce-spacing-around-equals",
-            "enforce-no-spacing-around-equals",
-            "line-breaks-after-println",
-            "mandatory-single-space-separation",
-            "mandatory-space-surrounding-operations",
-            "mandatory-line-break-after-statement",
-            "indent-inside-if",
-            "if-brace-same-line",
-            "if-brace-below-line",
-        )
+    fun fromJson(
+        json: String,
+        registry: FormatterRuleRegistry = FormatterRuleRegistry(),
+    ): FormatterRules = buildRules(ConfigParser.parseJson(json), registry)
 
-    fun fromJson(json: String): FormatterRules = buildRules(ConfigParser.parseJson(json))
-
-    fun fromYaml(yaml: String): FormatterRules = buildRules(ConfigParser.parseYaml(yaml))
+    fun fromYaml(
+        yaml: String,
+        registry: FormatterRuleRegistry = FormatterRuleRegistry(),
+    ): FormatterRules = buildRules(ConfigParser.parseYaml(yaml), registry)
 
     // la config puede llegar como stream, sin extension que mirar
-    fun fromStream(input: InputStream): FormatterRules = buildRules(ConfigParser.parseStream(input))
+    fun fromStream(
+        input: InputStream,
+        registry: FormatterRuleRegistry = FormatterRuleRegistry(),
+    ): FormatterRules = buildRules(ConfigParser.parseStream(input), registry)
 
-    fun fromFile(path: String): FormatterRules = buildRules(ConfigParser.parseFile(path))
+    fun fromFile(
+        path: String,
+        registry: FormatterRuleRegistry = FormatterRuleRegistry(),
+    ): FormatterRules = buildRules(ConfigParser.parseFile(path), registry)
 
-    private fun bool(
+    // cada factory convierte su texto; solo se guardan las reglas pedidas
+    private fun buildRules(
         map: Map<String, String>,
-        key: String,
-    ): Boolean =
-        when (map[key]?.lowercase()) {
-            null, "", "null" -> false
-            "true" -> true
-            "false" -> false
-            else -> throw IllegalArgumentException("Expected boolean for '$key'")
-        }
-
-    private fun int(
-        map: Map<String, String>,
-        key: String,
-    ): Int? {
-        val raw = map[key] ?: return null
-        if (raw.isEmpty() || raw == "null") return null
-        return raw.toIntOrNull() ?: throw IllegalArgumentException("Expected integer for '$key', got '$raw'")
-    }
-
-    private fun buildRules(map: Map<String, String>): FormatterRules {
-        map.keys.filter { it !in knownKeys }.forEach {
-            System.err.println("formatter: ignoring unknown key '$it'")
-        }
-        return FormatterRules(
-            spaceBeforeColon = bool(map, "enforce-spacing-before-colon-in-declaration"),
-            spaceAfterColon = bool(map, "enforce-spacing-after-colon-in-declaration"),
-            spacingAroundEquals = bool(map, "enforce-spacing-around-equals"),
-            noSpacingAroundEquals = bool(map, "enforce-no-spacing-around-equals"),
-            lineBreaksAfterPrintln = int(map, "line-breaks-after-println"),
-            singleSpaceSeparation = bool(map, "mandatory-single-space-separation"),
-            spaceSurroundingOperations = bool(map, "mandatory-space-surrounding-operations"),
-            lineBreakAfterStatement = bool(map, "mandatory-line-break-after-statement"),
-            indentInsideIf = int(map, "indent-inside-if"),
-            ifBraceSameLine = bool(map, "if-brace-same-line"),
-            ifBraceBelowLine = bool(map, "if-brace-below-line"),
-        )
+        registry: FormatterRuleRegistry,
+    ): FormatterRules {
+        val values =
+            registry.factories
+                .mapNotNull { factory -> map[factory.key]?.let(factory::parse)?.let { factory.key to it } }
+                .toMap()
+        val rules = FormatterRules(values)
+        FormatterRulesValidator(registry).check(rules)
+        (map.keys - registry.keys).forEach { System.err.println("formatter: ignoring unknown key '$it'") }
+        return rules
     }
 }

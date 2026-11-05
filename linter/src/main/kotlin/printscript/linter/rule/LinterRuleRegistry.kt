@@ -1,46 +1,42 @@
 package printscript.linter.rule
 
-import printscript.linter.LinterRules
-
-// devuelve lista vacia cuando la config no pide la regla
-fun interface LinterRuleFactory {
-    fun create(config: LinterRules): List<LinterRule>
-}
-
 // aca se registra cada regla nueva, asi Linter.kt no se toca mas.
 // register() devuelve un registry nuevo en vez de mutar, igual que ast.registry.Registry:
 // un registro mutable global se compartiria entre tests y entre instancias de Linter
 class LinterRuleRegistry(
     private val factories: List<LinterRuleFactory> = DEFAULT_FACTORIES,
 ) {
+    init {
+        // con dos factories para la misma clave, defaultConfig se quedaria con una sola sin avisar
+        require(factories.distinctBy { it.key }.size == factories.size) { "Duplicated linter config key" }
+    }
+
     fun register(factory: LinterRuleFactory): LinterRuleRegistry = LinterRuleRegistry(factories + factory)
 
-    fun rulesFor(config: LinterRules): List<LinterRule> = factories.flatMap { it.create(config) }
+    // se recorren las factories y no el map, asi el orden de las reglas no depende del archivo
+    fun rulesFor(config: Map<String, String>): List<LinterRule> {
+        (config.keys - factories.map { it.key }.toSet()).forEach {
+            System.err.println("linter: ignoring unknown key '$it'")
+        }
+        // clave ausente: la regla no va (el {} del TCK).
+        // Si viene vacia o "null", cae al default por compatibilidad con el TCK (donde una clave
+        // sin valor habilita la regla por defecto, a diferencia del formatter que la apaga).
+        return factories.mapNotNull { factory ->
+            config[factory.key]?.let { factory.create(if (isBlank(it)) factory.default else it) }
+        }
+    }
 
-    // el Linter recorre una sola regla: las que pidio la config vienen agrupadas
-    fun ruleFor(config: LinterRules): LinterRule = CompositeRule(rulesFor(config))
+    private fun isBlank(value: String): Boolean = value.isEmpty() || value.equals("null", ignoreCase = true)
+
+    // todas las reglas prendidas: lo que usa el CLI cuando no le pasan --config
+    fun defaultConfig(): Map<String, String> = factories.associate { it.key to it.default }
 
     private companion object {
         val DEFAULT_FACTORIES: List<LinterRuleFactory> =
             listOf(
-                LinterRuleFactory { config ->
-                    val format = config.identifierFormat
-                    if (format != null) listOf(IdentifierFormatRule(format)) else emptyList()
-                },
-                // println y readInput piden lo mismo, pero se devuelven sueltas: agruparlas aca
-                // en un CompositeRule solo duplicaria el que ya arma ruleFor, y haria que
-                // rulesFor() reporte menos reglas de las que realmente estan activas
-                LinterRuleFactory { config -> argumentRules(config) },
+                IdentifierFormatRuleFactory,
+                PrintCallArgumentRuleFactory,
+                ReadInputArgumentRuleFactory,
             )
-
-        private fun argumentRules(config: LinterRules): List<LinterRule> =
-            buildList {
-                if (config.printCallArgumentsMustBeLiteralOrIdentifier == true) {
-                    add(PrintCallArgumentRule())
-                }
-                if (config.readInputArgumentsMustBeLiteralOrIdentifier == true) {
-                    add(ReadInputArgumentRule())
-                }
-            }
     }
 }

@@ -1,7 +1,7 @@
 package printscript.formatter
 
 import printscript.lexer.CharStream
-import printscript.lexer.Lexer
+import printscript.lexer.LexerFactory
 import java.io.StringReader
 import java.io.StringWriter
 import java.io.Writer
@@ -9,14 +9,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class FormatterTest {
-    private fun tokensOf(code: String) = Lexer(CharStream(StringReader(code))).tokenize()
+    private fun tokensOf(code: String) = LexerFactory.create(CharStream(StringReader(code)), TEST_KEYWORDS).tokenize()
 
     private fun format(
         code: String,
         rules: FormatterRules = FormatterRules(),
     ): String {
         val writer = StringWriter()
-        Formatter(rules).format(tokensOf(code), writer)
+        FormatterFactory.create(rules).format(tokensOf(code), writer)
         return writer.toString()
     }
 
@@ -29,7 +29,7 @@ class FormatterTest {
 
     @Test
     fun `does not add a line break after the last statement`() {
-        val rules = FormatterRules(lineBreaksAfterPrintln = 2)
+        val rules = FormatterRules.of("line-breaks-after-println" to 2)
 
         assertEquals("println(1);", format("println(1);", rules))
     }
@@ -37,7 +37,7 @@ class FormatterTest {
     @Test
     fun `puts the brace of the else below too`() {
         val code = "if (x) {\n  println(1);\n} else {\n  println(2);\n}"
-        val rules = FormatterRules(ifBraceBelowLine = true)
+        val rules = FormatterRules.of("if-brace-below-line" to true)
 
         assertEquals("if (x)\n{\n  println(1);\n} else\n{\n  println(2);\n}", format(code, rules))
     }
@@ -45,7 +45,7 @@ class FormatterTest {
     @Test
     fun `indents the closing brace at the level of its if`() {
         val code = "if (x) {\nif (y) {\nprintln(1);\n}\n}"
-        val rules = FormatterRules(indentInsideIf = 2)
+        val rules = FormatterRules.of("indent-inside-if" to 2)
 
         assertEquals("if (x) {\n  if (y) {\n    println(1);\n  }\n}", format(code, rules))
     }
@@ -71,7 +71,7 @@ class FormatterTest {
                 override fun close() = Unit
             }
 
-        Formatter(FormatterRules()).format(counting, spy)
+        FormatterFactory.create().format(counting, spy)
 
         // si juntara los tokens antes de escribir, al primer write ya los habria leido todos
         assertEquals(1, readAtFirstWrite)

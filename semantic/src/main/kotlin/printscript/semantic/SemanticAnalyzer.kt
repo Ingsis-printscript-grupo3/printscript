@@ -1,18 +1,18 @@
 package printscript.semantic
 
+import printscript.ast.Expression
 import printscript.ast.Statement
-import printscript.common.LanguageVersion
+import printscript.ast.registry.Handler
 import printscript.semantic.symbol.SymbolTable
 
+// recibe los handlers ya elegidos: que nodos acepta lo decide quien lo arma
 class SemanticAnalyzer(
-    val version: LanguageVersion,
+    private val statementHandlers: List<Handler<Statement, StatementValidator, SemanticResult<Unit>>>,
+    private val expressionHandlers: List<Handler<Expression, ResolverContext, SemanticResult<String>>>,
 ) {
     fun analyze(ast: Iterator<Statement>): Iterator<SemanticResult<Statement>> =
         iterator {
-            val rules = SemanticRules.from(version)
-            val symbolTable = SymbolTable()
-            val expressionResolver = ExpressionResolver(symbolTable, rules)
-            val statementValidator = StatementValidator(symbolTable, expressionResolver, rules)
+            val statementValidator = newValidator()
 
             for (statement in ast) {
                 val result = statementValidator.validate(statement)
@@ -28,4 +28,11 @@ class SemanticAnalyzer(
                 }
             }
         }
+
+    // uno nuevo por analisis: la tabla de simbolos no se comparte entre corridas
+    private fun newValidator(): StatementValidator {
+        val symbolTable = SymbolTable()
+        val expressionResolver = ExpressionResolver(symbolTable, expressionHandlers)
+        return StatementValidator(symbolTable, expressionResolver, statementHandlers)
+    }
 }

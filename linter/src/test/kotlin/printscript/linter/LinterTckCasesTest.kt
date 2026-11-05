@@ -1,13 +1,6 @@
 package printscript.linter
 
-import printscript.ast.Statement
-import printscript.common.LanguageVersion
 import printscript.common.Position
-import printscript.lexer.CharStream
-import printscript.lexer.Lexer
-import printscript.parser.Parser
-import printscript.parser.result.ParseResult
-import java.io.StringReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -18,20 +11,7 @@ class LinterTckCasesTest {
     private fun lint(
         source: String,
         configJson: String,
-        version: LanguageVersion = LanguageVersion.V1_1,
-    ): List<Warning> {
-        val tokens = Lexer(CharStream(StringReader(source))).tokenize()
-        val statements = mutableListOf<Statement>()
-        Parser(tokens, version).parse().forEach { result ->
-            when (result) {
-                is ParseResult.Success -> statements.add(result.statement)
-                is ParseResult.Failure -> error("no debería fallar el parseo: ${result.message} en ${result.start}")
-            }
-        }
-        val warnings = mutableListOf<Warning>()
-        Linter(LinterRulesLoader.fromJson(configJson)).analyze(statements.iterator(), warnings::add)
-        return warnings
-    }
+    ): List<Warning> = warningsOf(LinterFactory.fromStream(configJson.byteInputStream()), source)
 
     private val camelCaseConfig =
         """
@@ -61,14 +41,14 @@ class LinterTckCasesTest {
             let otraCosa: string = "hola";
             """.trimIndent()
 
-        assertTrue(lint(source, camelCaseConfig, LanguageVersion.V1_0).isEmpty())
+        assertTrue(lint(source, camelCaseConfig).isEmpty())
     }
 
     @Test
     fun `10 - snake case declarations warn under camel case`() {
         val source = "let mi_variable: number = 3;"
 
-        val warnings = lint(source, camelCaseConfig, LanguageVersion.V1_0)
+        val warnings = lint(source, camelCaseConfig)
 
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'mi_variable' does not match format camel case", warnings[0].message)
@@ -78,7 +58,19 @@ class LinterTckCasesTest {
     fun `10 - snake case declarations pass under snake case`() {
         val source = "let mi_variable: number = 3;"
 
-        assertTrue(lint(source, snakeCaseConfig, LanguageVersion.V1_0).isEmpty())
+        assertTrue(lint(source, snakeCaseConfig).isEmpty())
+    }
+
+    // valid-no-rules del TCK: una regla que la config no nombra no corre
+    @Test
+    fun `10 - an empty config checks nothing`() {
+        val source =
+            """
+            let myVariable: number = 5;
+            let my_variable: number = 10;
+            """.trimIndent()
+
+        assertTrue(lint(source, "{}").isEmpty())
     }
 
     // este es el caso que el ticket 1.5 vino a arreglar: antes pasaba sin warning
@@ -90,7 +82,7 @@ class LinterTckCasesTest {
             mi_variable = 4;
             """.trimIndent()
 
-        val warnings = lint(source, camelCaseConfig, LanguageVersion.V1_0)
+        val warnings = lint(source, camelCaseConfig)
 
         assertEquals(2, warnings.size)
         // el warning apunta al nombre: columna 5 en el let, columna 1 en la asignacion
@@ -107,14 +99,14 @@ class LinterTckCasesTest {
             println(5);
             """.trimIndent()
 
-        assertTrue(lint(source, camelCaseConfig, LanguageVersion.V1_0).isEmpty())
+        assertTrue(lint(source, camelCaseConfig).isEmpty())
     }
 
     @Test
     fun `10 - println with an expression warns`() {
         val source = "println(1 + 2);"
 
-        val warnings = lint(source, camelCaseConfig, LanguageVersion.V1_0)
+        val warnings = lint(source, camelCaseConfig)
 
         assertEquals(1, warnings.size)
         assertEquals(

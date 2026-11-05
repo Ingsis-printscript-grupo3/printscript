@@ -20,33 +20,20 @@ class VariableDeclarationHandler : Handler<Statement, StatementValidator, Semant
             )
         }
 
-        validateRules(node, ctx)?.let { return it }
+        validateConstHasValue(node)?.let { return it }
         validateValueType(node, ctx)?.let { return it }
 
         return ctx.symbolTable.define(node.name, node.type, node.isConst, at = node.namePosition)
     }
 
-    private fun validateRules(
-        node: VariableDeclaration,
-        ctx: StatementValidator,
-    ): SemanticResult.Failure? =
-        when {
-            node.isConst && !ctx.rules.supportsConst ->
-                SemanticResult.Failure(
-                    "'const' declarations are not supported in PrintScript ${ctx.rules.version.label}.",
-                    node.position,
-                )
-            node.isConst && node.value == null ->
-                SemanticResult.Failure(
-                    "Constant '${node.name}' must be initialized.",
-                    node.position,
-                )
-            node.type !in ctx.rules.supportedTypes ->
-                SemanticResult.Failure(
-                    "Type '${node.type}' is not supported in PrintScript ${ctx.rules.version.label}.",
-                    node.position,
-                )
-            else -> null
+    private fun validateConstHasValue(node: VariableDeclaration): SemanticResult.Failure? =
+        if (node.isConst && node.value == null) {
+            SemanticResult.Failure(
+                "Constant '${node.name}' must be initialized.",
+                node.position,
+            )
+        } else {
+            null
         }
 
     private fun validateValueType(
@@ -54,10 +41,10 @@ class VariableDeclarationHandler : Handler<Statement, StatementValidator, Semant
         ctx: StatementValidator,
     ): SemanticResult.Failure? {
         val value = node.value ?: return null
-        return when (val exprResult = ctx.expressionResolver.resolveType(value, expectedType = node.type)) {
-            is SemanticResult.Failure -> exprResult
+        return when (val valueType = ctx.expressionResolver.resolveType(value, expectedType = node.type)) {
+            is SemanticResult.Failure -> valueType
             is SemanticResult.Success -> {
-                if (exprResult.value != node.type) {
+                if (valueType.value != node.type) {
                     SemanticResult.Failure("Incompatible types.", node.position)
                 } else {
                     null

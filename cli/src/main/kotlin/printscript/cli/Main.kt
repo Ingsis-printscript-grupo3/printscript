@@ -14,16 +14,14 @@ import printscript.common.LanguageVersion
 import printscript.common.Position
 import printscript.common.Token
 import printscript.formatter.Formatter
+import printscript.formatter.FormatterFactory
 import printscript.formatter.FormatterRules
 import printscript.formatter.FormatterRulesLoader
 import printscript.interpreter.env.SystemEnvProvider
 import printscript.interpreter.input.ConsoleInput
 import printscript.interpreter.output.ConsoleOutput
-import printscript.linter.IdentifierFormat
+import printscript.linter.Linter
 import printscript.linter.LinterFactory
-import printscript.linter.LinterInterface
-import printscript.linter.LinterRules
-import printscript.linter.LinterRulesLoader
 import printscript.linter.Warning
 import printscript.runner.Engine
 import printscript.runner.ExecutionResult
@@ -36,20 +34,15 @@ import java.io.Writer
 // commands: execute, validate, format, analyze (--config only for format and analyze)
 // example: execute ejemplos\programas\ok\10-consigna-joe-doe.prs
 
-private val DEFAULT_FORMATTER_RULES =
-    FormatterRules(
-        lineBreakAfterStatement = true,
-        singleSpaceSeparation = true,
-        spaceSurroundingOperations = true,
-        ifBraceSameLine = true,
-        indentInsideIf = 4,
-    )
+private const val DEFAULT_INDENT = 4
 
-private val DEFAULT_LINTER_RULES =
-    LinterRules(
-        identifierFormat = IdentifierFormat.CAMEL_CASE,
-        printCallArgumentsMustBeLiteralOrIdentifier = true,
-        readInputArgumentsMustBeLiteralOrIdentifier = true,
+private val DEFAULT_FORMATTER_RULES =
+    FormatterRules.of(
+        "mandatory-line-break-after-statement" to true,
+        "mandatory-single-space-separation" to true,
+        "mandatory-space-surrounding-operations" to true,
+        "if-brace-same-line" to true,
+        "indent-inside-if" to DEFAULT_INDENT,
     )
 
 class PrintScriptCli : CliktCommand(name = "printscript") {
@@ -135,19 +128,19 @@ class AnalyzeCommand : PrintScriptCommand(
 ) {
     private val config by option("--config", help = "Path to a JSON or YAML file with linter rules")
         .file(mustExist = true, canBeDir = false, mustBeReadable = true)
-    private lateinit var linter: LinterInterface
+    private lateinit var linter: Linter
     private var warningCount = 0
 
     override fun runOn(version: LanguageVersion) {
-        linter = LinterFactory.create(version, loadRules())
+        linter = createLinter()
         checkResult(engine.lint(file.reader(), version, progress::report, ::lintStatements))
         if (warningCount == 0) echo("${file.path}: no warnings found")
     }
 
-    private fun loadRules(): LinterRules {
-        val path = config?.path ?: return DEFAULT_LINTER_RULES
+    private fun createLinter(): Linter {
+        val path = config?.path ?: return LinterFactory.create()
         return try {
-            LinterRulesLoader.fromFile(path)
+            LinterFactory.fromFile(path)
         } catch (e: IllegalArgumentException) {
             invalidConfig(e)
         }
@@ -165,10 +158,10 @@ class AnalyzeCommand : PrintScriptCommand(
 class FormatCommand : PrintScriptCommand("format", "Format a .prs file and print the result") {
     private val config by option("--config", help = "Path to a JSON or YAML file with formatting rules")
         .file(mustExist = true, canBeDir = false, mustBeReadable = true)
-    private lateinit var rules: FormatterRules
+    private lateinit var formatter: Formatter
 
     override fun runOn(version: LanguageVersion) {
-        rules = loadRules()
+        formatter = FormatterFactory.create(loadRules())
         checkResult(engine.format(::openFile, version, progress::report, ::formatTokens))
     }
 
@@ -184,7 +177,7 @@ class FormatCommand : PrintScriptCommand("format", "Format a .prs file and print
     // the engine opens the file twice: once to validate it and once to format it
     private fun openFile(): Reader = file.reader()
 
-    private fun formatTokens(tokens: Iterator<Token>) = Formatter(rules).format(tokens, echoWriter())
+    private fun formatTokens(tokens: Iterator<Token>) = formatter.format(tokens, echoWriter())
 
     // prints each piece as soon as it is formatted
     private fun echoWriter(): Writer =

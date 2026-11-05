@@ -57,15 +57,18 @@ depende de ningún otro módulo.
 
 **`lexer`** — Convierte el texto fuente en tokens, de a uno por vez. No conoce la gramática:
 solo sabe reconocer palabras, números, strings y símbolos. Su interfaz pública es
-`LexerInterface.tokenize(): Iterator<Token>`. Se extiende agregando implementaciones de
+`Lexer.tokenize(): Iterator<Token>`. Se extiende agregando implementaciones de
 `TokenReader` a la lista que recibe el `Lexer` por constructor.
 
 **`ast`** — Los nodos del árbol sintáctico (`VariableDeclaration`, `PrintCall`,
 `BinaryExpression`, etc.) y el `Registry<N, C, R>` genérico que resuelve qué handler atiende
-cada nodo. Es solo estructura: no tiene lógica de negocio.
+cada nodo. Es solo estructura: no tiene lógica de negocio. Cada nodo declara sus hijos
+(`children`), así que cualquier recorrido genérico, como el del linter, baja por el árbol sin
+conocer los tipos concretos. `children` no tiene valor por defecto: un nodo nuevo no compila
+hasta declarar los suyos, y lo hace en su propia clase, sin tocar los recorridos existentes.
 
 **`parser`** — Arma el árbol a partir de los tokens. Su interfaz es
-`ParserInterface.parse(): Iterator<ParseResult>`, donde cada resultado es un `Success` con
+`Parser.parse(): Iterator<ParseResult>`, donde cada resultado es un `Success` con
 una sentencia o un `Failure` con mensaje y posición. Se extiende registrando *parselets*
 (expresiones) y *handlers* (sentencias).
 
@@ -92,8 +95,8 @@ Las reglas también se componen, y la configuración decide cuáles se crean.
 Y los dos últimos son los que arman todo y lo exponen.
 
 **`runner`** — El único módulo que depende del pipeline completo. Su `Engine` lo encadena y
-traduce cualquier excepción en un resultado con tipo, mensaje y posición. Expone también
-`PrintScriptRunner`, que es la fachada que consume el TCK de la cátedra.
+traduce cualquier excepción en un resultado con tipo, mensaje y posición. No sabe nada del
+TCK: los adaptadores que traducen sus interfaces al `Engine` viven en el repo del TCK.
 
 **`cli`** — La interfaz de línea de comandos, construida con Clikt. Delega la ejecución en
 `runner`; de `interpreter`, `formatter` y `linter` toma solo los tipos que necesita para
@@ -197,10 +200,15 @@ por defecto es la de `gradle.properties` (`0.0.1-SNAPSHOT`) y se pisa con `-Pver
 Los `.jar` quedan en `~/.m2/repository/org/printscript/`, donde cualquier proyecto Gradle o
 Maven de la misma máquina los encuentra sin credenciales.
 
-**A GitHub Packages**, que es la publicación real. La hace sola el workflow
-[`.github/workflows/publish.yml`](.github/workflows/publish.yml) cuando se crea un release en
-GitHub. El workflow corre `./gradlew publish` tomando la versión del tag: un release
-etiquetado `v1.0.0` se publica como `1.0.0`.
+**A GitHub Packages**, que es la publicación real. La hace automáticamente el workflow
+[`.github/workflows/publish.yml`](.github/workflows/publish.yml) cada vez que se hace push o se
+mergea un pull request a `main`. El workflow corre `./gradlew check`, deriva el incremento de
+versión (SemVer) leyendo los Conventional Commits (`feat:` -> minor, `BREAKING CHANGE:` -> major,
+`fix:` o por defecto -> patch), crea el tag y la GitHub Release correspondiente con changelog
+automático, y corre `./gradlew publish` para publicar los paquetes.
+
+También se puede disparar a mano vía `workflow_dispatch` desde GitHub Actions (pudiendo elegir el
+tipo de bump) o al crear un release manual en GitHub.
 
 Para publicar a mano hacen falta las variables de entorno `GITHUB_ACTOR` y `GITHUB_TOKEN`
 con un token que tenga permiso `write:packages`:
@@ -215,12 +223,13 @@ con un token que tenga permiso `write:packages`:
 ## Cómo correr el TCK
 
 El TCK de la cátedra vive en un repo aparte y se engancha a esta implementación por
-`CustomImplementationFactory`, que adapta `PrintScriptRunner` a sus interfaces.
+`CustomImplementationFactory`. Sus adaptadores llaman al `Engine` directo, así que un cambio
+en el TCK se resuelve en su repo sin tocar esta librería.
 
 ```bash
-# 1. publicar esta implementación en el repositorio local, con la version por defecto
-#    (0.0.1-SNAPSHOT), que es la que pide el build.gradle del fork
-./gradlew publishToMavenLocal
+# 1. publicar esta implementación en el repositorio local, con la version que pide
+#    el build.gradle del fork
+./gradlew publishToMavenLocal "-Pversion=<version del fork>"
 
 # 2. clonar el fork del grupo, en la rama de validación
 git clone -b group-3-validation https://github.com/Ingsis-printscript-grupo3/printscript-tck.git

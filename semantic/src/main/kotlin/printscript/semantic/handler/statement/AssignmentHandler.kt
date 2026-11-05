@@ -17,9 +17,9 @@ class AssignmentHandler : Handler<Statement, StatementValidator, SemanticResult<
             return SemanticResult.Failure("Unexpected node in AssignmentHandler.", node.position)
         }
         val variable =
-            when (val res = ctx.symbolTable.lookup(node.name, at = node.position)) {
-                is SemanticResult.Failure -> return res
-                is SemanticResult.Success -> res.value
+            when (val lookup = ctx.symbolTable.lookup(node.name, at = node.position)) {
+                is SemanticResult.Failure -> return lookup
+                is SemanticResult.Success -> lookup.value
             }
         if (variable.isConst) {
             return SemanticResult.Failure("Cannot reassign constant '${node.name}'.", node.position)
@@ -32,10 +32,10 @@ class AssignmentHandler : Handler<Statement, StatementValidator, SemanticResult<
         ctx: StatementValidator,
         expectedType: String,
     ): SemanticResult<Unit> =
-        when (val exprResult = ctx.expressionResolver.resolveType(node.value, expectedType = expectedType)) {
-            is SemanticResult.Failure -> exprResult
+        when (val valueType = ctx.expressionResolver.resolveType(node.value, expectedType = expectedType)) {
+            is SemanticResult.Failure -> valueType
             is SemanticResult.Success ->
-                if (exprResult.value != expectedType) {
+                if (valueType.value != expectedType) {
                     SemanticResult.Failure("Incompatible types in assignment.", node.position)
                 } else {
                     SemanticResult.Success(Unit)

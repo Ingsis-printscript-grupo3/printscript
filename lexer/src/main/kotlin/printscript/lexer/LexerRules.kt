@@ -2,23 +2,8 @@ package printscript.lexer
 
 import printscript.common.TokenType
 
+// las keywords no estan aca: cambian con la version y las recibe LexerFactory
 object LexerRules {
-    val keywords: Map<String, TokenType> =
-        mapOf(
-            "let" to TokenType.LET,
-            "println" to TokenType.PRINTLN,
-            "number" to TokenType.NUMBERTYPE,
-            "string" to TokenType.STRINGTYPE,
-            "const" to TokenType.CONST,
-            "boolean" to TokenType.BOOLEANTYPE,
-            "true" to TokenType.BOOLEANLITERAL,
-            "false" to TokenType.BOOLEANLITERAL,
-            "if" to TokenType.IF,
-            "else" to TokenType.ELSE,
-            "readInput" to TokenType.READINPUT,
-            "readEnv" to TokenType.READENV,
-        )
-
     val symbols: Map<Char, TokenType> =
         mapOf(
             '+' to TokenType.PLUS,

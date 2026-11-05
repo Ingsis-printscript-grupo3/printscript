@@ -6,8 +6,6 @@ import java.io.PrintStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class FormatterRulesLoaderTest {
@@ -46,14 +44,17 @@ class FormatterRulesLoaderTest {
             }
             """.trimIndent()
 
-        val rules = FormatterRulesLoader.fromJson(json)
+        val expected =
+            FormatterRules.of(
+                "enforce-spacing-before-colon-in-declaration" to true,
+                "enforce-spacing-after-colon-in-declaration" to true,
+                "enforce-spacing-around-equals" to true,
+                "line-breaks-after-println" to 2,
+                "indent-inside-if" to 2,
+                "if-brace-below-line" to true,
+            )
 
-        assertTrue(rules.spaceBeforeColon)
-        assertTrue(rules.spaceAfterColon)
-        assertTrue(rules.spacingAroundEquals)
-        assertEquals(2, rules.lineBreaksAfterPrintln)
-        assertEquals(2, rules.indentInsideIf)
-        assertTrue(rules.ifBraceBelowLine)
+        assertEquals(expected, FormatterRulesLoader.fromJson(json))
     }
 
     @Test
@@ -65,18 +66,21 @@ class FormatterRulesLoaderTest {
             line-breaks-after-println: 1
             """.trimIndent()
 
-        val rules = FormatterRulesLoader.fromYaml(yaml)
+        val expected =
+            FormatterRules.of(
+                "enforce-spacing-before-colon-in-declaration" to true,
+                "enforce-no-spacing-around-equals" to true,
+                "line-breaks-after-println" to 1,
+            )
 
-        assertTrue(rules.spaceBeforeColon)
-        assertTrue(rules.noSpacingAroundEquals)
-        assertEquals(1, rules.lineBreaksAfterPrintln)
+        assertEquals(expected, FormatterRulesLoader.fromYaml(yaml))
     }
 
     @Test
     fun `falls back to defaults for keys the config does not mention`() {
         val rules = FormatterRulesLoader.fromJson("""{ "line-breaks-after-println": 2 }""")
 
-        assertEquals(FormatterRules(lineBreaksAfterPrintln = 2), rules)
+        assertEquals(FormatterRules.of("line-breaks-after-println" to 2), rules)
     }
 
     @Test
@@ -93,14 +97,14 @@ class FormatterRulesLoaderTest {
     fun `reads a JSON config from a stream, like the TCK hands it over`() {
         val stream = """{ "line-breaks-after-println": 2 }""".byteInputStream()
 
-        assertEquals(2, FormatterRulesLoader.fromStream(stream).lineBreaksAfterPrintln)
+        assertEquals(2, FormatterRulesLoader.fromStream(stream).values["line-breaks-after-println"])
     }
 
     @Test
     fun `reads a YAML config from a stream, like the TCK hands it over`() {
         val stream = "line-breaks-after-println: 1".byteInputStream()
 
-        assertEquals(1, FormatterRulesLoader.fromStream(stream).lineBreaksAfterPrintln)
+        assertEquals(1, FormatterRulesLoader.fromStream(stream).values["line-breaks-after-println"])
     }
 
     @Test
@@ -115,28 +119,34 @@ class FormatterRulesLoaderTest {
     fun `reads the rules from a json file`() {
         val file = tempConfig("json", """{"line-breaks-after-println": 2}""")
 
-        assertEquals(FormatterRules(lineBreaksAfterPrintln = 2), FormatterRulesLoader.fromFile(file.path))
+        assertEquals(FormatterRules.of("line-breaks-after-println" to 2), FormatterRulesLoader.fromFile(file.path))
     }
 
     @Test
     fun `reads the rules from a yaml file`() {
         val file = tempConfig("yaml", "enforce-spacing-after-colon-in-declaration: true")
 
-        assertEquals(FormatterRules(spaceAfterColon = true), FormatterRulesLoader.fromFile(file.path))
+        assertEquals(
+            FormatterRules.of("enforce-spacing-after-colon-in-declaration" to true),
+            FormatterRulesLoader.fromFile(file.path),
+        )
     }
 
     @Test
     fun `reads the rules from a yml file`() {
         val file = tempConfig("yml", "enforce-no-spacing-around-equals: true")
 
-        assertEquals(FormatterRules(noSpacingAroundEquals = true), FormatterRulesLoader.fromFile(file.path))
+        assertEquals(
+            FormatterRules.of("enforce-no-spacing-around-equals" to true),
+            FormatterRulesLoader.fromFile(file.path),
+        )
     }
 
     @Test
     fun `ignores the casing of the extension`() {
         val file = tempConfig("JSON", """{"line-breaks-after-println": 1}""")
 
-        assertEquals(FormatterRules(lineBreaksAfterPrintln = 1), FormatterRulesLoader.fromFile(file.path))
+        assertEquals(FormatterRules.of("line-breaks-after-println" to 1), FormatterRulesLoader.fromFile(file.path))
     }
 
     @Test
@@ -159,21 +169,41 @@ class FormatterRulesLoaderTest {
     }
 
     @Test
+    fun `a boolean set to false leaves the rule off`() {
+        assertEquals(FormatterRules(), FormatterRulesLoader.fromJson("""{"if-brace-same-line": false}"""))
+    }
+
+    @Test
+    fun `rejects a boolean value that is not true or false`() {
+        assertFailsWith<IllegalArgumentException> { FormatterRulesLoader.fromYaml("if-brace-same-line: si") }
+    }
+
+    @Test
+    fun `rejects an integer value that is not a number`() {
+        assertFailsWith<IllegalArgumentException> { FormatterRulesLoader.fromYaml("indent-inside-if: muchos") }
+    }
+
+    @Test
+    fun `rejects asking for spaces and no spaces around equals at once`() {
+        assertFailsWith<IllegalArgumentException> {
+            FormatterRulesLoader.fromJson(
+                """{"enforce-spacing-around-equals": true, "enforce-no-spacing-around-equals": true}""",
+            )
+        }
+    }
+
+    @Test
     fun `a null value in json or an empty one in yaml leaves the rule off`() {
         val json = """{"line-breaks-after-println": null, "enforce-spacing-around-equals": null}"""
-        val rulesJson = FormatterRulesLoader.fromJson(json)
-        assertNull(rulesJson.lineBreaksAfterPrintln)
-        assertFalse(rulesJson.spacingAroundEquals)
+        assertEquals(FormatterRules(), FormatterRulesLoader.fromJson(json))
 
         val yaml = "line-breaks-after-println:\nenforce-spacing-around-equals: # empty"
-        val rulesYaml = FormatterRulesLoader.fromYaml(yaml)
-        assertNull(rulesYaml.lineBreaksAfterPrintln)
-        assertFalse(rulesYaml.spacingAroundEquals)
+        assertEquals(FormatterRules(), FormatterRulesLoader.fromYaml(yaml))
     }
 
     @Test
     fun `handles UTF-8 BOM at beginning of stream`() {
         val stream = "\uFEFF{\"line-breaks-after-println\": 2}".byteInputStream()
-        assertEquals(2, FormatterRulesLoader.fromStream(stream).lineBreaksAfterPrintln)
+        assertEquals(2, FormatterRulesLoader.fromStream(stream).values["line-breaks-after-println"])
     }
 }
