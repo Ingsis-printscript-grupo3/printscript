@@ -37,6 +37,21 @@ import printscript.parser.statement.handlers.AssignmentHandler
 import printscript.parser.statement.handlers.IfStatementHandler
 import printscript.parser.statement.handlers.PrintCallHandler
 import printscript.parser.statement.handlers.VariableDeclarationHandler
+import printscript.semantic.ResolverContext
+import printscript.semantic.SemanticResult
+import printscript.semantic.StatementValidator
+import printscript.semantic.handler.expression.BinaryExpressionHandler
+import printscript.semantic.handler.expression.BooleanLiteralHandler
+import printscript.semantic.handler.expression.IdentifierHandler
+import printscript.semantic.handler.expression.NumberLiteralHandler
+import printscript.semantic.handler.expression.ReadEnvHandler
+import printscript.semantic.handler.expression.ReadInputHandler
+import printscript.semantic.handler.expression.StringLiteralHandler
+import printscript.semantic.handler.statement.AssignmentHandler as SemanticAssignmentHandler
+import printscript.semantic.handler.statement.BlockHandler as SemanticBlockHandler
+import printscript.semantic.handler.statement.IfStatementHandler as SemanticIfStatementHandler
+import printscript.semantic.handler.statement.PrintCallHandler as SemanticPrintCallHandler
+import printscript.semantic.handler.statement.VariableDeclarationHandler as SemanticVariableDeclarationHandler
 
 internal object PrintScript11 : LanguageDefinition {
     override val keywords: Map<String, TokenType> =
@@ -71,13 +86,33 @@ internal object PrintScript11 : LanguageDefinition {
 
     private val declarableTypes = setOf(TokenType.NUMBERTYPE, TokenType.STRINGTYPE, TokenType.BOOLEANTYPE)
 
-    override val statementHandlers: Map<TokenType, StatementHandler> =
+    override val parserStatements: Map<TokenType, StatementHandler> =
         mapOf(
             TokenType.LET to VariableDeclarationHandler(declarableTypes),
             TokenType.PRINTLN to PrintCallHandler,
             TokenType.IDENTIFIER to AssignmentHandler,
             TokenType.CONST to VariableDeclarationHandler(declarableTypes),
             TokenType.IF to IfStatementHandler,
+        )
+
+    override val semanticStatements: List<Handler<Statement, StatementValidator, SemanticResult<Unit>>> =
+        listOf(
+            SemanticVariableDeclarationHandler(),
+            SemanticAssignmentHandler(),
+            SemanticPrintCallHandler(),
+            SemanticIfStatementHandler(),
+            SemanticBlockHandler(),
+        )
+
+    override val semanticExpressions: List<Handler<Expression, ResolverContext, SemanticResult<String>>> =
+        listOf(
+            NumberLiteralHandler(),
+            StringLiteralHandler(),
+            BooleanLiteralHandler(),
+            IdentifierHandler(),
+            BinaryExpressionHandler(),
+            ReadInputHandler(),
+            ReadEnvHandler(),
         )
 
     override fun statementInterpreters(output: Output): List<Handler<Statement, InterpreterContext, Unit>> =

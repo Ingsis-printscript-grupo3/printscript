@@ -134,7 +134,7 @@ private fun parserFor(
     return ParserFactory.create(
         tokens,
         definition.prefixParselets,
-        definition.statementHandlers,
+        definition.parserStatements,
         definition.infixParselets,
     )
 }
@@ -176,7 +176,8 @@ private fun analyzeAst(
     astIterator: Iterator<Statement>,
     languageVersion: LanguageVersion,
 ): Iterator<Statement> {
-    val semanticAnalyzer = SemanticAnalyzer(languageVersion)
+    val definition = languageVersion.definition()
+    val semanticAnalyzer = SemanticAnalyzer(definition.semanticStatements, definition.semanticExpressions)
     return buildValidStatementIterator(semanticAnalyzer.analyze(astIterator))
 }
 

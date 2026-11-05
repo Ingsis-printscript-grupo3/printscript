@@ -28,6 +28,16 @@ import printscript.parser.statement.StatementHandler
 import printscript.parser.statement.handlers.AssignmentHandler
 import printscript.parser.statement.handlers.PrintCallHandler
 import printscript.parser.statement.handlers.VariableDeclarationHandler
+import printscript.semantic.ResolverContext
+import printscript.semantic.SemanticResult
+import printscript.semantic.StatementValidator
+import printscript.semantic.handler.expression.BinaryExpressionHandler
+import printscript.semantic.handler.expression.IdentifierHandler
+import printscript.semantic.handler.expression.NumberLiteralHandler
+import printscript.semantic.handler.expression.StringLiteralHandler
+import printscript.semantic.handler.statement.AssignmentHandler as SemanticAssignmentHandler
+import printscript.semantic.handler.statement.PrintCallHandler as SemanticPrintCallHandler
+import printscript.semantic.handler.statement.VariableDeclarationHandler as SemanticVariableDeclarationHandler
 
 internal object PrintScript10 : LanguageDefinition {
     override val keywords: Map<String, TokenType> =
@@ -51,11 +61,26 @@ internal object PrintScript10 : LanguageDefinition {
 
     private val declarableTypes = setOf(TokenType.NUMBERTYPE, TokenType.STRINGTYPE)
 
-    override val statementHandlers: Map<TokenType, StatementHandler> =
+    override val parserStatements: Map<TokenType, StatementHandler> =
         mapOf(
             TokenType.LET to VariableDeclarationHandler(declarableTypes),
             TokenType.PRINTLN to PrintCallHandler,
             TokenType.IDENTIFIER to AssignmentHandler,
+        )
+
+    override val semanticStatements: List<Handler<Statement, StatementValidator, SemanticResult<Unit>>> =
+        listOf(
+            SemanticVariableDeclarationHandler(),
+            SemanticAssignmentHandler(),
+            SemanticPrintCallHandler(),
+        )
+
+    override val semanticExpressions: List<Handler<Expression, ResolverContext, SemanticResult<String>>> =
+        listOf(
+            NumberLiteralHandler(),
+            StringLiteralHandler(),
+            IdentifierHandler(),
+            BinaryExpressionHandler(),
         )
 
     override fun statementInterpreters(output: Output): List<Handler<Statement, InterpreterContext, Unit>> =

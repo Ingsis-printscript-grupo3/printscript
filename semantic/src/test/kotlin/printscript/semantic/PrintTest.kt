@@ -3,7 +3,6 @@ package printscript.semantic
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.test.assertTrue
 
 class PrintTest {
     @Test
@@ -12,7 +11,7 @@ class PrintTest {
 
         val results = analyze(code)
 
-        assertTrue(results.all { it is SemanticResult.Success })
+        assertIs<SemanticResult.Success<*>>(results.single())
     }
 
     @Test

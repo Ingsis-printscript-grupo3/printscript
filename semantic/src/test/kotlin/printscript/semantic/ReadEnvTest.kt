@@ -1,6 +1,5 @@
 package printscript.semantic
 
-import printscript.common.LanguageVersion
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -16,7 +15,7 @@ class ReadEnvTest {
             let b: boolean = readEnv("SOME_ENV");
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertEquals(3, results.size)
         assertTrue(results.all { it is SemanticResult.Success })
@@ -30,7 +29,7 @@ class ReadEnvTest {
             port = readEnv("PORT");
             """.trimIndent()
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         assertEquals(2, results.size)
         assertTrue(results.all { it is SemanticResult.Success })
@@ -41,7 +40,7 @@ class ReadEnvTest {
     fun `a non string argument fails naming readEnv`() {
         val code = "println(readEnv(99));"
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
         val failure = assertIs<SemanticResult.Failure>(results.single())
         assertEquals("'readEnv' argument must be a string, found 'number'.", failure.message)
@@ -51,8 +50,18 @@ class ReadEnvTest {
     fun `printing readEnv defaults to string`() {
         val code = "println(readEnv(\"USER\"));"
 
-        val results = analyze(code, LanguageVersion.V1_1)
+        val results = analyze(code)
 
-        assertTrue(results.all { it is SemanticResult.Success })
+        assertIs<SemanticResult.Success<*>>(results.single())
+    }
+
+    @Test
+    fun `an undeclared variable as argument fails`() {
+        val code = "println(readEnv(name));"
+
+        val results = analyze(code)
+
+        val failure = assertIs<SemanticResult.Failure>(results.single())
+        assertEquals("Variable 'name' not declared.", failure.message)
     }
 }

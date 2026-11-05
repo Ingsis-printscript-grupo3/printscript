@@ -32,8 +32,8 @@ class LanguageDefinitionTest {
 
     @Test
     fun `the 1_1 handler map resolves everything the 1_0 one resolves`() {
-        val handlers10 = PrintScript10.statementHandlers.keys
-        val handlers11 = PrintScript11.statementHandlers.keys
+        val handlers10 = PrintScript10.parserStatements.keys
+        val handlers11 = PrintScript11.parserStatements.keys
         val only11 = setOf(TokenType.IF, TokenType.CONST)
 
         assertEquals(emptySet<TokenType>(), handlers10 - handlers11)

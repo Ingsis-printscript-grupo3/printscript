@@ -1,7 +1,8 @@
 package printscript.semantic
 
+import printscript.ast.Expression
 import printscript.ast.Statement
-import printscript.common.LanguageVersion
+import printscript.ast.registry.Handler
 import printscript.common.TokenType
 import printscript.lexer.CharStream
 import printscript.lexer.Lexer
@@ -18,11 +19,44 @@ import printscript.parser.expression.StringLiteralParselet
 import printscript.parser.expression.UnaryMinusParselet
 import printscript.parser.result.ParseResult
 import printscript.parser.statement.StatementHandler
-import printscript.parser.statement.handlers.AssignmentHandler
-import printscript.parser.statement.handlers.IfStatementHandler
-import printscript.parser.statement.handlers.PrintCallHandler
-import printscript.parser.statement.handlers.VariableDeclarationHandler
+import printscript.semantic.handler.expression.BinaryExpressionHandler
+import printscript.semantic.handler.expression.BooleanLiteralHandler
+import printscript.semantic.handler.expression.IdentifierHandler
+import printscript.semantic.handler.expression.NumberLiteralHandler
+import printscript.semantic.handler.expression.ReadEnvHandler
+import printscript.semantic.handler.expression.ReadInputHandler
+import printscript.semantic.handler.expression.StringLiteralHandler
+import printscript.semantic.handler.statement.AssignmentHandler
+import printscript.semantic.handler.statement.BlockHandler
+import printscript.semantic.handler.statement.IfStatementHandler
+import printscript.semantic.handler.statement.PrintCallHandler
+import printscript.semantic.handler.statement.VariableDeclarationHandler
 import java.io.StringReader
+import printscript.parser.statement.handlers.AssignmentHandler as ParserAssignmentHandler
+import printscript.parser.statement.handlers.IfStatementHandler as ParserIfStatementHandler
+import printscript.parser.statement.handlers.PrintCallHandler as ParserPrintCallHandler
+import printscript.parser.statement.handlers.VariableDeclarationHandler as ParserVariableDeclarationHandler
+
+// el semantico no sabe de versiones: los tests le pasan todos los handlers
+internal val STATEMENT_HANDLERS: List<Handler<Statement, StatementValidator, SemanticResult<Unit>>> =
+    listOf(
+        VariableDeclarationHandler(),
+        AssignmentHandler(),
+        PrintCallHandler(),
+        IfStatementHandler(),
+        BlockHandler(),
+    )
+
+internal val EXPRESSION_HANDLERS: List<Handler<Expression, ResolverContext, SemanticResult<String>>> =
+    listOf(
+        NumberLiteralHandler(),
+        StringLiteralHandler(),
+        BooleanLiteralHandler(),
+        IdentifierHandler(),
+        BinaryExpressionHandler(),
+        ReadInputHandler(),
+        ReadEnvHandler(),
+    )
 
 // el parser aca solo actua como fixture generator para armar el ast de prueba
 private val KEYWORDS: Map<String, TokenType> =
@@ -57,11 +91,11 @@ private val TYPES = setOf(TokenType.NUMBERTYPE, TokenType.STRINGTYPE, TokenType.
 
 private val HANDLERS: Map<TokenType, StatementHandler> =
     mapOf(
-        TokenType.LET to VariableDeclarationHandler(TYPES),
-        TokenType.PRINTLN to PrintCallHandler,
-        TokenType.IDENTIFIER to AssignmentHandler,
-        TokenType.CONST to VariableDeclarationHandler(TYPES),
-        TokenType.IF to IfStatementHandler,
+        TokenType.LET to ParserVariableDeclarationHandler(TYPES),
+        TokenType.PRINTLN to ParserPrintCallHandler,
+        TokenType.IDENTIFIER to ParserAssignmentHandler,
+        TokenType.CONST to ParserVariableDeclarationHandler(TYPES),
+        TokenType.IF to ParserIfStatementHandler,
     )
 
 internal fun parse(code: String): Iterator<Statement> {
@@ -77,7 +111,5 @@ internal fun parse(code: String): Iterator<Statement> {
         }.iterator()
 }
 
-internal fun analyze(
-    code: String,
-    version: LanguageVersion = LanguageVersion.V1_0,
-): List<SemanticResult<Statement>> = SemanticAnalyzer(version).analyze(parse(code)).asSequence().toList()
+internal fun analyze(code: String): List<SemanticResult<Statement>> =
+    SemanticAnalyzer(STATEMENT_HANDLERS, EXPRESSION_HANDLERS).analyze(parse(code)).asSequence().toList()

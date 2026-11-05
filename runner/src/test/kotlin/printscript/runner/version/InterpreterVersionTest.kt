@@ -1,6 +1,5 @@
 package printscript.runner.version
 
-import printscript.ast.Statement
 import printscript.common.LanguageVersion
 import printscript.interpreter.Interpreter
 import printscript.interpreter.UnknownExpressionError
@@ -8,31 +7,12 @@ import printscript.interpreter.UnknownStatementError
 import printscript.interpreter.env.MapEnvProvider
 import printscript.interpreter.input.QueueInput
 import printscript.interpreter.output.BucketOutput
-import printscript.lexer.LexerFactory
-import printscript.parser.ParserFactory
-import printscript.parser.result.ParseResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertIs
 import kotlin.test.assertSame
 
-// el codigo se parsea con 1.1 para que el interprete de 1.0 reciba nodos que no soporta
 class InterpreterVersionTest {
-    private fun parse11(code: String): Iterator<Statement> {
-        val tokens = LexerFactory.create(code, PrintScript11.keywords).tokenize()
-        return ParserFactory
-            .create(
-                tokens,
-                PrintScript11.prefixParselets,
-                PrintScript11.statementHandlers,
-                PrintScript11.infixParselets,
-            ).parse()
-            .asSequence()
-            .map { result -> assertIs<ParseResult.Success>(result).statement }
-            .iterator()
-    }
-
     private fun interpreter(
         definition: LanguageDefinition,
         output: BucketOutput,
