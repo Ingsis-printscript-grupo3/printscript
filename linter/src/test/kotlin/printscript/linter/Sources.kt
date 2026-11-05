@@ -1,9 +1,12 @@
 package printscript.linter
 
+import printscript.ast.Expression
+import printscript.ast.PrintCall
 import printscript.ast.Statement
 import printscript.common.TokenType
 import printscript.lexer.CharStream
 import printscript.lexer.LexerFactory
+import printscript.linter.rule.LinterRule
 import printscript.parser.Parser
 import printscript.parser.expression.BooleanLiteralParselet
 import printscript.parser.expression.IdentifierParselet
@@ -73,6 +76,11 @@ fun statementsOf(source: String): List<Statement> {
     }.toList()
 }
 
+fun statementOf(source: String): Statement = statementsOf(source).single()
+
+// el parser solo arma expresiones dentro de una sentencia, asi que se la saca de un println
+fun expressionOf(source: String): Expression = (statementOf("println($source);") as PrintCall).value
+
 fun warningsOf(
     linter: Linter,
     source: String,
@@ -81,3 +89,9 @@ fun warningsOf(
     linter.analyze(statementsOf(source).iterator(), warnings::add)
     return warnings
 }
+
+// corre una sola regla, con el mismo recorrido del ast que usa el linter real
+fun warningsOf(
+    rule: LinterRule,
+    source: String,
+): List<Warning> = warningsOf(Linter(listOf(rule)), source)

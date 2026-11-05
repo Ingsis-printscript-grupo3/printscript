@@ -1,12 +1,10 @@
 package printscript.linter.rule
 
-import printscript.ast.Assignment
-import printscript.ast.Identifier
-import printscript.ast.NumberLiteral
-import printscript.ast.PrintCall
-import printscript.ast.VariableDeclaration
 import printscript.common.Position
 import printscript.linter.IdentifierFormat
+import printscript.linter.expressionOf
+import printscript.linter.statementOf
+import printscript.linter.warningsOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -16,32 +14,22 @@ class IdentifierFormatRuleTest {
     private val camelCaseRule = IdentifierFormatRule(IdentifierFormat.CAMEL_CASE)
     private val snakeCaseRule = IdentifierFormatRule(IdentifierFormat.SNAKE_CASE)
 
-    private fun pos() = Position(1, 1)
-
     @Test
     fun `applies to VariableDeclaration and Assignment`() {
-        val decl = VariableDeclaration("myVar", "number", null, pos())
-        val assign = Assignment("myVar", NumberLiteral(1.0, pos()), pos())
-        val print = PrintCall(Identifier("myVar", pos()), pos())
-
-        assertTrue(camelCaseRule.appliesTo(decl))
-        assertTrue(camelCaseRule.appliesTo(assign))
-        assertFalse(camelCaseRule.appliesTo(print))
-        assertFalse(camelCaseRule.appliesTo(NumberLiteral(1.0, pos())))
+        assertTrue(camelCaseRule.appliesTo(statementOf("let myVar: number;")))
+        assertTrue(camelCaseRule.appliesTo(statementOf("myVar = 1;")))
+        assertFalse(camelCaseRule.appliesTo(statementOf("println(myVar);")))
+        assertFalse(camelCaseRule.appliesTo(expressionOf("1")))
     }
 
     @Test
     fun `camel case variable declaration passes under camel case rule`() {
-        val decl = VariableDeclaration("myVar", "number", null, pos())
-
-        assertEquals(0, camelCaseRule.check(decl).size)
+        assertEquals(0, warningsOf(camelCaseRule, "let myVar: number;").size)
     }
 
     @Test
     fun `snake case variable declaration warns under camel case rule`() {
-        val decl = VariableDeclaration("my_var", "number", null, Position(1, 1), namePosition = Position(1, 5))
-
-        val warnings = camelCaseRule.check(decl)
+        val warnings = warningsOf(camelCaseRule, "let my_var: number;")
 
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'my_var' does not match format camel case", warnings[0].message)
@@ -50,9 +38,7 @@ class IdentifierFormatRuleTest {
 
     @Test
     fun `snake case assignment warns under camel case rule`() {
-        val assign = Assignment("my_var", NumberLiteral(1.0, pos()), Position(2, 3))
-
-        val warnings = camelCaseRule.check(assign)
+        val warnings = warningsOf(camelCaseRule, "\n  my_var = 1;")
 
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'my_var' does not match format camel case", warnings[0].message)
@@ -61,9 +47,7 @@ class IdentifierFormatRuleTest {
 
     @Test
     fun `camel case variable declaration warns under snake case rule`() {
-        val decl = VariableDeclaration("myVar", "number", null, Position(1, 1), namePosition = Position(1, 5))
-
-        val warnings = snakeCaseRule.check(decl)
+        val warnings = warningsOf(snakeCaseRule, "let myVar: number;")
 
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'myVar' does not match format snake case", warnings[0].message)
@@ -72,16 +56,12 @@ class IdentifierFormatRuleTest {
 
     @Test
     fun `snake case variable declaration passes under snake case rule`() {
-        val decl = VariableDeclaration("my_var", "number", null, pos())
-
-        assertEquals(0, snakeCaseRule.check(decl).size)
+        assertEquals(0, warningsOf(snakeCaseRule, "let my_var: number;").size)
     }
 
     @Test
     fun `const declaration warns if name does not match format`() {
-        val constDecl = VariableDeclaration("MI_CONST", "number", null, Position(1, 1), isConst = true)
-
-        val warnings = camelCaseRule.check(constDecl)
+        val warnings = warningsOf(camelCaseRule, "const MI_CONST: number = 1;")
 
         assertEquals(1, warnings.size)
         assertEquals("Identifier 'MI_CONST' does not match format camel case", warnings[0].message)
@@ -89,8 +69,6 @@ class IdentifierFormatRuleTest {
 
     @Test
     fun `check returns empty list for node where appliesTo is false`() {
-        val print = PrintCall(Identifier("myVar", pos()), pos())
-
-        assertEquals(emptyList(), camelCaseRule.check(print))
+        assertEquals(emptyList(), camelCaseRule.check(statementOf("println(myVar);")))
     }
 }
