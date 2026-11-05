@@ -1,19 +1,41 @@
-name: Publish
+name: Release and Publish
 
 on:
+  push:
+    branches: [main]
   release:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Tipo de bump (auto = según los commits)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
+# Dos merges seguidos a main no pueden calcular la misma versión en paralelo.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
-  publish:
+  release-and-publish:
+    # workflow_dispatch deja elegir la rama: solo se publica desde main.
+    if: github.ref == 'refs/heads/main' || github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -24,10 +46,49 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Run checks
+        run: ./gradlew check
+
+      # Solo calcula la versión: feat -> minor, cualquier otro commit -> patch.
+      # El tag lo crea el release al final.
+      - name: Calculate version
+        id: version
+        if: github.event_name != 'release'
+        env:
+          BUMP_INPUT: ${{ inputs.bump || 'auto' }}
+        run: |
+          LATEST=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | grep -v -- '-' | head -n 1)
+          if [ -n "$LATEST" ]; then RANGE="$LATEST..HEAD"; else LATEST="v0.0.0"; RANGE="HEAD"; fi
+
+          SUBJECTS=$(git log "$RANGE" --format=%s)
+          if [ -z "$SUBJECTS" ] && [ "$BUMP_INPUT" = "auto" ]; then
+            echo "No hay commits nuevos desde $LATEST, no se publica nada."
+            exit 0
+          fi
+
+          BUMP="$BUMP_INPUT"
+          if [ "$BUMP" = "auto" ]; then
+            if echo "$SUBJECTS" | grep -Eq '^feat(\([^)]+\))?:'; then BUMP="minor"; else BUMP="patch"; fi
+          fi
+
+          IFS=. read -r MAJOR MINOR PATCH <<< "${LATEST#v}"
+          if [ "$BUMP" = "minor" ]; then MINOR=$((MINOR + 1)); PATCH=0; else PATCH=$((PATCH + 1)); fi
+
+          echo "$LATEST + $BUMP -> v$MAJOR.$MINOR.$PATCH"
+          echo "new_tag=v$MAJOR.$MINOR.$PATCH" >> "$GITHUB_OUTPUT"
+
       - name: Publish to GitHub Packages
+        if: github.event_name == 'release' || steps.version.outputs.new_tag != ''
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.event.release.tag_name }}
-        # saca la v del tag del release: v1.0.0 se publica como 1.0.0
-        run: ./gradlew publish -Pversion=${TAG#v}
+          TAG: ${{ github.event.release.tag_name || steps.version.outputs.new_tag }}
+        run: ./gradlew publish -Pversion="${TAG#v}"
+
+      # Va después del publish: si el publish falla no queda tag, y re-correr el workflow lo reintenta.
+      - name: Create release
+        if: github.event_name != 'release' && steps.version.outputs.new_tag != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.new_tag }}
+        run: gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --generate-notes

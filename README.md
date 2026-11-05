@@ -200,10 +200,15 @@ por defecto es la de `gradle.properties` (`0.0.1-SNAPSHOT`) y se pisa con `-Pver
 Los `.jar` quedan en `~/.m2/repository/org/printscript/`, donde cualquier proyecto Gradle o
 Maven de la misma máquina los encuentra sin credenciales.
 
-**A GitHub Packages**, que es la publicación real. La hace sola el workflow
-[`.github/workflows/publish.yml`](.github/workflows/publish.yml) cuando se crea un release en
-GitHub. El workflow corre `./gradlew publish` tomando la versión del tag: un release
-etiquetado `v1.0.0` se publica como `1.0.0`.
+**A GitHub Packages**, que es la publicación real. La hace automáticamente el workflow
+[`.github/workflows/publish.yml`](.github/workflows/publish.yml) cada vez que se hace push o se
+mergea un pull request a `main`. El workflow corre `./gradlew check`, deriva el incremento de
+versión (SemVer) leyendo los Conventional Commits (`feat:` -> minor, `BREAKING CHANGE:` -> major,
+`fix:` o por defecto -> patch), crea el tag y la GitHub Release correspondiente con changelog
+automático, y corre `./gradlew publish` para publicar los paquetes.
+
+También se puede disparar a mano vía `workflow_dispatch` desde GitHub Actions (pudiendo elegir el
+tipo de bump) o al crear un release manual en GitHub.
 
 Para publicar a mano hacen falta las variables de entorno `GITHUB_ACTOR` y `GITHUB_TOKEN`
 con un token que tenga permiso `write:packages`:
